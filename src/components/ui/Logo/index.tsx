@@ -39,7 +39,7 @@ export function Logo({
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: markOnly ? 'flex-start' : 'center',
-        height,
+        height: `var(--logo-container-h, ${height}px)`,
         ...(containerWidth != null ? { width: containerWidth } : {}),
         overflow: markOnly ? 'hidden' : 'visible',
         flexShrink: 0,
@@ -50,7 +50,7 @@ export function Logo({
         src={logoImg}
         alt={alt}
         style={{
-          height: imgHeight,
+          height: `var(--logo-img-h, ${imgHeight}px)`,
           width: 'auto',
           maxWidth: 'none',
           display: 'block',

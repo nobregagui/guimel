@@ -55,6 +55,8 @@
     align-items: center;
     gap: 10px;
     margin-bottom: clamp(16px, 2.5vh, 36px);
+    --logo-container-h: 52px;
+    --logo-img-h: 121px;
   }
   
   .brandName {
@@ -129,6 +131,8 @@
     font-weight: 700;
     font-size: 0.7rem;
     color: var(--text-primary, #18181B);
+    --logo-container-h: 0px;
+    --logo-img-h: 56px;
   }
   
   .mockupSearch {
@@ -866,6 +870,364 @@
     }
   }
   
+  /* Telas grandes — escala proporcional sem alterar o layout base */
+  @media (min-width: 1440px) {
+    .leftPane {
+      padding: clamp(32px, 3.5vh, 56px) clamp(56px, 5vw, 88px) clamp(32px, 3.5vh, 56px) clamp(72px, 5.5vw, 104px);
+    }
+
+    .leftContent {
+      max-width: 580px;
+    }
+
+    .brandTop {
+      --logo-container-h: 60px;
+      --logo-img-h: 140px;
+      margin-bottom: clamp(20px, 3vh, 42px);
+    }
+
+    .headline {
+      font-size: clamp(2rem, 2.8vw, 3rem);
+      margin-bottom: 20px;
+    }
+
+    .subheadline {
+      font-size: 1rem;
+      max-width: 480px;
+      margin-bottom: clamp(20px, 3vh, 42px);
+    }
+
+    .mockupWrapper {
+      height: clamp(210px, 28vh, 300px);
+      margin-bottom: clamp(20px, 3vh, 42px);
+    }
+
+    .mockupLogo {
+      --logo-img-h: 64px;
+    }
+
+    .mockupCard {
+      padding: 16px 18px;
+      border-radius: 16px;
+      font-size: 0.83rem;
+    }
+
+    .mockupCardMain {
+      width: 356px;
+    }
+
+    .mockupSearch {
+      width: 74px;
+      height: 21px;
+    }
+
+    .mockupTitle {
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+
+    .mockupKpis {
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .mockupKpi {
+      padding: 9px;
+      border-radius: 9px;
+    }
+
+    .mockupKpiLabel {
+      font-size: 0.72rem;
+    }
+
+    .mockupKpiValue {
+      font-size: 0.86rem;
+    }
+
+    .mockupKpiBadgeGreen,
+    .mockupKpiBadgeRed {
+      font-size: 0.69rem;
+    }
+
+    .mockupSectionLabel {
+      font-size: 0.75rem;
+      margin-bottom: 7px;
+    }
+
+    .mockupTransactions {
+      gap: 6px;
+    }
+
+    .mockupTxLabel {
+      font-size: 0.75rem;
+    }
+
+    .mockupTxTag {
+      font-size: 0.67rem;
+    }
+
+    .mockupCardGrowth {
+      right: 17px;
+      width: 172px;
+    }
+
+    .mockupGrowthLabel {
+      font-size: 0.75rem;
+    }
+
+    .mockupGrowthValue {
+      font-size: 1.27rem;
+    }
+
+    .mockupGrowthSub {
+      font-size: 0.69rem;
+      margin-bottom: 9px;
+    }
+
+    .mockupMiniChart {
+      height: 35px;
+    }
+
+    .mockupCardCash {
+      width: 172px;
+    }
+
+    .mockupCashLabel {
+      font-size: 0.75rem;
+    }
+
+    .mockupCashValue {
+      font-size: 1.01rem;
+    }
+
+    .mockupCashSub {
+      font-size: 0.69rem;
+      margin-bottom: 9px;
+    }
+
+    .mockupBars {
+      gap: 4px;
+      height: 37px;
+    }
+
+    .mockupCardHealth {
+      width: 138px;
+      bottom: -54px;
+    }
+
+    .mockupHealthLabel {
+      font-size: 0.75rem;
+    }
+
+    .mockupHealthGauge {
+      width: 92px;
+    }
+
+    .mockupHealthTag {
+      font-size: 0.8rem;
+    }
+
+    .mockupCardAI {
+      width: 196px;
+      bottom: -132px;
+    }
+
+    .mockupAIIcon {
+      font-size: 1rem;
+    }
+
+    .mockupAITitle {
+      font-size: 0.83rem;
+    }
+
+    .mockupAIText {
+      font-size: 0.72rem;
+    }
+
+    .mockupAILink {
+      font-size: 0.75rem;
+    }
+
+    .aiBadge {
+      padding: 20px 22px;
+      border-radius: 18px;
+      gap: 16px;
+    }
+
+    .aiRobot {
+      font-size: 2.25rem;
+    }
+
+    .aiBadgeTitle {
+      font-size: 0.95rem;
+    }
+
+    .aiBadgeText {
+      font-size: 0.875rem;
+    }
+
+    .aiBadgeLink {
+      font-size: 0.875rem;
+    }
+  }
+
+  @media (min-width: 1920px) {
+    .leftPane {
+      padding: clamp(40px, 4vh, 64px) clamp(72px, 6vw, 112px) clamp(40px, 4vh, 64px) clamp(88px, 6.5vw, 128px);
+    }
+
+    .leftContent {
+      max-width: 660px;
+    }
+
+    .brandTop {
+      --logo-container-h: 68px;
+      --logo-img-h: 158px;
+      margin-bottom: clamp(24px, 3.5vh, 48px);
+    }
+
+    .headline {
+      font-size: clamp(2.25rem, 3vw, 3.35rem);
+      margin-bottom: 24px;
+    }
+
+    .subheadline {
+      font-size: 1.0625rem;
+      max-width: 540px;
+      line-height: 1.7;
+      margin-bottom: clamp(24px, 3.5vh, 48px);
+    }
+
+    .mockupWrapper {
+      height: clamp(240px, 30vh, 340px);
+      margin-bottom: clamp(24px, 3.5vh, 48px);
+    }
+
+    .mockupLogo {
+      --logo-img-h: 72px;
+    }
+
+    .mockupCard {
+      padding: 18px 20px;
+      border-radius: 18px;
+      font-size: 0.9rem;
+    }
+
+    .mockupCardMain {
+      width: 403px;
+    }
+
+    .mockupSearch {
+      width: 83px;
+      height: 24px;
+    }
+
+    .mockupTitle {
+      font-size: 1rem;
+      margin-bottom: 14px;
+    }
+
+    .mockupKpis {
+      gap: 11px;
+      margin-bottom: 14px;
+    }
+
+    .mockupKpi {
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .mockupKpiLabel {
+      font-size: 0.8rem;
+    }
+
+    .mockupKpiValue {
+      font-size: 0.95rem;
+    }
+
+    .mockupKpiBadgeGreen,
+    .mockupKpiBadgeRed {
+      font-size: 0.76rem;
+    }
+
+    .mockupSectionLabel {
+      font-size: 0.82rem;
+      margin-bottom: 8px;
+    }
+
+    .mockupTxLabel {
+      font-size: 0.82rem;
+    }
+
+    .mockupTxTag {
+      font-size: 0.73rem;
+    }
+
+    .mockupCardGrowth {
+      right: 20px;
+      width: 195px;
+    }
+
+    .mockupGrowthValue {
+      font-size: 1.43rem;
+    }
+
+    .mockupMiniChart {
+      height: 38px;
+    }
+
+    .mockupCardCash {
+      width: 195px;
+    }
+
+    .mockupCashValue {
+      font-size: 1.14rem;
+    }
+
+    .mockupBars {
+      height: 42px;
+    }
+
+    .mockupCardHealth {
+      width: 156px;
+      bottom: -61px;
+    }
+
+    .mockupHealthGauge {
+      width: 104px;
+    }
+
+    .mockupCardAI {
+      width: 221px;
+      bottom: -150px;
+    }
+
+    .mockupAITitle {
+      font-size: 0.9rem;
+    }
+
+    .mockupAIText {
+      font-size: 0.78rem;
+    }
+
+    .aiBadge {
+      padding: 22px 26px;
+      border-radius: 20px;
+    }
+
+    .aiRobot {
+      font-size: 2.5rem;
+    }
+
+    .aiBadgeTitle {
+      font-size: 1rem;
+    }
+
+    .aiBadgeText {
+      font-size: 0.9375rem;
+    }
+  }
+
   @media (max-width: 1024px) {
     .leftPane {
       padding: 40px 36px;
