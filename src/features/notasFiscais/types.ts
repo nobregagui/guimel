@@ -1,5 +1,15 @@
 export type TipoNota = 'entrada' | 'saida'
 
+export type TipoDevolucao = 'devolucao_venda' | 'devolucao_compra'
+
+export type MotivoDevolucao =
+  | 'defeito'
+  | 'avaria_transporte'
+  | 'troca_mercadoria'
+  | 'desistencia_compra'
+  | 'erro_faturamento'
+  | 'outros'
+
 export type StatusNota =
   | 'autorizada'
   | 'pendente'
@@ -105,6 +115,22 @@ export interface NotaFiscal {
   protocolo?: string
   dataProtocolo?: string
   motivoCancelamento?: string
+  devolucao?: NotaFiscalDevolucaoInfo
+}
+
+export interface NotaFiscalReferencia {
+  notaOriginalId: string
+  chaveAcesso: string
+  numero: string
+  serie: string
+  dataEmissao: string
+}
+
+export interface NotaFiscalDevolucaoInfo {
+  tipo: TipoDevolucao
+  motivo: MotivoDevolucao
+  motivoDescricao?: string
+  referencia: NotaFiscalReferencia
 }
 
 export interface NotaFiscalItemFormValues {
@@ -115,6 +141,40 @@ export interface NotaFiscalItemFormValues {
   quantidade: number
   valorUnitario: number
   desconto: number
+}
+
+export interface NotaFiscalDevolucaoItemFormValues extends NotaFiscalItemFormValues {
+  itemOriginalId: string
+  quantidadeOriginal: number
+  selecionado: boolean
+}
+
+export interface NotaFiscalDevolucaoFormValues {
+  tipoDevolucao: TipoDevolucao
+  tipo: TipoNota
+  dataEmissao: string
+  dataSaida?: string
+  vencimento?: string
+  notaOriginalId: string
+  referenciaChaveAcesso: string
+  referenciaNumero: string
+  referenciaSerie: string
+  referenciaDataEmissao: string
+  motivoDevolucao: MotivoDevolucao
+  motivoDescricao?: string
+  destinatarioNome: string
+  destinatarioCnpj: string
+  destinatarioIe?: string
+  destinatarioCpf?: string
+  destinatarioEndereco: string
+  destinatarioCidade: string
+  destinatarioEstado: string
+  itens: NotaFiscalDevolucaoItemFormValues[]
+  valorFrete: number
+  valorSeguro: number
+  valorOutrasDespesas: number
+  formaPagamento: FormaPagamentoNF
+  informacoesAdicionais?: string
 }
 
 export interface NotaFiscalFormValues {
@@ -136,6 +196,25 @@ export interface NotaFiscalFormValues {
   valorOutrasDespesas: number
   formaPagamento: FormaPagamentoNF
   informacoesAdicionais?: string
+}
+
+export const MOTIVO_DEVOLUCAO_LABEL: Record<MotivoDevolucao, string> = {
+  defeito: 'Defeito ou avaria no produto',
+  avaria_transporte: 'Avaria durante o transporte',
+  troca_mercadoria: 'Troca de mercadoria',
+  desistencia_compra: 'Desistência da compra',
+  erro_faturamento: 'Erro de faturamento',
+  outros: 'Outros motivos',
+}
+
+export const TIPO_DEVOLUCAO_LABEL: Record<TipoDevolucao, string> = {
+  devolucao_venda: 'Devolução de venda',
+  devolucao_compra: 'Devolução de compra',
+}
+
+export const CFOP_DEVOLUCAO_PADRAO: Record<TipoDevolucao, string> = {
+  devolucao_venda: '1202',
+  devolucao_compra: '5411',
 }
 
 export const NATUREZA_OPERACAO_LABEL: Record<NaturezaOperacao, string> = {

@@ -1,4 +1,5 @@
 export { NotaFiscalDetalheDrawer } from '@/features/notasFiscais/components/NotaFiscalDetalheDrawer'
+export { NotaFiscalDevolucaoDrawer } from '@/features/notasFiscais/components/NotaFiscalDevolucaoDrawer'
 export { NotaFiscalDrawer } from '@/features/notasFiscais/components/NotaFiscalDrawer'
 export { NotaFiscalStatusBadge } from '@/features/notasFiscais/components/NotaFiscalStatusBadge'
 export { NotaFiscalTipoBadge } from '@/features/notasFiscais/components/NotaFiscalTipoBadge'
@@ -15,6 +16,7 @@ export {
   ALIQUOTA_COFINS,
   ALIQUOTA_ICMS,
   ALIQUOTA_PIS,
+  createEmptyDevolucaoForm,
   createEmptyNotaFiscalForm,
   emptyNotaFiscalItem,
   MINHA_EMPRESA,

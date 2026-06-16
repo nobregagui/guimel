@@ -1,13 +1,14 @@
-import { ArrowDown, ArrowRight, ArrowUp } from 'lucide-react'
+import { ArrowDown, ArrowRight, ArrowUp, RotateCcw } from 'lucide-react'
 
 import type { TipoNota } from '@/features/notasFiscais/types'
 import styles from '@/pages/notas-fiscais/NotasFiscaisPage.module.css'
 
 interface TypeSelectorSectionProps {
   onSelect: (tipo: TipoNota) => void
+  onSelectDevolucao: () => void
 }
 
-export function TypeSelectorSection({ onSelect }: TypeSelectorSectionProps) {
+export function TypeSelectorSection({ onSelect, onSelectDevolucao }: TypeSelectorSectionProps) {
   return (
     <section className={styles.typeSelectorSection}>
       <div>
@@ -40,10 +41,6 @@ export function TypeSelectorSection({ onSelect }: TypeSelectorSectionProps) {
             <div className={styles.typeCardExample}>
               <span className={`${styles.typeCardExampleDot} ${styles.typeCardExampleDotEntrada}`} />
               Compra de mercadorias para revenda
-            </div>
-            <div className={styles.typeCardExample}>
-              <span className={`${styles.typeCardExampleDot} ${styles.typeCardExampleDotEntrada}`} />
-              Devolução de venda realizada
             </div>
             <div className={styles.typeCardExample}>
               <span className={`${styles.typeCardExampleDot} ${styles.typeCardExampleDotEntrada}`} />
@@ -82,16 +79,49 @@ export function TypeSelectorSection({ onSelect }: TypeSelectorSectionProps) {
               <span className={`${styles.typeCardExampleDot} ${styles.typeCardExampleDotSaida}`} />
               Prestação de serviços contratados
             </div>
-            <div className={styles.typeCardExample}>
-              <span className={`${styles.typeCardExampleDot} ${styles.typeCardExampleDotSaida}`} />
-              Devolução de compra ao fornecedor
-            </div>
           </div>
           <div className={`${styles.typeCardAction} ${styles.typeCardActionSaida}`}>
             Emitir nota de saída <ArrowRight size={14} />
           </div>
         </button>
       </div>
+
+      <button
+        type="button"
+        className={`${styles.typeCard} ${styles.typeCardDevolucao}`}
+        onClick={onSelectDevolucao}
+      >
+        <div className={`${styles.typeCardIcon} ${styles.typeCardIconDevolucao}`}>
+          <RotateCcw size={18} />
+        </div>
+        <span className={`${styles.typeCardBadge} ${styles.typeCardBadgeDevolucao}`}>
+          NF-e de Devolução
+        </span>
+        <div>
+          <h3 className={styles.typeCardTitle}>Nota fiscal de devolução</h3>
+          <p className={styles.typeCardDesc}>
+            Emita ou registre uma devolução referenciando a nota original. Os dados do cliente,
+            fornecedor e itens são preenchidos automaticamente para agilizar o processo.
+          </p>
+        </div>
+        <div className={styles.typeCardExamples}>
+          <div className={styles.typeCardExample}>
+            <span className={`${styles.typeCardExampleDot} ${styles.typeCardExampleDotDevolucao}`} />
+            Devolução de venda — cliente devolve mercadoria (NF-e de entrada)
+          </div>
+          <div className={styles.typeCardExample}>
+            <span className={`${styles.typeCardExampleDot} ${styles.typeCardExampleDotDevolucao}`} />
+            Devolução de compra — devolução ao fornecedor (NF-e de saída)
+          </div>
+          <div className={styles.typeCardExample}>
+            <span className={`${styles.typeCardExampleDot} ${styles.typeCardExampleDotDevolucao}`} />
+            Referência automática à chave, número e itens da NF original
+          </div>
+        </div>
+        <div className={`${styles.typeCardAction} ${styles.typeCardActionDevolucao}`}>
+          Iniciar devolução <ArrowRight size={14} />
+        </div>
+      </button>
     </section>
   )
 }

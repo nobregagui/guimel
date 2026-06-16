@@ -1193,6 +1193,165 @@
   color: #ea580c;
 }
 
+.typeCardDevolucao {
+  border-color: #6366f1;
+  margin-top: 4px;
+}
+
+.typeCardDevolucao:hover {
+  border-color: #4f46e5;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+}
+
+.typeCardIconDevolucao {
+  background-color: #eef2ff;
+  color: #4f46e5;
+}
+
+.typeCardBadgeDevolucao {
+  background-color: #eef2ff;
+  color: #4f46e5;
+}
+
+.typeCardExampleDotDevolucao {
+  background-color: #6366f1;
+}
+
+.typeCardActionDevolucao {
+  color: #4f46e5;
+}
+
+.drawerPanelWide {
+  width: min(680px, 100vw);
+}
+
+.drawerHeaderIconDevolucao {
+  background-color: #eef2ff;
+  color: #4f46e5;
+}
+
+.devolucaoTipoRow {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.devolucaoTipoPill {
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.devolucaoTipoPill:hover {
+  border-color: #c7d2fe;
+}
+
+.devolucaoTipoPillActive {
+  background-color: #eef2ff;
+  color: #4f46e5;
+  border-color: #6366f1;
+}
+
+.devolucaoTipoPillSaida.devolucaoTipoPillActive {
+  background-color: #fff7ed;
+  color: #ea580c;
+  border-color: #f97316;
+}
+
+.devolucaoHint {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.devolucaoRefCard {
+  padding: 14px 16px;
+  background-color: #f8fafc;
+  border: 1px solid #e0e7ff;
+  border-radius: 10px;
+}
+
+.devolucaoRefTitle {
+  margin: 0 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4f46e5;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.devolucaoItensHeader {
+  display: grid;
+  grid-template-columns: 28px 1fr 64px 88px 72px 100px;
+  gap: 8px;
+  padding: 0 0 6px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 11px;
+  font-weight: 500;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.devolucaoItemRow {
+  display: grid;
+  grid-template-columns: 28px 1fr 64px 88px 72px 100px;
+  gap: 8px;
+  align-items: end;
+}
+
+.devolucaoCheckbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+}
+
+.devolucaoCheckbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: #6366f1;
+  cursor: pointer;
+}
+
+.devolucaoQtdOrig {
+  font-size: 13px;
+  color: #6b7280;
+  padding-bottom: 12px;
+  text-align: center;
+}
+
+.totalValueDevolucao {
+  background-color: #eef2ff;
+  color: #4f46e5;
+}
+
+.btnDevolucao {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  border: none;
+  border-radius: 8px;
+  background-color: #6366f1;
+  color: #ffffff;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.btnDevolucao:hover {
+  background-color: #4f46e5;
+}
+
 /* ─── Drawer NF ─────────────────────────────────────────────────────────────── */
 .drawerHeaderLeft {
   display: flex;
@@ -1552,5 +1711,10 @@
 
   .itemRowHeader {
     grid-template-columns: 1fr 60px 80px 60px 28px;
+  }
+
+  .devolucaoItensHeader,
+  .devolucaoItemRow {
+    grid-template-columns: 28px 1fr 52px 72px 60px 80px;
   }
 }

@@ -1,12 +1,13 @@
 import { create } from 'zustand'
 
 import { NOTAS_FISCAIS } from '@/features/notasFiscais/data/notasFiscais'
-import type { NotaFiscal, NotaFiscalFormValues } from '@/features/notasFiscais/types'
-import { buildNotaFromForm } from '@/features/notasFiscais/utils'
+import type { NotaFiscal, NotaFiscalDevolucaoFormValues, NotaFiscalFormValues } from '@/features/notasFiscais/types'
+import { buildNotaFromDevolucaoForm, buildNotaFromForm } from '@/features/notasFiscais/utils'
 
 interface NotasFiscaisState {
   notas: NotaFiscal[]
   addNota: (values: NotaFiscalFormValues) => NotaFiscal
+  addNotaDevolucao: (values: NotaFiscalDevolucaoFormValues) => NotaFiscal
   updateNota: (id: string, data: Partial<NotaFiscal>) => void
   cancelarNota: (id: string, motivo: string) => void
   getNotaById: (id: string) => NotaFiscal | undefined
@@ -18,6 +19,16 @@ export const useNotasFiscaisStore = create<NotasFiscaisState>((set, get) => ({
   addNota: (values) => {
     const nota: NotaFiscal = {
       ...buildNotaFromForm(values, get().notas.length),
+      id: `nf-${Date.now()}`,
+    }
+
+    set((state) => ({ notas: [nota, ...state.notas] }))
+    return nota
+  },
+
+  addNotaDevolucao: (values) => {
+    const nota: NotaFiscal = {
+      ...buildNotaFromDevolucaoForm(values, get().notas.length),
       id: `nf-${Date.now()}`,
     }
 

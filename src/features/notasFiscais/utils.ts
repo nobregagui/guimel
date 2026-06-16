@@ -4,15 +4,21 @@ import {
   ALIQUOTA_PIS,
   MINHA_EMPRESA,
 } from '@/features/notasFiscais/data/shared'
-import type {
-  ItemNota,
-  NotaFiscal,
-  NotaFiscalFormValues,
-  NotaFiscalItemFormValues,
-  StatusFilter,
-  StatusNota,
-  TipoFilter,
-  TributosNota,
+import {
+  CFOP_DEVOLUCAO_PADRAO,
+  MOTIVO_DEVOLUCAO_LABEL,
+  type ItemNota,
+  type NaturezaOperacao,
+  type NotaFiscal,
+  type NotaFiscalDevolucaoFormValues,
+  type NotaFiscalDevolucaoItemFormValues,
+  type NotaFiscalFormValues,
+  type NotaFiscalItemFormValues,
+  type StatusFilter,
+  type StatusNota,
+  type TipoDevolucao,
+  type TipoFilter,
+  type TributosNota,
 } from '@/features/notasFiscais/types'
 
 export function formatBRL(value: number): string {
@@ -182,4 +188,158 @@ export const STATUS_DOT_COLORS: Record<StatusNota, string> = {
   cancelada: '#dc2626',
   denegada: '#dc2626',
   inutilizada: '#6b7280',
+}
+
+const NATUREZAS_ORIGEM_DEVOLUCAO: Record<TipoDevolucao, NaturezaOperacao[]> = {
+  devolucao_venda: ['venda', 'servico'],
+  devolucao_compra: ['compra'],
+}
+
+export function isNotaElegivelParaDevolucao(
+  nota: NotaFiscal,
+  tipoDevolucao: TipoDevolucao,
+): boolean {
+  if (nota.status !== 'autorizada') return false
+  if (nota.naturezaOperacao === 'devolucao_venda' || nota.naturezaOperacao === 'devolucao_compra') {
+    return false
+  }
+
+  if (tipoDevolucao === 'devolucao_venda') {
+    return (
+      nota.tipo === 'saida' &&
+      NATUREZAS_ORIGEM_DEVOLUCAO.devolucao_venda.includes(nota.naturezaOperacao)
+    )
+  }
+
+  return (
+    nota.tipo === 'entrada' &&
+    NATUREZAS_ORIGEM_DEVOLUCAO.devolucao_compra.includes(nota.naturezaOperacao)
+  )
+}
+
+export function getNotasElegiveisParaDevolucao(
+  notas: NotaFiscal[],
+  tipoDevolucao: TipoDevolucao,
+): NotaFiscal[] {
+  return notas
+    .filter((nota) => isNotaElegivelParaDevolucao(nota, tipoDevolucao))
+    .sort((a, b) => b.dataEmissao.localeCompare(a.dataEmissao))
+}
+
+export function buildDevolucaoFormFromNota(
+  notaOriginal: NotaFiscal,
+  tipoDevolucao: TipoDevolucao,
+): NotaFiscalDevolucaoFormValues {
+  const isDevolucaoVenda = tipoDevolucao === 'devolucao_venda'
+  const contraparte = isDevolucaoVenda ? notaOriginal.destinatario : notaOriginal.emitente
+  const cfopPadrao = CFOP_DEVOLUCAO_PADRAO[tipoDevolucao]
+  const hoje = new Date().toISOString().split('T')[0]
+
+  return {
+    tipoDevolucao,
+    tipo: isDevolucaoVenda ? 'entrada' : 'saida',
+    dataEmissao: hoje,
+    dataSaida: hoje,
+    vencimento: notaOriginal.vencimento ?? '',
+    notaOriginalId: notaOriginal.id,
+    referenciaChaveAcesso: notaOriginal.chaveAcesso,
+    referenciaNumero: notaOriginal.numero,
+    referenciaSerie: notaOriginal.serie,
+    referenciaDataEmissao: notaOriginal.dataEmissao,
+    motivoDevolucao: 'defeito',
+    motivoDescricao: '',
+    destinatarioNome: contraparte.nome,
+    destinatarioCnpj: contraparte.cnpj,
+    destinatarioIe: contraparte.ie ?? '',
+    destinatarioCpf: isDevolucaoVenda ? (notaOriginal.destinatario.cpf ?? '') : '',
+    destinatarioEndereco: contraparte.endereco,
+    destinatarioCidade: contraparte.cidade,
+    destinatarioEstado: contraparte.estado,
+    itens: notaOriginal.itens.map((item) => ({
+      itemOriginalId: item.id,
+      quantidadeOriginal: item.quantidade,
+      selecionado: true,
+      descricao: item.descricao,
+      ncm: item.ncm,
+      cfop: cfopPadrao,
+      unidade: item.unidade,
+      quantidade: item.quantidade,
+      valorUnitario: item.valorUnitario,
+      desconto: item.desconto,
+    })),
+    valorFrete: 0,
+    valorSeguro: 0,
+    valorOutrasDespesas: 0,
+    formaPagamento: notaOriginal.formaPagamento,
+    informacoesAdicionais: `Devolução referente à NF-e Nº ${notaOriginal.numero}, série ${notaOriginal.serie}, emitida em ${formatDate(notaOriginal.dataEmissao)}.`,
+  }
+}
+
+function getItensDevolucaoSelecionados(
+  itens: NotaFiscalDevolucaoItemFormValues[],
+): NotaFiscalItemFormValues[] {
+  return itens
+    .filter((item) => item.selecionado && item.quantidade > 0)
+    .map(({ selecionado: _selecionado, itemOriginalId: _id, quantidadeOriginal: _qtd, ...item }) => item)
+}
+
+export function buildNotaFromDevolucaoForm(
+  values: NotaFiscalDevolucaoFormValues,
+  existingCount: number,
+): Omit<NotaFiscal, 'id'> {
+  const itensSelecionados = getItensDevolucaoSelecionados(values.itens)
+  const baseForm: NotaFiscalFormValues = {
+    tipo: values.tipo,
+    naturezaOperacao: values.tipoDevolucao,
+    dataEmissao: values.dataEmissao,
+    dataSaida: values.dataSaida,
+    vencimento: values.vencimento,
+    destinatarioNome: values.destinatarioNome,
+    destinatarioCnpj: values.destinatarioCnpj,
+    destinatarioIe: values.destinatarioIe,
+    destinatarioCpf: values.destinatarioCpf,
+    destinatarioEndereco: values.destinatarioEndereco,
+    destinatarioCidade: values.destinatarioCidade,
+    destinatarioEstado: values.destinatarioEstado,
+    itens: itensSelecionados,
+    valorFrete: values.valorFrete,
+    valorSeguro: values.valorSeguro,
+    valorOutrasDespesas: values.valorOutrasDespesas,
+    formaPagamento: values.formaPagamento,
+    informacoesAdicionais: [
+      values.informacoesAdicionais?.trim(),
+      `Motivo: ${MOTIVO_DEVOLUCAO_LABEL[values.motivoDevolucao]}`,
+      values.motivoDescricao?.trim(),
+    ]
+      .filter(Boolean)
+      .join(' — '),
+  }
+
+  const nota = buildNotaFromForm(baseForm, existingCount)
+
+  return {
+    ...nota,
+    devolucao: {
+      tipo: values.tipoDevolucao,
+      motivo: values.motivoDevolucao,
+      motivoDescricao: values.motivoDescricao?.trim() || undefined,
+      referencia: {
+        notaOriginalId: values.notaOriginalId,
+        chaveAcesso: values.referenciaChaveAcesso,
+        numero: values.referenciaNumero,
+        serie: values.referenciaSerie,
+        dataEmissao: values.referenciaDataEmissao,
+      },
+    },
+  }
+}
+
+export function getTipoDevolucaoFromNota(nota: NotaFiscal): TipoDevolucao | null {
+  if (nota.tipo === 'saida' && ['venda', 'servico'].includes(nota.naturezaOperacao)) {
+    return 'devolucao_venda'
+  }
+  if (nota.tipo === 'entrada' && nota.naturezaOperacao === 'compra') {
+    return 'devolucao_compra'
+  }
+  return null
 }

@@ -1,8 +1,10 @@
 import type {
   NaturezaOperacao,
+  NotaFiscalDevolucaoFormValues,
   NotaFiscalFormValues,
   NotaFiscalItemFormValues,
   NotasFiscaisAba,
+  TipoDevolucao,
   TipoNota,
 } from '@/features/notasFiscais/types'
 
@@ -49,6 +51,41 @@ export function emptyNotaFiscalItem(): NotaFiscalItemFormValues {
     quantidade: 1,
     valorUnitario: 0,
     desconto: 0,
+  }
+}
+
+export function createEmptyDevolucaoForm(
+  tipoDevolucao: TipoDevolucao = 'devolucao_venda',
+): NotaFiscalDevolucaoFormValues {
+  const hoje = new Date().toISOString().split('T')[0]
+  const isDevolucaoVenda = tipoDevolucao === 'devolucao_venda'
+
+  return {
+    tipoDevolucao,
+    tipo: isDevolucaoVenda ? 'entrada' : 'saida',
+    dataEmissao: hoje,
+    dataSaida: hoje,
+    vencimento: '',
+    notaOriginalId: '',
+    referenciaChaveAcesso: '',
+    referenciaNumero: '',
+    referenciaSerie: '',
+    referenciaDataEmissao: '',
+    motivoDevolucao: 'defeito',
+    motivoDescricao: '',
+    destinatarioNome: '',
+    destinatarioCnpj: '',
+    destinatarioIe: '',
+    destinatarioCpf: '',
+    destinatarioEndereco: '',
+    destinatarioCidade: '',
+    destinatarioEstado: 'SP',
+    itens: [],
+    valorFrete: 0,
+    valorSeguro: 0,
+    valorOutrasDespesas: 0,
+    formaPagamento: 'pix',
+    informacoesAdicionais: '',
   }
 }
 

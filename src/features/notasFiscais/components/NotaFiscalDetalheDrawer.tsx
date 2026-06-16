@@ -1,32 +1,43 @@
 import { useEffect, useState } from 'react'
-import { Download, X } from 'lucide-react'
+import { Download, RotateCcw, X } from 'lucide-react'
 
 import { NotaFiscalStatusBadge } from '@/features/notasFiscais/components/NotaFiscalStatusBadge'
 import { NotaFiscalTipoBadge } from '@/features/notasFiscais/components/NotaFiscalTipoBadge'
 import {
   FORMA_PAGAMENTO_NF_LABEL,
+  MOTIVO_DEVOLUCAO_LABEL,
   NATUREZA_OPERACAO_LABEL,
+  TIPO_DEVOLUCAO_LABEL,
   type NotaFiscal,
 } from '@/features/notasFiscais/types'
-import { formatBRL, formatDate } from '@/features/notasFiscais/utils'
+import {
+  formatBRL,
+  formatDate,
+  getTipoDevolucaoFromNota,
+  isNotaElegivelParaDevolucao,
+} from '@/features/notasFiscais/utils'
 import styles from '@/pages/notas-fiscais/NotasFiscaisPage.module.css'
 
 interface NotaFiscalDetalheDrawerProps {
   nota: NotaFiscal
   onClose: () => void
   onCancelar: (motivo: string) => void
+  onDevolver?: (nota: NotaFiscal) => void
 }
 
 export function NotaFiscalDetalheDrawer({
   nota,
   onClose,
   onCancelar,
+  onDevolver,
 }: NotaFiscalDetalheDrawerProps) {
   const [motivoCancelamento, setMotivoCancelamento] = useState('')
   const [showCancelForm, setShowCancelForm] = useState(false)
   const isEntrada = nota.tipo === 'entrada'
   const contraparte = isEntrada ? nota.emitente : nota.destinatario
   const podeCancelar = nota.status === 'autorizada' || nota.status === 'pendente'
+  const tipoDevolucao = getTipoDevolucaoFromNota(nota)
+  const podeDevolver = tipoDevolucao && isNotaElegivelParaDevolucao(nota, tipoDevolucao)
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -140,6 +151,45 @@ export function NotaFiscalDetalheDrawer({
               </div>
             </div>
           </div>
+
+          {nota.devolucao ? (
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <h3 className={styles.cardTitle}>Dados da devolução</h3>
+              </div>
+              <dl className={styles.dadosGrid}>
+                <div className={styles.dadoItem}>
+                  <dt>Tipo</dt>
+                  <dd>{TIPO_DEVOLUCAO_LABEL[nota.devolucao.tipo]}</dd>
+                </div>
+                <div className={styles.dadoItem}>
+                  <dt>Motivo</dt>
+                  <dd>{MOTIVO_DEVOLUCAO_LABEL[nota.devolucao.motivo]}</dd>
+                </div>
+                <div className={styles.dadoItem}>
+                  <dt>NF original</dt>
+                  <dd>
+                    Nº {nota.devolucao.referencia.numero} · Série{' '}
+                    {nota.devolucao.referencia.serie}
+                  </dd>
+                </div>
+                <div className={styles.dadoItem}>
+                  <dt>Emissão da NF original</dt>
+                  <dd>{formatDate(nota.devolucao.referencia.dataEmissao)}</dd>
+                </div>
+                <div className={`${styles.dadoItem} ${styles.formFieldFull}`}>
+                  <dt>Chave referenciada</dt>
+                  <dd>{nota.devolucao.referencia.chaveAcesso}</dd>
+                </div>
+                {nota.devolucao.motivoDescricao ? (
+                  <div className={`${styles.dadoItem} ${styles.formFieldFull}`}>
+                    <dt>Descrição do motivo</dt>
+                    <dd>{nota.devolucao.motivoDescricao}</dd>
+                  </div>
+                ) : null}
+              </dl>
+            </div>
+          ) : null}
 
           <div className={styles.twoColBalanced}>
             <div className={styles.card}>
@@ -298,6 +348,15 @@ export function NotaFiscalDetalheDrawer({
           <button type="button" className={styles.btnSecondary}>
             <Download size={14} /> Baixar XML
           </button>
+          {podeDevolver && onDevolver ? (
+            <button
+              type="button"
+              className={styles.btnDevolucao}
+              onClick={() => onDevolver(nota)}
+            >
+              <RotateCcw size={14} /> Emitir devolução
+            </button>
+          ) : null}
           {podeCancelar && !showCancelForm ? (
             <button
               type="button"
