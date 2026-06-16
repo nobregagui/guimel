@@ -1,0 +1,249 @@
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  border: none;
+  background: rgba(15, 23, 42, 0.35);
+  cursor: pointer;
+}
+
+.sidebar {
+  --sidebar-bg: #f0fdf4;
+  --sidebar-text: #1e293b;
+  --sidebar-nav-color: #14532d;
+  --item-hover-bg: #dcfce7;
+  --card-ai-bg: #d1fae5;
+  --button-cta: #f97316;
+  --button-cta-hover: #ea580c;
+
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  width: 260px;
+  height: 100vh;
+  height: 100dvh;
+  padding: 16px 12px 14px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid #dcfce7;
+  box-shadow: 2px 0 16px rgba(20, 83, 45, 0.06);
+  transition: width 0.22s ease, transform 0.25s ease;
+  overflow: hidden;
+  transform: translateX(0);
+  visibility: visible;
+}
+
+.collapsed {
+  width: 72px;
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 0 2px;
+  min-height: 0;
+  overflow: visible;
+}
+
+.logoLink {
+  display: inline-flex;
+  text-decoration: none;
+  line-height: 0;
+  padding: 4px;
+  border-radius: 10px;
+  background: transparent;
+  overflow: visible;
+}
+
+.logoLink,
+.logoLink:hover,
+.logoLink[aria-current='page'] {
+  text-decoration: none;
+  background: transparent;
+}
+
+.sidebarLogo {
+  height: 52px;
+  width: auto;
+  overflow: visible;
+}
+
+.sidebarLogo img {
+  height: 121px;
+  width: auto;
+}
+
+.collapsed .sidebarLogo {
+  width: 52px;
+  overflow: hidden;
+}
+
+.collapsed .sidebarLogo img {
+  height: 52px;
+}
+
+.sidebar :global(a) {
+  text-decoration: none;
+}
+
+.sidebar :global(a:hover) {
+  text-decoration: none;
+}
+
+.collapseBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  background: var(--item-hover-bg);
+  color: var(--sidebar-nav-color);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.collapseBtn:hover {
+  background: #bbf7d0;
+  color: var(--sidebar-nav-color);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.nav::-webkit-scrollbar {
+  display: none;
+}
+
+.sidebar a.navItem,
+.sidebar a.navItem:hover,
+.sidebar a.navItem[aria-current='page'] {
+  color: var(--sidebar-nav-color);
+  text-decoration: none;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  color: var(--sidebar-nav-color);
+  text-decoration: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  flex-shrink: 0;
+  transition: background 0.18s ease;
+}
+
+.navItem:hover {
+  background: var(--item-hover-bg);
+  text-decoration: none;
+}
+
+.navIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--sidebar-nav-color);
+}
+
+.navItem[aria-current='page'],
+.navItemActive {
+  background: var(--item-hover-bg);
+  text-decoration: none;
+}
+
+.navItem[aria-current='page']:hover,
+.navItemActive:hover {
+  background: var(--item-hover-bg);
+  text-decoration: none;
+}
+
+.navLabel {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aiCard {
+  margin-top: 10px;
+  padding: 11px;
+  border-radius: 12px;
+  background: var(--card-ai-bg);
+  border: 1px solid #a7f3d0;
+  flex-shrink: 0;
+}
+
+.aiCardTitle {
+  margin: 0 0 4px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--sidebar-nav-color);
+}
+
+.aiCardText {
+  margin: 0 0 8px;
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  color: var(--sidebar-text);
+}
+
+.aiCardBtn {
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--button-cta);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.15s ease;
+}
+
+.aiCardBtn:hover {
+  background: var(--button-cta-hover);
+}
+
+@media (max-width: 1200px) {
+  .collapseBtn {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 768px) {
+  .overlay {
+    display: block;
+  }
+
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .mobileOpen {
+    transform: translateX(0);
+  }
+
+  .collapsed {
+    width: 260px;
+  }
+}

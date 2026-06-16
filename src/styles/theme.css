@@ -1,0 +1,16 @@
+:root {
+  --primary: #16a34a;
+  --primary-dark: #15803d;
+
+  --secondary: #f97316;
+  --secondary-light: #fb923c;
+
+  --background: #f8fafc;
+
+  --text-primary: #18181b;
+  --text-secondary: #71717a;
+
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+}

@@ -1,0 +1,903 @@
+/*
+ * src/pages/auth/LoginPage.module.css
+ *
+ * Estilos da tela de login do MelGui Money.
+ * Usa as CSS variables definidas em src/styles/theme.css.
+ */
+
+/* ─── Reset + Root ─────────────────────────────────────────────────────────── */
+
+.root {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
+    font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+    background: var(--background, #F8FAFC);
+  }
+  
+  /* ─── Lado esquerdo ─────────────────────────────────────────────────────────── */
+  
+  .leftPane {
+    flex: 1.1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    /* align-items: center; */
+    /* justify-content: center; */
+    min-height: 0;
+    padding: clamp(24px, 3vh, 48px) 56px clamp(24px, 3vh, 48px) 64px;
+  
+    /* Gradiente mesh verde/laranja/branco igual ao design */
+    background:
+      radial-gradient(ellipse 70% 60% at 85% 10%, rgba(249, 115, 22, 0.18) 0%, transparent 65%),
+      radial-gradient(ellipse 80% 70% at 10% 80%, rgba(22, 163, 74, 0.15) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(22, 163, 74, 0.10) 0%, transparent 70%),
+      #FAFDF8;
+  }
+  
+  .leftContent {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 500px;
+    width: 100%;
+    animation: fadeSlideUp 0.55s ease both;
+  }
+  
+  /* ─── Brand (logo + nome) ─────────────────────────────────────────────────── */
+  
+  .brandTop {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: clamp(16px, 2.5vh, 36px);
+  }
+  
+  .brandName {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-primary, #18181B);
+    letter-spacing: -0.02em;
+  }
+  
+  /* ─── Headline ───────────────────────────────────────────────────────────────*/
+  
+  .headline {
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    color: var(--text-primary, #18181B);
+    margin: 0 0 16px;
+  }
+  
+  .headlineAccent {
+    color: var(--primary, #16A34A);
+  }
+  
+  .subheadline {
+    font-size: 0.9rem;
+    line-height: 1.65;
+    color: var(--text-secondary, #71717A);
+    margin: 0 0 clamp(16px, 2.5vh, 36px);
+    max-width: 420px;
+  }
+  
+  /* ─── Dashboard Mockup ───────────────────────────────────────────────────── */
+  
+  .mockupWrapper {
+    position: relative;
+    width: 100%;
+    height: clamp(180px, 24vh, 260px);
+    margin-bottom: clamp(16px, 2.5vh, 36px);
+  }
+  
+  .mockupCard {
+    position: absolute;
+    background: #FFFFFF;
+    border-radius: 14px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+    padding: 14px 16px;
+    font-size: 0.72rem;
+    color: var(--text-primary, #18181B);
+    animation: floatIn 0.6s ease both;
+  }
+  
+  /* Card principal */
+  .mockupCardMain {
+    left: 0;
+    top: 0;
+    width: 310px;
+    animation-delay: 0.1s;
+  }
+  
+  .mockupHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  
+  .mockupLogo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 0.7rem;
+    color: var(--text-primary, #18181B);
+  }
+  
+  .mockupSearch {
+    width: 64px;
+    height: 18px;
+    background: #F3F4F6;
+    border-radius: 6px;
+  }
+  
+  .mockupTitle {
+    font-weight: 700;
+    font-size: 0.78rem;
+    margin-bottom: 10px;
+  }
+  
+  .mockupKpis {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .mockupKpi {
+    flex: 1;
+    background: #F8FAFC;
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .mockupKpiLabel {
+    font-size: 0.63rem;
+    color: var(--text-secondary, #71717A);
+    font-weight: 500;
+  }
+  
+  .mockupKpiValue {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-primary, #18181B);
+  }
+  
+  .mockupKpiBadgeGreen {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: #16A34A;
+  }
+  
+  .mockupKpiBadgeRed {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: #EF4444;
+  }
+  
+  .mockupSectionLabel {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-secondary, #71717A);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  
+  .mockupTransactions {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .mockupTxRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+  }
+  
+  .mockupTxDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #D1D5DB;
+    flex-shrink: 0;
+  }
+  
+  .mockupTxLabel {
+    flex: 1;
+    font-size: 0.65rem;
+    color: var(--text-secondary, #71717A);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .mockupTxTag {
+    font-size: 0.58rem;
+    font-weight: 700;
+    color: #9CA3AF;
+    background: #F3F4F6;
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+  
+  /* Card crescimento */
+  .mockupCardGrowth {
+    right: 15px;
+    top: 0px;
+    width: 150px;
+    animation-delay: 0.2s;
+  }
+  
+  .mockupGrowthLabel {
+    font-size: 0.65rem;
+    color: var(--text-secondary, #71717A);
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  
+  .mockupGrowthValue {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #16A34A;
+    letter-spacing: -0.02em;
+  }
+  
+  .mockupGrowthSub {
+    font-size: 0.6rem;
+    color: var(--text-secondary, #71717A);
+    margin-bottom: 8px;
+  }
+  
+  .mockupMiniChart {
+    width: 100%;
+    height: 30px;
+  }
+  
+  .mockupLine {
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* Card fluxo de caixa */
+  .mockupCardCash {
+    left: 0;
+    bottom: 0;
+    width: 150px;
+    animation-delay: 0.25s;
+  }
+  
+  .mockupCashLabel {
+    font-size: 0.65rem;
+    color: var(--text-secondary, #71717A);
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+  
+  .mockupCashValue {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: var(--text-primary, #18181B);
+    letter-spacing: -0.02em;
+    margin-bottom: 1px;
+  }
+  
+  .mockupCashSub {
+    font-size: 0.6rem;
+    color: var(--text-secondary, #71717A);
+    margin-bottom: 8px;
+  }
+  
+  .mockupBars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 32px;
+  }
+  
+  .mockupBar {
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    min-height: 4px;
+  }
+  
+  /* Card saúde financeira */
+  .mockupCardHealth {
+    right: 0px;
+    bottom: -47px;
+    width: 120px;
+    text-align: center;
+    animation-delay: 0.3s;
+    z-index: 1;
+  }
+  
+  .mockupHealthLabel {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-secondary, #71717A);
+    margin-bottom: 4px;
+  }
+  
+  .mockupHealthGauge {
+    width: 80px;
+    margin: 0 auto 4px;
+  }
+  
+  .mockupHealthGauge svg {
+    width: 100%;
+    height: auto;
+  }
+  
+  .mockupHealthTag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #16A34A;
+    background: #DCFCE7;
+    padding: 2px 8px;
+    border-radius: 20px;
+    display: inline-block;
+  }
+  
+  /* Card IA */
+  .mockupCardAI {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -115px;
+    width: 170px;
+    animation-delay: 0.35s;
+  }
+  
+  .mockupAIIcon {
+    font-size: 0.9rem;
+    color: #16A34A;
+    margin-bottom: 4px;
+  }
+  
+  .mockupAITitle {
+    font-weight: 700;
+    font-size: 0.72rem;
+    margin-bottom: 4px;
+  }
+  
+  .mockupAIText {
+    font-size: 0.63rem;
+    color: var(--text-secondary, #71717A);
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+  
+  .mockupAILink {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--primary, #16A34A);
+    cursor: pointer;
+  }
+  
+  /* ─── Badge IA ───────────────────────────────────────────────────────────── */
+  
+  .aiBadge {
+    display: none;
+    align-items: flex-start;
+    gap: 14px;
+    align-self: flex-end;
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(22, 163, 74, 0.2);
+    border-radius: 16px;
+    padding: 18px 20px;
+    /* backdrop-filter: blur(8px); */
+  }
+  
+  .aiRobot {
+    font-size: 2rem;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  
+  .aiBadgeTitle {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--text-primary, #18181B);
+    margin-bottom: 4px;
+  }
+  
+  .aiBadgeAccent {
+    color: var(--primary, #16A34A);
+  }
+  
+  .aiBadgeText {
+    font-size: 0.8rem;
+    color: var(--text-secondary, #71717A);
+    line-height: 1.55;
+    margin-bottom: 8px;
+  }
+  
+  .aiBadgeLink {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-primary, #18181B);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  
+  /* ─── Lado direito ───────────────────────────────────────────────────────── */
+  
+  .rightPane {
+    flex: 0 0 480px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    overflow: hidden;
+    padding: clamp(16px, 2vh, 40px) 32px;
+    background: transparent;
+  }
+  
+  .formCard {
+    width: 100%;
+    max-width: 420px;
+    max-height: 100%;
+    overflow: hidden;
+    background: #FFFFFF;
+    border-radius: 24px;
+    box-shadow:
+      0 8px 40px rgba(0, 0, 0, 0.10),
+      0 2px 8px rgba(0, 0, 0, 0.05);
+    padding: clamp(24px, 3vh, 40px) 36px clamp(20px, 2.5vh, 32px);
+    animation: fadeSlideUp 0.55s ease 0.1s both;
+  }
+  
+  /* ─── Form brand ─────────────────────────────────────────────────────────── */
+  
+  .formBrand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    line-height: 0;
+  }
+  
+  .formBrandName {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary, #18181B);
+    letter-spacing: -0.02em;
+  }
+  
+  /* ─── Títulos ─────────────────────────────────────────────────────────────── */
+  
+  .formTitle {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary, #18181B);
+    letter-spacing: -0.025em;
+    margin: 0 0 6px;
+  }
+  
+  .formSubtitle {
+    font-size: 0.875rem;
+    color: var(--text-secondary, #71717A);
+    margin: 0 0 clamp(16px, 2vh, 28px);
+  }
+  
+  /* ─── Form ────────────────────────────────────────────────────────────────── */
+  
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(12px, 1.5vh, 18px);
+  }
+  
+  .fieldGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary, #18181B);
+  }
+  
+  .input {
+    width: 100%;
+    height: 48px;
+    padding: 0 16px;
+    border: 1.5px solid #E5E7EB;
+    border-radius: var(--radius-sm, 12px);
+    font-size: 0.9375rem;
+    color: var(--text-primary, #18181B);
+    background: #FAFAFA;
+    outline: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+    box-sizing: border-box;
+    font-family: inherit;
+  }
+  
+  .input::placeholder {
+    color: #9CA3AF;
+  }
+  
+  .input:focus {
+    border-color: var(--primary, #16A34A);
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+    background: #FFFFFF;
+  }
+  
+  .inputError {
+    border-color: #EF4444;
+  }
+  
+  .inputError:focus {
+    border-color: #EF4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+  }
+  
+  .inputPassword {
+    padding-right: 48px;
+  }
+  
+  .passwordWrapper {
+    position: relative;
+  }
+  
+  .eyeBtn {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9CA3AF;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    transition: color 0.15s;
+  }
+  
+  .eyeBtn:hover {
+    color: var(--text-primary, #18181B);
+  }
+  
+  .errorMsg {
+    font-size: 0.8rem;
+    color: #EF4444;
+    font-weight: 500;
+  }
+  
+  /* ─── Lembrar de mim ─────────────────────────────────────────────────────── */
+  
+  .rememberRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: -4px;
+  }
+  
+  .checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--text-primary, #18181B);
+    user-select: none;
+  }
+  
+  .checkbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .checkboxCustom {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid #D1D5DB;
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: #FAFAFA;
+    transition: all 0.15s;
+  }
+  
+  .checkbox:checked ~ .checkboxCustom {
+    background: var(--primary, #16A34A);
+    border-color: var(--primary, #16A34A);
+  }
+  
+  .checkbox:checked ~ .checkboxCustom::after {
+    content: '';
+    width: 10px;
+    height: 6px;
+    border-left: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    transform: rotate(-45deg) translateY(-1px);
+    display: block;
+  }
+  
+  .forgotLink {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary, #16A34A);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  
+  .forgotLink:hover {
+    color: var(--primary-dark, #15803D);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  
+  /* ─── Botão submit ───────────────────────────────────────────────────────── */
+  
+  .submitBtn {
+    width: 100%;
+    height: 52px;
+    border-radius: var(--radius-sm, 12px);
+    border: none;
+    background: var(--primary, #16A34A);
+    color: #FFFFFF;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    letter-spacing: -0.01em;
+    transition: background 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+    font-family: inherit;
+    margin-top: 4px;
+  }
+  
+  .submitBtn:hover:not(:disabled) {
+    background: var(--primary-dark, #15803D);
+    box-shadow: 0 4px 16px rgba(22, 163, 74, 0.35);
+    transform: translateY(-1px);
+  }
+  
+  .submitBtn:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  
+  .submitBtn:disabled {
+    opacity: 0.75;
+    cursor: not-allowed;
+  }
+  
+  /* Spinner de loading */
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2.5px solid rgba(255, 255, 255, 0.4);
+    border-top-color: #FFFFFF;
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+  }
+  
+  /* ─── Divider ────────────────────────────────────────────────────────────── */
+  
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0 20px;
+  }
+  
+  .dividerLine {
+    flex: 1;
+    height: 1px;
+    background: #E5E7EB;
+  }
+  
+  .dividerText {
+    font-size: 0.8rem;
+    color: #9CA3AF;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  
+  /* ─── OAuth ──────────────────────────────────────────────────────────────── */
+  
+  .oauthGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .oauthBtn {
+    width: 100%;
+    height: 48px;
+    border: 1.5px solid #E5E7EB;
+    border-radius: var(--radius-sm, 12px);
+    background: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary, #18181B);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+  }
+  
+  .oauthBtn:hover {
+    border-color: #D1D5DB;
+    background: #FAFAFA;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+  
+  /* ─── Signup row ─────────────────────────────────────────────────────────── */
+  
+  .signupRow {
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--text-secondary, #71717A);
+    margin: 0 0 24px;
+  }
+  
+  .signupLink {
+    font-weight: 700;
+    color: var(--primary, #16A34A);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  
+  .signupLink:hover {
+    color: var(--primary-dark, #15803D);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  
+  /* ─── Trust badges ───────────────────────────────────────────────────────── */
+  
+  .trustBadges {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #F3F4F6;
+    padding-top: 20px;
+    gap: 8px;
+  }
+  
+  .trustBadge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #6B7280;
+  }
+  
+  .trustBadge svg {
+    flex-shrink: 0;
+    color: #9CA3AF;
+  }
+  
+  .trustBadgeTitle {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-primary, #18181B);
+    line-height: 1;
+  }
+  
+  .trustBadgeSub {
+    font-size: 0.63rem;
+    color: var(--text-secondary, #71717A);
+    line-height: 1.3;
+  }
+  
+  /* ─── Animações ──────────────────────────────────────────────────────────── */
+  
+  @keyframes fadeSlideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes floatIn {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  /* ─── Responsividade ─────────────────────────────────────────────────────── */
+
+  @media (max-height: 820px) {
+    .headline {
+      font-size: clamp(1.5rem, 4vh, 2rem);
+      margin-bottom: 12px;
+    }
+
+    .aiBadge {
+      padding: 14px 16px;
+    }
+
+    .aiRobot {
+      font-size: 1.5rem;
+    }
+
+    .formBrand {
+      margin-bottom: 16px;
+    }
+
+    .formTitle {
+      font-size: 1.25rem;
+    }
+
+    .trustBadges {
+      padding-top: 14px;
+    }
+  }
+  
+  @media (max-width: 1024px) {
+    .leftPane {
+      padding: 40px 36px;
+    }
+  
+    .rightPane {
+      flex: 0 0 420px;
+      padding: 40px 24px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .root {
+      flex-direction: column;
+    }
+  
+    .leftPane {
+      display: none; /* oculta o painel esquerdo em mobile */
+    }
+  
+    .rightPane {
+      flex: 1;
+      padding: 32px 20px;
+      background:
+        radial-gradient(ellipse 80% 50% at 90% 5%, rgba(249, 115, 22, 0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 50% at 10% 95%, rgba(22, 163, 74, 0.10) 0%, transparent 60%),
+        #F8FAFC;
+    }
+  
+    .formCard {
+      box-shadow: none;
+      background: transparent;
+      padding: 24px 4px;
+    }
+  }

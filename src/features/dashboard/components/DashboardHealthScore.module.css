@@ -1,0 +1,54 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  text-align: center;
+  padding: 12px 14px !important;
+}
+
+.gaugeWrap {
+  position: relative;
+  width: 100%;
+  max-width: 140px;
+}
+
+.gauge {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.gaugeArc {
+  transform-origin: 60px 60px;
+  transform: rotate(-180deg);
+}
+
+/* fallback stroke via component - keep green */
+.score {
+  position: absolute;
+  left: 50%;
+  bottom: 2px;
+  transform: translateX(-50%);
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--primary, #16a34a), var(--secondary, #f97316));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.03em;
+}
+
+.status {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #dcfce7, #ffedd5);
+  color: var(--primary-dark, #15803d);
+  font-size: 0.75rem;
+  font-weight: 700;
+}

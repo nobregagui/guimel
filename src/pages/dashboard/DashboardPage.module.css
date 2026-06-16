@@ -1,0 +1,75 @@
+/* Bento grid — preenche a área útil, gaps compactos */
+.content {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.kpis {
+  grid-column: 1 / -1;
+}
+
+.cashflow {
+  grid-column: 1 / 8;
+}
+
+.quickActions {
+  grid-column: 8 / -1;
+}
+
+.financialSummary {
+  grid-column: 1 / 8;
+}
+
+.receivables {
+  grid-column: 8 / -1;
+}
+
+.activities {
+  grid-column: 1 / 5;
+}
+
+.aiInsights {
+  grid-column: 5 / 10;
+}
+
+.healthScore {
+  grid-column: 10 / -1;
+}
+
+@media (max-width: 1280px) {
+  .cashflow,
+  .financialSummary {
+    grid-column: 1 / 7;
+  }
+
+  .quickActions,
+  .receivables {
+    grid-column: 7 / -1;
+  }
+
+  .activities {
+    grid-column: 1 / 6;
+  }
+
+  .aiInsights {
+    grid-column: 6 / 10;
+  }
+
+  .healthScore {
+    grid-column: 10 / -1;
+  }
+}
+
+@media (max-width: 1024px) {
+  .cashflow,
+  .quickActions,
+  .financialSummary,
+  .receivables,
+  .activities,
+  .aiInsights,
+  .healthScore {
+    grid-column: 1 / -1;
+  }
+}
