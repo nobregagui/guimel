@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 
-import logoImg from '@/assets/newLogo.png'
+import logoImg from '@/assets/newLogoGuime.png'
 
 /** Padrão: container compacto + imagem maior. */
 export const LOGO_CONTAINER_HEIGHT = 52
