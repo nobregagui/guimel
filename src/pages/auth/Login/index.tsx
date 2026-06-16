@@ -1,7 +1,7 @@
 ﻿/**
  * src/pages/auth/LoginPage.tsx
  *
- * Tela de login do MelGui Money.
+ * Tela de login do GuiMe Money.
  * Stack: React 19 · TypeScript · React Hook Form · Zod · Zustand (useAuthStore)
  * Estilos: CSS variables (theme.css) + módulo CSS local (LoginPage.module.css)
  */
@@ -294,7 +294,7 @@ export function LoginPage() {
             <div className={styles.aiRobot} aria-hidden="true">🤖</div>
             <div>
               <div className={styles.aiBadgeTitle}>
-                Powered by <span className={styles.aiBadgeAccent}>MelGui Money AI</span>
+                Powered by <span className={styles.aiBadgeAccent}>GuiMe Money AI</span>
               </div>
               <div className={styles.aiBadgeText}>
                 Inteligência artificial trabalhando para analisar, prever e otimizar seus

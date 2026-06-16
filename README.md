@@ -1,15 +1,15 @@
-# MelGui Money (erp-melgui)
+# GuiMe Money (erp-GuiMe)
 
 Frontend de um ERP SaaS moderno construído com React, TypeScript e Vite.
 
-**MelGui Money** — Sistema ERP para gestão financeira inteligente.
+**GuiMe Money** — Sistema ERP para gestão financeira inteligente.
 
 ## Visão geral
 
 | Item | Valor |
 |------|-------|
-| **Nome do pacote** | `erp-melgui` |
-| **Produto** | MelGui Money — Sistema ERP |
+| **Nome do pacote** | `erp-GuiMe` |
+| **Produto** | GuiMe Money — Sistema ERP |
 | **Tipo** | ERP SaaS (frontend) |
 | **Stack principal** | React 19 + TypeScript + Vite 8 |
 | **Estado atual** | Arquitetura base + tela de login completa; dashboard com KPIs mockados; demais módulos em placeholder |
@@ -50,7 +50,7 @@ Frontend de um ERP SaaS moderno construído com React, TypeScript e Vite.
 ```bash
 # Clonar o repositório
 git clone <url-do-repositorio>
-cd erp-melgui
+cd erp-GuiMe
 
 # Instalar dependências
 npm install
@@ -109,9 +109,9 @@ index.html
 ## Estrutura do projeto
 
 ```
-erp-melgui/
+erp-GuiMe/
 ├── .env.example
-├── index.html                    # title: MelGui Money
+├── index.html                    # title: GuiMe Money
 ├── public/
 │   ├── favicon.svg
 │   └── icons.svg
@@ -119,7 +119,7 @@ erp-melgui/
 │   ├── main.tsx
 │   ├── app/                      # Shell da aplicação
 │   ├── assets/
-│   │   ├── logo.png              # Logo oficial MelGui Money
+│   │   ├── logo.png              # Logo oficial GuiMe Money
 │   │   ├── hero.png
 │   │   └── …
 │   ├── components/
@@ -151,7 +151,7 @@ erp-melgui/
 
 | Item | Detalhe |
 |------|---------|
-| **Marca** | MelGui Money |
+| **Marca** | GuiMe Money |
 | **Subtítulo** | Sistema ERP |
 | **Logo** | `src/assets/logo.png` |
 | **Componente** | `@/components/ui/Logo` |
@@ -193,13 +193,13 @@ Implementação completa em `src/pages/auth/Login/`:
 | **Auth** | Login mockado via `useAuthStore` (simula latência de 1s) |
 | **Viewport** | Sem scroll vertical (`100dvh`, overflow hidden) |
 | **OAuth UI** | Botões Google e Microsoft (visual apenas) |
-| **Extras** | Mockup animado do dashboard, badge MelGui Money AI, trust badges |
+| **Extras** | Mockup animado do dashboard, badge GuiMe Money AI, trust badges |
 
 **Painel esquerdo:**
-- Logo MelGui Money
+- Logo GuiMe Money
 - Headline + subheadline
 - Mockup interativo (KPIs, fluxo de caixa, saúde financeira, insights IA)
-- Badge "Powered by MelGui Money AI"
+- Badge "Powered by GuiMe Money AI"
 
 **Painel direito (formCard):**
 - Logo centralizado (`height: 65px`)

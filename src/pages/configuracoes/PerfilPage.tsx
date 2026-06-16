@@ -26,12 +26,12 @@ export function PerfilPage() {
             <div className={styles.formGrid}>
               <div className={styles.field}>
                 <label htmlFor="nome-fantasia">Nome Fantasia</label>
-                <input id="nome-fantasia" defaultValue="MelGui Money" />
+                <input id="nome-fantasia" defaultValue="GuiMe Money" />
               </div>
 
               <div className={styles.field}>
                 <label htmlFor="razao-social">Razão Social</label>
-                <input id="razao-social" defaultValue="MelGui Money LTDA" />
+                <input id="razao-social" defaultValue="GuiMe Money LTDA" />
               </div>
 
               <div className={styles.field}>
@@ -48,7 +48,7 @@ export function PerfilPage() {
 
               <div className={styles.field}>
                 <label htmlFor="email-empresa">E-mail</label>
-                <input id="email-empresa" defaultValue="contato@melguimoney.com" />
+                <input id="email-empresa" defaultValue="contato@GuiMemoney.com" />
               </div>
 
               <div className={styles.field}>

@@ -4,12 +4,12 @@ import styles from './DashboardAiInsights.module.css'
 
 export function DashboardAiInsights() {
   return (
-    <section className={styles.root} aria-label="MelGui AI">
+    <section className={styles.root} aria-label="GuiMe AI">
       <div className={styles.iconWrap}>
         <RobotIcon className={styles.icon} />
       </div>
       <div className={styles.content}>
-        <h2 className={styles.title}>MelGui AI</h2>
+        <h2 className={styles.title}>GuiMe AI</h2>
         <p className={styles.text}>
           O assistente inteligente que ajuda você a tomar decisões financeiras.
         </p>

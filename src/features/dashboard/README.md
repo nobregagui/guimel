@@ -1,4 +1,4 @@
-# Dashboard — MelGui Money
+# Dashboard — GuiMe Money
 
 Documentação da estrutura de código do dashboard ERP: rotas, layout compartilhado, feature module e composição visual da página `/dashboard`.
 
@@ -66,7 +66,7 @@ src/
 
 **Dependências externas usadas (não alteradas pelo dashboard):**
 
-- `@/components/ui/Logo` — logo MelGui na sidebar
+- `@/components/ui/Logo` — logo GuiMe na sidebar
 - `@/styles/theme.css` — tokens CSS (`--primary`, `--radius-*`, etc.)
 - `@/utils/currency` — `formatCurrency()` nos valores monetários
 
@@ -118,7 +118,7 @@ Implementado em `DashboardPage.module.css`:
 - `.content` — coluna principal com gap
 - `.mainGrid` — 2 colunas (primária + lateral 340px)
 - `.colPrimary` / `.colSecondary`
-- `.bottomRow` — MelGui AI + Saúde Financeira
+- `.bottomRow` — GuiMe AI + Saúde Financeira
 
 ---
 
@@ -128,7 +128,7 @@ Implementado em `DashboardPage.module.css`:
 
 | Componente | Arquivo | Função |
 |------------|---------|--------|
-| **DashboardSidebar** | `components/DashboardSidebar.tsx` | Menu lateral escuro (`#071A12`), `<Logo />`, navegação `NavLink`, card MelGui AI |
+| **DashboardSidebar** | `components/DashboardSidebar.tsx` | Menu lateral escuro (`#071A12`), `<Logo />`, navegação `NavLink`, card GuiMe AI |
 | **DashboardHeader** | `components/DashboardHeader.tsx` | Saudação, busca, botões (+, notificações, ajuda), empresa, avatar |
 
 ### Conteúdo (usados só pelo `DashboardPage`)
@@ -141,7 +141,7 @@ Implementado em `DashboardPage.module.css`:
 | **DashboardReceivables** | `DashboardReceivables.tsx` | Lista de contas a receber mock |
 | **DashboardRecentActivities** | `DashboardRecentActivities.tsx` | Timeline de atividades recentes |
 | **DashboardFinancialSummary** | `DashboardFinancialSummary.tsx` | 4 mini cards: Entradas, Saídas, Resultado, Margem |
-| **DashboardAiInsights** | `DashboardAiInsights.tsx` | Banner MelGui AI + CTA “Conversar agora” |
+| **DashboardAiInsights** | `DashboardAiInsights.tsx` | Banner GuiMe AI + CTA “Conversar agora” |
 | **DashboardHealthScore** | `DashboardHealthScore.tsx` | Gauge SVG, score 92, status “Excelente” |
 
 Cada par `.tsx` + `.module.css` segue **CSS Modules** e **named exports**.
@@ -172,7 +172,7 @@ Mocks consumidos pelos componentes:
 
 - `NavIcon` — ícones SVG inline do menu
 - `MiniSparkline` — mini gráfico de linha (sem lib externa)
-- `RobotIcon` — ícone do card MelGui AI
+- `RobotIcon` — ícone do card GuiMe AI
 
 ---
 

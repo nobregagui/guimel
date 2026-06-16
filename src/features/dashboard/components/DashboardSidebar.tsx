@@ -41,7 +41,7 @@ export function DashboardSidebar({
       ) : null}
 
       <aside
-        data-melgui-sidebar
+        data-GuiMe-sidebar
         className={[
           styles.sidebar,
           collapsed ? styles.collapsed : '',
@@ -93,7 +93,7 @@ export function DashboardSidebar({
         </nav>
 
         <div className={styles.aiCard}>
-          <p className={styles.aiCardTitle}>MelGui AI</p>
+          <p className={styles.aiCardTitle}>GuiMe AI</p>
           {!collapsed ? (
             <>
               <p className={styles.aiCardText}>Conciliação bancária inteligente</p>
