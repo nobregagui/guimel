@@ -12,6 +12,7 @@ import { NotasFiscaisPage } from '@/pages/notas-fiscais'
 import { ProdutosPage } from '@/pages/produtos'
 import { RelatoriosPage } from '@/pages/relatorios'
 import { VendasPage } from '@/pages/vendas'
+import { VendaDetalhePage } from '@/pages/vendas/detalhe'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
 
 export const privateRoutes: RouteObject[] = [
@@ -28,6 +29,7 @@ export const privateRoutes: RouteObject[] = [
           { path: '/produtos', element: <ProdutosPage /> },
           { path: '/financeiro', element: <FinanceiroPage /> },
           { path: '/vendas', element: <VendasPage /> },
+          { path: '/vendas/:id', element: <VendaDetalhePage /> },
           { path: '/relatorios', element: <RelatoriosPage /> },
           { path: '/notas-fiscais', element: <NotasFiscaisPage /> },
           { path: '/cobrancas', element: <ModulePlaceholder title="Cobranças" /> },

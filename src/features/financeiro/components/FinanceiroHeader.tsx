@@ -1,4 +1,5 @@
 import { Download, Plus } from 'lucide-react'
+import type { RefObject } from 'react'
 
 import { FINANCEIRO_ABAS } from '@/features/financeiro/data/shared'
 import type { FinanceiroAba, Periodo } from '@/features/financeiro/types'
@@ -10,6 +11,9 @@ interface FinanceiroHeaderProps {
   onPeriodoChange: (periodo: Periodo) => void
   onAbaChange: (aba: FinanceiroAba) => void
   primaryActionLabel?: string
+  primaryActionRef?: RefObject<HTMLButtonElement | null>
+  highlightPrimaryAction?: boolean
+  onPrimaryAction?: () => void
 }
 
 export function FinanceiroHeader({
@@ -18,6 +22,9 @@ export function FinanceiroHeader({
   onPeriodoChange,
   onAbaChange,
   primaryActionLabel = 'Novo lançamento',
+  primaryActionRef,
+  highlightPrimaryAction = false,
+  onPrimaryAction,
 }: FinanceiroHeaderProps) {
   return (
     <div className={styles.header}>
@@ -42,7 +49,12 @@ export function FinanceiroHeader({
             <Download size={13} /> Exportar
           </button>
 
-          <button type="button" className={styles.btnPrimary}>
+          <button
+            ref={primaryActionRef}
+            type="button"
+            className={`${styles.btnPrimary} ${highlightPrimaryAction ? styles.btnPrimaryHighlight : ''}`}
+            onClick={onPrimaryAction}
+          >
             <Plus size={13} /> {primaryActionLabel}
           </button>
         </div>

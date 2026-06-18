@@ -1,3 +1,5 @@
+import type { RecentesTableFiltros } from '@/features/clientes/types'
+
 export const CLIENTES_ABAS = [
   { id: 'visao-geral' as const, label: 'Visão geral' },
   { id: 'clientes' as const, label: 'Clientes' },
@@ -10,6 +12,26 @@ export const CLIENTES_FILTROS = [
   { id: 'inativos' as const, label: 'Inativos' },
   { id: 'pendentes' as const, label: 'Pendentes' },
 ]
+
+export const RECENTES_CADASTRO_FILTROS = [
+  { id: 'todos' as const, label: 'Todos' },
+  { id: 'mes_atual' as const, label: 'Junho/2026' },
+  { id: 'ultimos_30' as const, label: 'Últimos 30 dias' },
+  { id: 'ultimos_90' as const, label: 'Últimos 90 dias' },
+]
+
+export const RECENTES_STATUS_FILTROS = [
+  { id: 'todos' as const, label: 'Todos' },
+  { id: 'ativo' as const, label: 'Ativo' },
+  { id: 'inativo' as const, label: 'Inativo' },
+  { id: 'pendente' as const, label: 'Pendente' },
+]
+
+export const EMPTY_RECENTES_TABLE_FILTROS: RecentesTableFiltros = {
+  segmento: '',
+  cadastro: 'todos',
+  status: 'todos',
+}
 
 export const CLIENTE_SEGMENTOS = [
   'Serviços',

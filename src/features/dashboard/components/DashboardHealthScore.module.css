@@ -1,54 +1,230 @@
 .root {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
+  gap: 12px;
   width: 100%;
-  height: 100%;
-  min-height: 0;
-  text-align: center;
-  padding: 12px 14px !important;
+  min-width: 0;
+}
+
+.body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  min-width: 0;
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.description {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--text-secondary, #71717a);
+}
+
+.metrics {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 96px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: linear-gradient(160deg, #fafafa 0%, #f0fdf4 100%);
+  border: 1px solid rgba(22, 163, 74, 0.1);
+}
+
+.metricLabel {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-secondary, #71717a);
+}
+
+.metricValue {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-primary, #18181b);
+  letter-spacing: -0.02em;
+}
+
+.gaugeSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .gaugeWrap {
   position: relative;
-  width: 100%;
-  max-width: 140px;
+  width: 148px;
+  height: 84px;
 }
 
 .gauge {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
+  overflow: visible;
 }
 
-.gaugeArc {
-  transform-origin: 60px 60px;
-  transform: rotate(-180deg);
+.gaugeProgress {
+  transition: stroke-dashoffset 0.4s ease;
 }
 
-/* fallback stroke via component - keep green */
-.score {
+.scoreBlock {
   position: absolute;
   left: 50%;
   bottom: 2px;
   transform: translateX(-50%);
-  font-size: 1.5rem;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 1px;
+  line-height: 1;
+}
+
+.scoreValue {
+  font-size: 1.625rem;
   font-weight: 800;
+  letter-spacing: -0.04em;
   background: linear-gradient(135deg, var(--primary, #16a34a), var(--secondary, #f97316));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  letter-spacing: -0.03em;
+}
+
+.scoreMax {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-secondary, #71717a);
 }
 
 .status {
-  display: inline-block;
-  padding: 3px 12px;
-  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 999px;
   background: linear-gradient(135deg, #dcfce7, #ffedd5);
   color: var(--primary-dark, #15803d);
   font-size: 0.75rem;
   font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.wide .body {
+  gap: 28px;
+}
+
+@media (max-width: 900px) {
+  .wide .body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .wide .gaugeSection {
+    align-self: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .root {
+    gap: 10px;
+    overflow-x: clip;
+  }
+
+  .body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .wide .body {
+    gap: 14px;
+  }
+
+  .info {
+    width: 100%;
+  }
+
+  .description {
+    max-width: none;
+    font-size: 0.75rem;
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    width: 100%;
+  }
+
+  .metric {
+    min-width: 0;
+    padding: 8px 10px;
+  }
+
+  .metricLabel {
+    font-size: 0.625rem;
+  }
+
+  .metricValue {
+    font-size: 0.75rem;
+  }
+
+  .gaugeSection {
+    align-self: center;
+    width: min(100%, 176px);
+  }
+
+  .gaugeWrap {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 148 / 84;
+  }
+
+  .scoreValue {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .metric:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 360px) {
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .metric:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  .gaugeSection {
+    width: min(100%, 160px);
+  }
+
+  .scoreValue {
+    font-size: 1.375rem;
+  }
 }

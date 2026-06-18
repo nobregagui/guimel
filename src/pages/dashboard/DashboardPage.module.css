@@ -10,66 +10,81 @@
   grid-column: 1 / -1;
 }
 
+.topRow {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.cashflow,
+.quickActions {
+  min-width: 0;
+}
+
 .cashflow {
-  grid-column: 1 / 8;
+  grid-column: 1 / 7;
 }
 
 .quickActions {
-  grid-column: 8 / -1;
+  grid-column: 7 / -1;
 }
 
-.financialSummary {
+.mainBlock {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+.leftStack {
   grid-column: 1 / 8;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
 }
 
 .receivables {
   grid-column: 8 / -1;
-}
-
-.activities {
-  grid-column: 1 / 5;
-}
-
-.aiInsights {
-  grid-column: 5 / 10;
+  min-width: 0;
 }
 
 .healthScore {
-  grid-column: 10 / -1;
+  grid-column: 1 / -1;
 }
 
 @media (max-width: 1280px) {
-  .cashflow,
-  .financialSummary {
+  .cashflow {
     grid-column: 1 / 7;
   }
 
-  .quickActions,
-  .receivables {
+  .quickActions {
     grid-column: 7 / -1;
   }
 
-  .activities {
-    grid-column: 1 / 6;
+  .leftStack {
+    grid-column: 1 / 7;
   }
 
-  .aiInsights {
-    grid-column: 6 / 10;
-  }
-
-  .healthScore {
-    grid-column: 10 / -1;
+  .receivables {
+    grid-column: 7 / -1;
   }
 }
 
 @media (max-width: 1024px) {
+  .topRow,
+  .mainBlock {
+    display: flex;
+    flex-direction: column;
+  }
+
   .cashflow,
   .quickActions,
-  .financialSummary,
-  .receivables,
-  .activities,
-  .aiInsights,
-  .healthScore {
-    grid-column: 1 / -1;
+  .leftStack,
+  .receivables {
+    grid-column: unset;
   }
 }

@@ -18,6 +18,7 @@ import {
   type StatusNota,
   type TipoDevolucao,
   type TipoFilter,
+  type TipoNota,
   type TributosNota,
 } from '@/features/notasFiscais/types'
 
@@ -342,4 +343,8 @@ export function getTipoDevolucaoFromNota(nota: NotaFiscal): TipoDevolucao | null
     return 'devolucao_compra'
   }
   return null
+}
+
+export function isTipoNota(value: string | null): value is TipoNota {
+  return value === 'entrada' || value === 'saida'
 }

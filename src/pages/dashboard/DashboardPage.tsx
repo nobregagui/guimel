@@ -1,5 +1,4 @@
 import {
-  DashboardAiInsights,
   DashboardCashflow,
   DashboardFinancialSummary,
   DashboardHealthScore,
@@ -18,32 +17,29 @@ export function DashboardPage() {
         <DashboardKpis />
       </section>
 
-      <section className={styles.cashflow}>
-        <DashboardCashflow />
+      <section className={styles.topRow}>
+        <div className={styles.cashflow}>
+          <DashboardCashflow />
+        </div>
+
+        <div className={styles.quickActions}>
+          <DashboardQuickActions />
+        </div>
       </section>
 
-      <section className={styles.quickActions}>
-        <DashboardQuickActions />
-      </section>
+      <section className={styles.mainBlock}>
+        <div className={styles.leftStack}>
+          <DashboardFinancialSummary />
+          <DashboardRecentActivities />
+        </div>
 
-      <section className={styles.financialSummary}>
-        <DashboardFinancialSummary />
-      </section>
-
-      <section className={styles.receivables}>
-        <DashboardReceivables />
-      </section>
-
-      <section className={styles.activities}>
-        <DashboardRecentActivities />
-      </section>
-
-      <section className={styles.aiInsights}>
-        <DashboardAiInsights />
+        <div className={styles.receivables}>
+          <DashboardReceivables />
+        </div>
       </section>
 
       <section className={styles.healthScore}>
-        <DashboardHealthScore />
+        <DashboardHealthScore wide />
       </section>
     </div>
   )

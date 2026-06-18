@@ -1,26 +1,33 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   AlertCircle,
   CalendarClock,
   CheckCircle2,
   MoreHorizontal,
-  SlidersHorizontal,
   Wallet,
 } from 'lucide-react'
 
 import { CategoryBreakdown } from '@/features/financeiro/components/CategoryBreakdown'
+import {
+  ContasTituloTableFiltersButton,
+  ContasTituloTableFiltersPanel,
+} from '@/features/financeiro/components/ContasTituloTableFilters'
 import { DataTable, TableFooter, TableSection, TableToolbar } from '@/features/financeiro/components/DataTable'
-import { FilterPills, FinanceiroKpiCard, KpiGrid } from '@/features/financeiro/components/FinanceiroKpiCard'
+import { FinanceiroKpiCard, KpiGrid } from '@/features/financeiro/components/FinanceiroKpiCard'
 import { ProximosTitulos } from '@/features/financeiro/components/ProximosTitulos'
 import { StatusBadge } from '@/features/financeiro/components/StatusBadge'
-import { CONTAS_PAGAR, CONTAS_PAGAR_FILTROS } from '@/features/financeiro/data/contasPagar'
-import type { ContaPagar, ContasPagarFiltro, TableColumn } from '@/features/financeiro/types'
+import { CONTAS_PAGAR_CATEGORIAS } from '@/features/financeiro/data/contasPagar'
+import { EMPTY_CONTAS_TITULO_TABLE_FILTROS } from '@/features/financeiro/data/shared'
+import { useFinanceiroStore } from '@/features/financeiro/store/useFinanceiroStore'
+import type { ContaPagar, ContasTituloTableFiltros, TableColumn } from '@/features/financeiro/types'
 import {
   FORMA_PAGAMENTO_LABEL,
-  filterContasPagar,
+  countActiveContasTituloTableFiltros,
   formatBRL,
+  getContasTituloTableItems,
   getProximosTitulos,
   groupByCategory,
+  hasActiveContasTituloTableFiltros,
   isVencido,
   isVencimentoProximo,
   sumByStatus,
@@ -28,28 +35,32 @@ import {
 } from '@/features/financeiro/utils'
 import styles from '@/pages/financeiro/FinanceiroPage.module.css'
 
-interface ContasPagarTabProps {
-  filtro: ContasPagarFiltro
-  onFiltroChange: (filtro: ContasPagarFiltro) => void
-}
+export function ContasPagarTab() {
+  const contas = useFinanceiroStore((s) => s.contasPagar)
+  const [filtrosOpen, setFiltrosOpen] = useState(false)
+  const [tableFiltros, setTableFiltros] = useState<ContasTituloTableFiltros>(EMPTY_CONTAS_TITULO_TABLE_FILTROS)
 
-export function ContasPagarTab({ filtro, onFiltroChange }: ContasPagarTabProps) {
-  const contasFiltradas = useMemo(() => filterContasPagar(CONTAS_PAGAR, filtro), [filtro])
+  const contasFiltradas = useMemo(
+    () => getContasTituloTableItems(contas, tableFiltros, (conta) => conta.fornecedor),
+    [contas, tableFiltros],
+  )
+  const activeTableFilters = countActiveContasTituloTableFiltros(tableFiltros)
+  const contasBaseCount = contas.length
 
-  const totalAberto = useMemo(() => sumEmAberto(CONTAS_PAGAR), [])
-  const totalVencido = useMemo(() => sumByStatus(CONTAS_PAGAR, 'vencido'), [])
+  const totalAberto = useMemo(() => sumEmAberto(contas), [contas])
+  const totalVencido = useMemo(() => sumByStatus(contas, 'vencido'), [contas])
   const totalProximo = useMemo(
     () =>
-      CONTAS_PAGAR.filter((c) => c.status === 'pendente' && isVencimentoProximo(c.vencimentoIso)).reduce(
+      contas.filter((c) => c.status === 'pendente' && isVencimentoProximo(c.vencimentoIso)).reduce(
         (acc, c) => acc + c.valor,
         0,
       ),
-    [],
+    [contas],
   )
-  const totalPago = useMemo(() => sumByStatus(CONTAS_PAGAR, 'pago'), [])
+  const totalPago = useMemo(() => sumByStatus(contas, 'pago'), [contas])
 
-  const categorias = useMemo(() => groupByCategory(CONTAS_PAGAR), [])
-  const proximosVencimentos = useMemo(() => getProximosTitulos(CONTAS_PAGAR), [])
+  const categorias = useMemo(() => groupByCategory(contas), [contas])
+  const proximosVencimentos = useMemo(() => getProximosTitulos(contas), [contas])
 
   const columns = useMemo<TableColumn<ContaPagar>[]>(
     () => [
@@ -115,13 +126,17 @@ export function ContasPagarTab({ filtro, onFiltroChange }: ContasPagarTabProps) 
     [],
   )
 
+  function handleClearTableFiltros() {
+    setTableFiltros(EMPTY_CONTAS_TITULO_TABLE_FILTROS)
+  }
+
   return (
     <>
       <KpiGrid>
         <FinanceiroKpiCard
           label="Total em aberto"
           value={formatBRL(totalAberto)}
-          trend={`${CONTAS_PAGAR.filter((c) => c.status !== 'pago').length} títulos pendentes`}
+          trend={`${contas.filter((c) => c.status !== 'pago').length} títulos pendentes`}
           progress={68}
           progressColor="#dc2626"
           icon={<Wallet size={13} />}
@@ -130,7 +145,7 @@ export function ContasPagarTab({ filtro, onFiltroChange }: ContasPagarTabProps) 
         <FinanceiroKpiCard
           label="Vencidas"
           value={formatBRL(totalVencido)}
-          trend={`${CONTAS_PAGAR.filter((c) => c.status === 'vencido').length} título(s) em atraso`}
+          trend={`${contas.filter((c) => c.status === 'vencido').length} título(s) em atraso`}
           progress={42}
           progressColor="#e24b4a"
           icon={<AlertCircle size={13} />}
@@ -149,7 +164,7 @@ export function ContasPagarTab({ filtro, onFiltroChange }: ContasPagarTabProps) 
         <FinanceiroKpiCard
           label="Pagas no mês"
           value={formatBRL(totalPago)}
-          trend={`${CONTAS_PAGAR.filter((c) => c.status === 'pago').length} pagamento(s) confirmado(s)`}
+          trend={`${contas.filter((c) => c.status === 'pago').length} pagamento(s) confirmado(s)`}
           trendPositive
           progress={55}
           progressColor="#16a34a"
@@ -160,31 +175,50 @@ export function ContasPagarTab({ filtro, onFiltroChange }: ContasPagarTabProps) 
 
       <div className={styles.twoCol}>
         <CategoryBreakdown items={categorias} />
-
-        <ProximosTitulos
-          titulos={proximosVencimentos}
-          getLabel={(titulo) => titulo.fornecedor}
-        />
+        <ProximosTitulos titulos={proximosVencimentos} getLabel={(titulo) => titulo.fornecedor} />
       </div>
 
       <TableSection
         toolbar={
-          <TableToolbar
-            title="Contas a pagar"
-            subtitle={`${contasFiltradas.length} de ${CONTAS_PAGAR.length} títulos em junho`}
-            actions={
-              <>
-                <FilterPills options={CONTAS_PAGAR_FILTROS} value={filtro} onChange={onFiltroChange} />
-                <button type="button" className={styles.btnSecondary}>
-                  <SlidersHorizontal size={12} /> Filtros
-                </button>
-              </>
-            }
-          />
+          <div className={styles.tableToolbarStack}>
+            <TableToolbar
+              title="Contas a pagar"
+              subtitle={
+                hasActiveContasTituloTableFiltros(tableFiltros)
+                  ? `${contasFiltradas.length} de ${contasBaseCount} títulos em junho`
+                  : `${contasBaseCount} títulos em junho`
+              }
+              actions={
+                <ContasTituloTableFiltersButton
+                  open={filtrosOpen}
+                  activeCount={activeTableFilters}
+                  onToggle={() => setFiltrosOpen((current) => !current)}
+                />
+              }
+            />
+
+            {filtrosOpen ? (
+              <ContasTituloTableFiltersPanel
+                title="Filtrar contas a pagar"
+                parteLabel="Fornecedor"
+                partePlaceholder="Buscar por fornecedor ou documento"
+                categorias={CONTAS_PAGAR_CATEGORIAS}
+                filtros={tableFiltros}
+                activeCount={activeTableFilters}
+                onChange={setTableFiltros}
+                onClear={handleClearTableFiltros}
+                onClose={() => setFiltrosOpen(false)}
+              />
+            ) : null}
+          </div>
         }
         footer={
           <TableFooter
-            info={`Mostrando ${contasFiltradas.length} de ${CONTAS_PAGAR.length} contas a pagar`}
+            info={
+              hasActiveContasTituloTableFiltros(tableFiltros)
+                ? `Mostrando ${contasFiltradas.length} de ${contasBaseCount} contas a pagar`
+                : `Mostrando ${contasFiltradas.length} contas a pagar`
+            }
             actionLabel="Registrar pagamento"
           />
         }
@@ -193,7 +227,7 @@ export function ContasPagarTab({ filtro, onFiltroChange }: ContasPagarTabProps) 
           columns={columns}
           data={contasFiltradas}
           getRowKey={(row) => row.id}
-          emptyMessage="Nenhuma conta a pagar encontrada para o filtro selecionado."
+          emptyMessage="Nenhuma conta a pagar encontrada para os filtros selecionados."
         />
       </TableSection>
     </>

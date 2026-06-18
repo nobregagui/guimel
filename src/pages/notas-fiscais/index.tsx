@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import {
   NotaFiscalDetalheDrawer,
@@ -14,11 +14,14 @@ import {
   type TipoDevolucao,
   type TipoNota,
 } from '@/features/notasFiscais'
-import { getTipoDevolucaoFromNota } from '@/features/notasFiscais/utils'
+import { getTipoDevolucaoFromNota, isTipoNota } from '@/features/notasFiscais/utils'
+import { useRouteQuery } from '@/hooks/useRouteQuery'
+import { ROUTE_QUERY, isRouteIntent } from '@/routes/queryState'
 
 import styles from './NotasFiscaisPage.module.css'
 
 export function NotasFiscaisPage() {
+  const { getParam, consumeParam, searchParams } = useRouteQuery()
   const [abaAtiva, setAbaAtiva] = useState<NotasFiscaisAba>('visao-geral')
   const [busca, setBusca] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -71,6 +74,19 @@ export function NotasFiscaisPage() {
     closeDetalhe()
     openDevolucaoDrawer(nota.id, tipo)
   }
+
+  useEffect(() => {
+    const intent = consumeParam(ROUTE_QUERY.intent)
+    if (!isRouteIntent(intent)) return
+
+    setAbaAtiva('visao-geral')
+
+    const tipoParam = getParam(ROUTE_QUERY.tipo)
+    if (isTipoNota(tipoParam)) {
+      setDrawerTipo(tipoParam)
+      setDrawerOpen(true)
+    }
+  }, [consumeParam, getParam, searchParams])
 
   return (
     <div className={styles.root}>

@@ -1,5 +1,9 @@
+import { Link } from 'react-router-dom'
+
 import { receivableItems } from '@/features/dashboard/data'
 import shared from '@/features/dashboard/dashboard.module.css'
+import { APP_PATHS } from '@/routes/paths'
+import { createFinanceiroNavigationState } from '@/routes/navigationState'
 import { formatCurrency } from '@/utils'
 
 import styles from './DashboardReceivables.module.css'
@@ -9,9 +13,13 @@ export function DashboardReceivables() {
     <section className={[shared.card, styles.root].join(' ')} aria-label="Contas a receber">
       <div className={styles.header}>
         <h2 className={shared.cardTitle}>Contas a Receber</h2>
-        <button type="button" className={shared.btnLink}>
+        <Link
+          to={APP_PATHS.financeiro}
+          state={createFinanceiroNavigationState('a-receber')}
+          className={shared.btnLink}
+        >
           Ver todas
-        </button>
+        </Link>
       </div>
 
       <ul className={styles.list}>

@@ -5,6 +5,14 @@ export type ClienteStatus = 'ativo' | 'inativo' | 'pendente'
 export type ClienteFormaPagamento = 'boleto' | 'pix' | 'transferencia' | 'cartao' | 'debito'
 export type ClienteFiltro = 'todos' | 'ativos' | 'inativos' | 'pendentes'
 export type ClientesAba = 'visao-geral' | 'clientes' | 'analise'
+export type RecentesCadastroFiltro = 'todos' | 'mes_atual' | 'ultimos_30' | 'ultimos_90'
+export type RecentesStatusFiltro = 'todos' | ClienteStatus
+
+export interface RecentesTableFiltros {
+  segmento: string
+  cadastro: RecentesCadastroFiltro
+  status: RecentesStatusFiltro
+}
 
 export interface ClienteFormValues {
   tipo: ClienteTipo

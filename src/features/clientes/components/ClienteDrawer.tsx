@@ -2,9 +2,17 @@ import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { Building2, User, X } from 'lucide-react'
 
+import { CnpjConsultaStatus } from '@/features/clientes/components/CnpjConsultaStatus'
 import { CLIENTE_SEGMENTOS, CLIENTE_FORMAS_PAGAMENTO, EMPTY_CLIENTE_FORM, ESTADOS_BR } from '@/features/clientes/data/shared'
+import { useCnpjConsulta } from '@/features/clientes/hooks/useCnpjConsulta'
 import { clienteFormSchema } from '@/features/clientes/schemas/clienteFormSchema'
 import type { ClienteFormValues } from '@/features/clientes/types'
+import {
+  getCnpjSaveBlockMessage,
+  isCnpjComplete,
+  isCnpjVerifiedForSave,
+} from '@/services/opencnpj.service'
+import { cnpjMask, cpfMask } from '@/utils/masks'
 import styles from '@/pages/clientes/ClientesPage.module.css'
 
 interface ClienteDrawerProps {
@@ -28,15 +36,36 @@ export function ClienteDrawer({
     watch,
     reset,
     setError,
+    clearErrors,
     formState: { isSubmitting, errors },
   } = useForm<ClienteFormValues>({
     defaultValues: EMPTY_CLIENTE_FORM,
   })
 
   const tipo = watch('tipo')
+  const documento = watch('documento')
   const formaPagamento = watch('formaPagamentoPreferida')
   const isEdit = mode === 'edit'
   const wasOpenRef = useRef(false)
+  const shouldConsultCnpj = !isEdit && tipo === 'pj'
+  const cnpjConsulta = useCnpjConsulta(documento, shouldConsultCnpj)
+  const isCnpjSaveBlocked =
+    shouldConsultCnpj && isCnpjComplete(documento) && !isCnpjVerifiedForSave(cnpjConsulta)
+
+  const { onChange: onDocumentoChange, ...documentoRegister } = register('documento')
+
+  useEffect(() => {
+    if (!shouldConsultCnpj) return
+
+    if (isCnpjVerifiedForSave(cnpjConsulta)) {
+      clearErrors('documento')
+      return
+    }
+
+    if (cnpjConsulta.status === 'not_found' && isCnpjComplete(documento)) {
+      setError('documento', { message: getCnpjSaveBlockMessage(cnpjConsulta) })
+    }
+  }, [shouldConsultCnpj, cnpjConsulta, documento, clearErrors, setError])
 
   useEffect(() => {
     if (!open) return undefined
@@ -73,6 +102,11 @@ export function ClienteDrawer({
           setError(field as keyof ClienteFormValues, { message: issue.message })
         }
       }
+      return
+    }
+
+    if (shouldConsultCnpj && isCnpjComplete(parsed.data.documento) && !isCnpjVerifiedForSave(cnpjConsulta)) {
+      setError('documento', { message: getCnpjSaveBlockMessage(cnpjConsulta) })
       return
     }
 
@@ -137,8 +171,18 @@ export function ClienteDrawer({
 
               <div className={styles.formField}>
                 <label htmlFor="cliente-documento">{tipo === 'pj' ? 'CNPJ' : 'CPF'}</label>
-                <input id="cliente-documento" {...register('documento')} placeholder={tipo === 'pj' ? '00.000.000/0001-00' : '000.000.000-00'} />
+                <input
+                  id="cliente-documento"
+                  {...documentoRegister}
+                  placeholder={tipo === 'pj' ? '00.000.000/0001-00' : '000.000.000-00'}
+                  onChange={(event) => {
+                    const maskedValue = tipo === 'pj' ? cnpjMask(event.target.value) : cpfMask(event.target.value)
+                    event.target.value = maskedValue
+                    onDocumentoChange(event)
+                  }}
+                />
                 {errors.documento ? <span className={styles.fieldError}>{errors.documento.message}</span> : null}
+                {shouldConsultCnpj ? <CnpjConsultaStatus result={cnpjConsulta} /> : null}
               </div>
 
               <div className={styles.formField}>
@@ -216,7 +260,12 @@ export function ClienteDrawer({
           <button type="button" className={styles.btnSecondary} onClick={onClose}>
             Cancelar
           </button>
-          <button type="submit" form="cliente-drawer-form" className={styles.btnPrimary} disabled={isSubmitting}>
+          <button
+            type="submit"
+            form="cliente-drawer-form"
+            className={styles.btnPrimary}
+            disabled={isSubmitting || isCnpjSaveBlocked}
+          >
             {isEdit ? 'Salvar alterações' : 'Salvar cliente'}
           </button>
         </footer>

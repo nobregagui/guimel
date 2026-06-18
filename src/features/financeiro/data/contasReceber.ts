@@ -113,6 +113,8 @@ export const CONTAS_RECEBER: ContaReceber[] = [
   },
 ]
 
+export const CONTAS_RECEBER_CATEGORIAS = [...new Set(CONTAS_RECEBER.map((c) => c.categoria))].sort()
+
 export const CONTAS_RECEBER_FILTROS = [
   { id: 'todos' as const, label: 'Todos' },
   { id: 'pendentes' as const, label: 'Pendentes' },

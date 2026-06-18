@@ -24,6 +24,8 @@ export const EXTRATO_MOVIMENTOS: ExtratoMovimento[] = [
   { id: 'ex-18', contaId: '4', data: '14/06/2026', dataIso: '2026-06-14', descricao: 'Aporte caixinha',          detalhe: 'Transferência interna', categoria: 'Transferência',      tipo: 'entrada', valor:   500, saldoApos:  1200 },
 ]
 
+export const EXTRATO_CATEGORIAS = [...new Set(EXTRATO_MOVIMENTOS.map((m) => m.categoria))].sort()
+
 export const EXTRATO_FILTROS = [
   { id: 'todos' as const, label: 'Todos' },
   { id: 'entradas' as const, label: 'Entradas' },

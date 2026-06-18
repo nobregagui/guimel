@@ -92,6 +92,12 @@
   background-color: #f9fafb;
 }
 
+.btnSecondaryActive {
+  border-color: #16a34a;
+  background-color: #f0fdf4;
+  color: #15803d;
+}
+
 .btnPrimary {
   display: flex;
   align-items: center;
@@ -490,6 +496,127 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.tableToolbarStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tableFiltersPanel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 20px 16px;
+  border-top: 1px solid #f3f4f6;
+  background-color: #fafafa;
+}
+
+.tableFiltersHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tableFiltersTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.tableFiltersClear {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #16a34a;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.tableFiltersClear:hover {
+  color: #15803d;
+  text-decoration: underline;
+}
+
+.tableFiltersGrid {
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) 1fr;
+  gap: 16px 24px;
+}
+
+.tableFilterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tableFilterGroup:nth-child(2),
+.tableFilterGroup:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+.tableFilterLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+}
+
+.tableFilterSelect {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #ffffff;
+  font-size: 13px;
+  color: #111827;
+  font-family: inherit;
+}
+
+.tableFilterSelect:focus {
+  outline: none;
+  border-color: #16a34a;
+}
+
+.tableFiltersHint {
+  margin: 0;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.tableFiltersClose {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.tableFiltersClose:hover {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+@media (max-width: 768px) {
+  .tableFiltersGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .filterRow {
@@ -939,6 +1066,31 @@
 .fieldError {
   font-size: 11px;
   color: #dc2626;
+}
+
+.cnpjConsulta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cnpjConsultaLine {
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.cnpjConsultaMuted {
+  color: #9ca3af;
+}
+
+.cnpjConsultaSuccess {
+  color: #15803d;
+  font-weight: 500;
+}
+
+.cnpjConsultaWarning {
+  color: #d97706;
+  font-weight: 500;
 }
 
 .clienteCellBtn {

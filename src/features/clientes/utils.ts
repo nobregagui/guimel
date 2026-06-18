@@ -4,6 +4,8 @@ import type {
   ClienteFiltro,
   ClienteFormValues,
   ClienteStatus,
+  RecentesCadastroFiltro,
+  RecentesTableFiltros,
   SegmentoSummary,
 } from '@/features/clientes/types'
 
@@ -122,6 +124,67 @@ export function getTopClientes(clientes: Cliente[], limit = 5): Cliente[] {
 
 export function getClientesRecentes(clientes: Cliente[], limit = 5): Cliente[] {
   return [...clientes].sort((a, b) => b.cadastroIso.localeCompare(a.cadastroIso)).slice(0, limit)
+}
+
+function matchesRecentesCadastroFiltro(cadastroIso: string, filtro: RecentesCadastroFiltro): boolean {
+  switch (filtro) {
+    case 'mes_atual':
+      return cadastroIso.startsWith('2026-06')
+    case 'ultimos_30': {
+      const cadastro = new Date(`${cadastroIso}T00:00:00`)
+      const limit = new Date(REFERENCE_DATE)
+      limit.setDate(limit.getDate() - 30)
+      return cadastro >= limit && cadastro <= REFERENCE_DATE
+    }
+    case 'ultimos_90': {
+      const cadastro = new Date(`${cadastroIso}T00:00:00`)
+      const limit = new Date(REFERENCE_DATE)
+      limit.setDate(limit.getDate() - 90)
+      return cadastro >= limit && cadastro <= REFERENCE_DATE
+    }
+    default:
+      return true
+  }
+}
+
+export function applyRecentesTableFiltros(
+  clientes: Cliente[],
+  filtros: RecentesTableFiltros,
+): Cliente[] {
+  return clientes.filter((cliente) => {
+    if (filtros.segmento && cliente.segmento !== filtros.segmento) return false
+    if (filtros.status !== 'todos' && cliente.status !== filtros.status) return false
+    if (!matchesRecentesCadastroFiltro(cliente.cadastroIso, filtros.cadastro)) return false
+    return true
+  })
+}
+
+export function countActiveRecentesTableFiltros(filtros: RecentesTableFiltros): number {
+  let count = 0
+  if (filtros.segmento) count += 1
+  if (filtros.status !== 'todos') count += 1
+  if (filtros.cadastro !== 'todos') count += 1
+  return count
+}
+
+export function hasActiveRecentesTableFiltros(filtros: RecentesTableFiltros): boolean {
+  return countActiveRecentesTableFiltros(filtros) > 0
+}
+
+export function getRecentesTableClientes(
+  clientes: Cliente[],
+  filtros: RecentesTableFiltros,
+  busca: string,
+): Cliente[] {
+  const base = filterClientes(clientes, 'todos', busca)
+  const filtered = applyRecentesTableFiltros(base, filtros)
+  const sorted = [...filtered].sort((a, b) => b.cadastroIso.localeCompare(a.cadastroIso))
+
+  if (hasActiveRecentesTableFiltros(filtros)) {
+    return sorted
+  }
+
+  return sorted.slice(0, 5)
 }
 
 export function countByTipo(clientes: Cliente[], tipo: Cliente['tipo']): number {

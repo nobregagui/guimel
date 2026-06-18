@@ -5,6 +5,43 @@ export type LancamentoTipo = 'receber' | 'pagar'
 export type Periodo = '7d' | 'mes' | 'ano'
 export type FinanceiroAba = 'visao-geral' | 'a-pagar' | 'a-receber' | 'extrato' | 'transferencias'
 export type FiltroLancamento = 'todos' | 'receber' | 'pagar' | 'vencidos'
+export type LancamentosVencimentoFiltro = 'todos' | 'mes_atual' | 'ultimos_30' | 'proximos_7' | 'vencidos'
+export type LancamentosTipoFiltro = 'todos' | LancamentoTipo
+export type LancamentosStatusFiltro = 'todos' | LancamentoStatus
+
+export interface LancamentosTableFiltros {
+  descricao: string
+  categoria: string
+  vencimento: LancamentosVencimentoFiltro
+  tipo: LancamentosTipoFiltro
+  status: LancamentosStatusFiltro
+}
+
+export type FinanceiroDataFiltro = 'todos' | 'mes_atual' | 'ultimos_30' | 'ultimos_7'
+export type ExtratoTipoTableFiltro = 'todos' | ExtratoMovimentoTipo
+export type TransferenciasStatusTableFiltro = 'todos' | TransferenciaStatus
+
+export interface ContasTituloTableFiltros {
+  parte: string
+  categoria: string
+  vencimento: LancamentosVencimentoFiltro
+  formaPagamento: '' | FormaPagamento
+  status: LancamentosStatusFiltro
+}
+
+export interface ExtratoTableFiltros {
+  descricao: string
+  categoria: string
+  conta: string
+  tipo: ExtratoTipoTableFiltro
+  data: FinanceiroDataFiltro
+}
+
+export interface TransferenciasTableFiltros {
+  descricao: string
+  data: FinanceiroDataFiltro
+  status: TransferenciasStatusTableFiltro
+}
 export type ContasPagarFiltro = 'todos' | 'pendentes' | 'vencidas' | 'pagas'
 export type ContasReceberFiltro = 'todos' | 'pendentes' | 'vencidas' | 'recebidas'
 export type ExtratoFiltro = 'todos' | 'entradas' | 'saidas'
@@ -84,6 +121,56 @@ export interface FluxoPonto {
   entradas: number
   saidas: number
   projecao?: boolean
+}
+
+export interface LancamentoFormValues {
+  descricao: string
+  subDescricao: string
+  categoria: string
+  tipo: LancamentoTipo
+  vencimentoIso: string
+  valor: number
+  status: LancamentoStatus
+}
+
+export interface ContaPagarFormValues {
+  fornecedor: string
+  documento: string
+  categoria: string
+  vencimentoIso: string
+  valor: number
+  formaPagamento: FormaPagamento
+  status: LancamentoStatus
+}
+
+export interface ContaReceberFormValues {
+  cliente: string
+  documento: string
+  categoria: string
+  vencimentoIso: string
+  valor: number
+  formaPagamento: FormaPagamento
+  status: LancamentoStatus
+}
+
+export interface ExtratoMovimentoFormValues {
+  contaId: string
+  dataIso: string
+  descricao: string
+  detalhe: string
+  categoria: string
+  tipo: ExtratoMovimentoTipo
+  valor: number
+}
+
+export interface TransferenciaFormValues {
+  contaOrigemId: string
+  contaDestinoId: string
+  dataIso: string
+  descricao: string
+  observacao: string
+  valor: number
+  status: TransferenciaStatus
 }
 
 export interface FilterOption<T extends string = string> {

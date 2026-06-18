@@ -1,30 +1,53 @@
-import { useMemo } from 'react'
-import { MoreHorizontal, SlidersHorizontal, TrendingDown, TrendingUp, Clock } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { MoreHorizontal, TrendingDown, TrendingUp, Clock } from 'lucide-react'
 
 import { ContaIcon } from '@/features/financeiro/components/ContaIcon'
 import { DataTable, TableFooter, TableSection, TableToolbar } from '@/features/financeiro/components/DataTable'
-import { FilterPills, FinanceiroKpiCard, KpiGrid } from '@/features/financeiro/components/FinanceiroKpiCard'
+import { FinanceiroKpiCard, KpiGrid } from '@/features/financeiro/components/FinanceiroKpiCard'
 import { FluxoCaixaChart } from '@/features/financeiro/components/FluxoCaixaChart'
+import {
+  LancamentosTableFiltersButton,
+  LancamentosTableFiltersPanel,
+} from '@/features/financeiro/components/LancamentosTableFilters'
 import { StatusBadge, TipoBadge } from '@/features/financeiro/components/StatusBadge'
-import { CONTAS_BANCARIAS, FLUXO_MES, LANCAMENTO_FILTROS, LANCAMENTOS } from '@/features/financeiro/data/shared'
-import type { FiltroLancamento, Lancamento, Periodo, TableColumn } from '@/features/financeiro/types'
-import { filterLancamentos, formatBRL, getPeriodoLabel, isVencido } from '@/features/financeiro/utils'
+import { EMPTY_LANCAMENTOS_TABLE_FILTROS, FLUXO_MES } from '@/features/financeiro/data/shared'
+import { useFinanceiroStore } from '@/features/financeiro/store/useFinanceiroStore'
+import type { Lancamento, LancamentosTableFiltros, Periodo, TableColumn } from '@/features/financeiro/types'
+import {
+  countActiveLancamentosTableFiltros,
+  formatBRL,
+  getPeriodoLabel,
+  getRecentesTableLancamentos,
+  hasActiveLancamentosTableFiltros,
+  isVencido,
+} from '@/features/financeiro/utils'
 import styles from '@/pages/financeiro/FinanceiroPage.module.css'
 
 interface VisaoGeralTabProps {
   periodo: Periodo
-  filtro: FiltroLancamento
-  onFiltroChange: (filtro: FiltroLancamento) => void
 }
 
-export function VisaoGeralTab({ periodo, filtro, onFiltroChange }: VisaoGeralTabProps) {
-  const totalSaldo = CONTAS_BANCARIAS.reduce((s, c) => s + c.saldo, 0)
+export function VisaoGeralTab({ periodo }: VisaoGeralTabProps) {
+  const lancamentosBase = useFinanceiroStore((s) => s.lancamentos)
+  const contasBancarias = useFinanceiroStore((s) => s.contasBancarias)
+  const [filtrosOpen, setFiltrosOpen] = useState(false)
+  const [tableFiltros, setTableFiltros] = useState<LancamentosTableFiltros>(EMPTY_LANCAMENTOS_TABLE_FILTROS)
+
+  const totalSaldo = contasBancarias.reduce((s, c) => s + c.saldo, 0)
   const receitasMes = 48320
   const despesasMes = 31150
   const resultado = receitasMes - despesasMes
   const periodoLabel = getPeriodoLabel(periodo)
 
-  const lancamentosFiltrados = useMemo(() => filterLancamentos(LANCAMENTOS, filtro), [filtro])
+  const lancamentos = useMemo(
+    () => getRecentesTableLancamentos(lancamentosBase, tableFiltros),
+    [lancamentosBase, tableFiltros],
+  )
+  const activeTableFilters = countActiveLancamentosTableFiltros(tableFiltros)
+  const lancamentosBaseCount = useMemo(
+    () => getRecentesTableLancamentos(lancamentosBase, EMPTY_LANCAMENTOS_TABLE_FILTROS).length,
+    [lancamentosBase],
+  )
 
   const columns = useMemo<TableColumn<Lancamento>[]>(
     () => [
@@ -95,6 +118,10 @@ export function VisaoGeralTab({ periodo, filtro, onFiltroChange }: VisaoGeralTab
     [],
   )
 
+  function handleClearTableFiltros() {
+    setTableFiltros(EMPTY_LANCAMENTOS_TABLE_FILTROS)
+  }
+
   return (
     <>
       <KpiGrid>
@@ -113,7 +140,7 @@ export function VisaoGeralTab({ periodo, filtro, onFiltroChange }: VisaoGeralTab
             </button>
           </div>
           <div className={styles.contaList}>
-            {CONTAS_BANCARIAS.map((conta) => (
+            {contasBancarias.map((conta) => (
               <div key={conta.id} className={styles.contaItem}>
                 <div className={styles.contaItemLeft}>
                   <ContaIcon banco={conta.banco} />
@@ -144,26 +171,50 @@ export function VisaoGeralTab({ periodo, filtro, onFiltroChange }: VisaoGeralTab
 
       <TableSection
         toolbar={
-          <TableToolbar
-            title="Lançamentos recentes"
-            subtitle={`${LANCAMENTOS.length} lançamentos em junho`}
-            actions={
-              <>
-                <FilterPills options={LANCAMENTO_FILTROS} value={filtro} onChange={onFiltroChange} />
-                <button type="button" className={styles.btnSecondary}>
-                  <SlidersHorizontal size={12} /> Filtros
-                </button>
-              </>
-            }
-          />
+          <div className={styles.tableToolbarStack}>
+            <TableToolbar
+              title="Lançamentos recentes"
+              subtitle={
+                hasActiveLancamentosTableFiltros(tableFiltros)
+                  ? `${lancamentos.length} de ${lancamentosBaseCount} lançamentos recentes`
+                  : `${lancamentos.length} últimos lançamentos do mês`
+              }
+              actions={
+                <LancamentosTableFiltersButton
+                  open={filtrosOpen}
+                  activeCount={activeTableFilters}
+                  onToggle={() => setFiltrosOpen((current) => !current)}
+                />
+              }
+            />
+
+            {filtrosOpen ? (
+              <LancamentosTableFiltersPanel
+                filtros={tableFiltros}
+                activeCount={activeTableFilters}
+                onChange={setTableFiltros}
+                onClear={handleClearTableFiltros}
+                onClose={() => setFiltrosOpen(false)}
+              />
+            ) : null}
+          </div>
         }
         footer={
           <TableFooter
-            info={`Mostrando ${lancamentosFiltrados.length} de ${LANCAMENTOS.length} lançamentos`}
+            info={
+              hasActiveLancamentosTableFiltros(tableFiltros)
+                ? `Mostrando ${lancamentos.length} de ${lancamentosBaseCount} lançamentos recentes`
+                : `Mostrando ${lancamentos.length} lançamentos recentes`
+            }
           />
         }
       >
-        <DataTable columns={columns} data={lancamentosFiltrados} getRowKey={(row) => row.id} />
+        <DataTable
+          columns={columns}
+          data={lancamentos}
+          getRowKey={(row) => row.id}
+          emptyMessage="Nenhum lançamento encontrado para os filtros selecionados."
+        />
       </TableSection>
     </>
   )

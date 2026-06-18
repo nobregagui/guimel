@@ -113,6 +113,8 @@ export const CONTAS_PAGAR: ContaPagar[] = [
   },
 ]
 
+export const CONTAS_PAGAR_CATEGORIAS = [...new Set(CONTAS_PAGAR.map((c) => c.categoria))].sort()
+
 export const CONTAS_PAGAR_FILTROS = [
   { id: 'todos' as const, label: 'Todos' },
   { id: 'pendentes' as const, label: 'Pendentes' },

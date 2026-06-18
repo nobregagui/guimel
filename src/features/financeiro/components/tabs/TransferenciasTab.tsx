@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   ArrowLeftRight,
   Ban,
@@ -6,53 +6,58 @@ import {
   CheckCircle2,
   Landmark,
   MoreHorizontal,
-  SlidersHorizontal,
 } from 'lucide-react'
 
 import { ContaSelector } from '@/features/financeiro/components/ContaSelector'
 import { DataTable, TableFooter, TableSection, TableToolbar } from '@/features/financeiro/components/DataTable'
-import { FilterPills, FinanceiroKpiCard, KpiGrid } from '@/features/financeiro/components/FinanceiroKpiCard'
+import { FinanceiroKpiCard, KpiGrid } from '@/features/financeiro/components/FinanceiroKpiCard'
 import { ProximasTransferencias } from '@/features/financeiro/components/ProximasTransferencias'
+import {
+  TransferenciasTableFiltersButton,
+  TransferenciasTableFiltersPanel,
+} from '@/features/financeiro/components/TransferenciasTableFilters'
 import { TransferenciaRota } from '@/features/financeiro/components/TransferenciaRota'
 import { TransferenciaStatusBadge } from '@/features/financeiro/components/TransferenciaStatusBadge'
 import { TransferenciasResumoContas } from '@/features/financeiro/components/TransferenciasResumoContas'
-import { CONTAS_BANCARIAS } from '@/features/financeiro/data/shared'
-import { TRANSFERENCIAS, TRANSFERENCIAS_FILTROS } from '@/features/financeiro/data/transferencias'
-import type { ExtratoContaFiltro, Periodo, TableColumn, Transferencia, TransferenciasFiltro } from '@/features/financeiro/types'
+import { EMPTY_TRANSFERENCIAS_TABLE_FILTROS } from '@/features/financeiro/data/shared'
+import { useFinanceiroStore } from '@/features/financeiro/store/useFinanceiroStore'
+import type { ExtratoContaFiltro, Periodo, TableColumn, Transferencia, TransferenciasTableFiltros } from '@/features/financeiro/types'
 import {
-  filterTransferencias,
+  countActiveTransferenciasTableFiltros,
   formatBRL,
   getPeriodoLabel,
   getProximasTransferencias,
   getTransferenciaResumoPorConta,
+  getTransferenciasBaseItems,
+  getTransferenciasTableItems,
+  hasActiveTransferenciasTableFiltros,
   sumTransferenciasPorStatus,
 } from '@/features/financeiro/utils'
 import styles from '@/pages/financeiro/FinanceiroPage.module.css'
 
 interface TransferenciasTabProps {
   periodo: Periodo
-  filtro: TransferenciasFiltro
   contaId: ExtratoContaFiltro
-  onFiltroChange: (filtro: TransferenciasFiltro) => void
   onContaChange: (contaId: ExtratoContaFiltro) => void
 }
 
-export function TransferenciasTab({
-  periodo,
-  filtro,
-  contaId,
-  onFiltroChange,
-  onContaChange,
-}: TransferenciasTabProps) {
+export function TransferenciasTab({ periodo, contaId, onContaChange }: TransferenciasTabProps) {
+  const transferencias = useFinanceiroStore((s) => s.transferencias)
+  const contasBancarias = useFinanceiroStore((s) => s.contasBancarias)
+  const [filtrosOpen, setFiltrosOpen] = useState(false)
+  const [tableFiltros, setTableFiltros] = useState<TransferenciasTableFiltros>(EMPTY_TRANSFERENCIAS_TABLE_FILTROS)
+
   const transferenciasBase = useMemo(
-    () => filterTransferencias(TRANSFERENCIAS, 'todos', contaId, periodo),
-    [contaId, periodo],
+    () => getTransferenciasBaseItems(transferencias, contaId, periodo),
+    [transferencias, contaId, periodo],
   )
 
   const transferenciasFiltradas = useMemo(
-    () => filterTransferencias(TRANSFERENCIAS, filtro, contaId, periodo),
-    [filtro, contaId, periodo],
+    () => getTransferenciasTableItems(transferencias, tableFiltros, contaId, periodo),
+    [transferencias, tableFiltros, contaId, periodo],
   )
+
+  const activeTableFilters = countActiveTransferenciasTableFiltros(tableFiltros)
 
   const totalConcluido = useMemo(
     () => sumTransferenciasPorStatus(transferenciasBase, 'concluida'),
@@ -70,16 +75,16 @@ export function TransferenciasTab({
   const resumosPorConta = useMemo(
     () => getTransferenciaResumoPorConta(
       transferenciasBase,
-      CONTAS_BANCARIAS.map((c) => c.id),
+      contasBancarias.map((c) => c.id),
     ),
-    [transferenciasBase],
+    [transferenciasBase, contasBancarias],
   )
 
   const proximas = useMemo(() => getProximasTransferencias(transferenciasBase), [transferenciasBase])
 
   const contaLabel = contaId === 'todas'
     ? 'Todas as contas'
-    : (CONTAS_BANCARIAS.find((c) => c.id === contaId)?.nome ?? 'Conta selecionada')
+    : (contasBancarias.find((c) => c.id === contaId)?.nome ?? 'Conta selecionada')
 
   const columns = useMemo<TableColumn<Transferencia>[]>(
     () => [
@@ -93,8 +98,8 @@ export function TransferenciasTab({
         header: 'Origem → Destino',
         render: (row) => (
           <TransferenciaRota
-            origem={CONTAS_BANCARIAS.find((c) => c.id === row.contaOrigemId)}
-            destino={CONTAS_BANCARIAS.find((c) => c.id === row.contaDestinoId)}
+            origem={contasBancarias.find((c) => c.id === row.contaOrigemId)}
+            destino={contasBancarias.find((c) => c.id === row.contaDestinoId)}
           />
         ),
       },
@@ -138,8 +143,12 @@ export function TransferenciasTab({
         ),
       },
     ],
-    [],
+    [contasBancarias],
   )
+
+  function handleClearTableFiltros() {
+    setTableFiltros(EMPTY_TRANSFERENCIAS_TABLE_FILTROS)
+  }
 
   return (
     <>
@@ -175,7 +184,7 @@ export function TransferenciasTab({
         <FinanceiroKpiCard
           label="Total movimentado"
           value={formatBRL(totalConcluido + totalAgendado)}
-          trend={`Período: ${getPeriodoLabel( periodo)}`}
+          trend={`Período: ${getPeriodoLabel(periodo)}`}
           trendPositive
           progress={70}
           progressColor="#16a34a"
@@ -189,34 +198,52 @@ export function TransferenciasTab({
           <span className={styles.extratoFilterLabel}>
             <Landmark size={14} /> Conta
           </span>
-          <ContaSelector contas={CONTAS_BANCARIAS} value={contaId} onChange={onContaChange} />
-        </div>
-        <div className={styles.extratoFilterGroup}>
-          <span className={styles.extratoFilterLabel}>Status</span>
-          <FilterPills options={TRANSFERENCIAS_FILTROS} value={filtro} onChange={onFiltroChange} />
+          <ContaSelector contas={contasBancarias} value={contaId} onChange={onContaChange} />
         </div>
       </div>
 
       <div className={styles.twoCol}>
-        <TransferenciasResumoContas contas={CONTAS_BANCARIAS} resumos={resumosPorConta} />
-        <ProximasTransferencias transferencias={proximas} contas={CONTAS_BANCARIAS} />
+        <TransferenciasResumoContas contas={contasBancarias} resumos={resumosPorConta} />
+        <ProximasTransferencias transferencias={proximas} contas={contasBancarias} />
       </div>
 
       <TableSection
         toolbar={
-          <TableToolbar
-            title="Histórico de transferências"
-            subtitle={`${transferenciasFiltradas.length} lançamentos — ${contaLabel} — ${getPeriodoLabel( periodo)}`}
-            actions={
-              <button type="button" className={styles.btnSecondary}>
-                <SlidersHorizontal size={12} /> Filtros avançados
-              </button>
-            }
-          />
+          <div className={styles.tableToolbarStack}>
+            <TableToolbar
+              title="Histórico de transferências"
+              subtitle={
+                hasActiveTransferenciasTableFiltros(tableFiltros)
+                  ? `${transferenciasFiltradas.length} de ${transferenciasBase.length} lançamentos — ${contaLabel} — ${getPeriodoLabel(periodo)}`
+                  : `${transferenciasFiltradas.length} lançamentos — ${contaLabel} — ${getPeriodoLabel(periodo)}`
+              }
+              actions={
+                <TransferenciasTableFiltersButton
+                  open={filtrosOpen}
+                  activeCount={activeTableFilters}
+                  onToggle={() => setFiltrosOpen((current) => !current)}
+                />
+              }
+            />
+
+            {filtrosOpen ? (
+              <TransferenciasTableFiltersPanel
+                filtros={tableFiltros}
+                activeCount={activeTableFilters}
+                onChange={setTableFiltros}
+                onClear={handleClearTableFiltros}
+                onClose={() => setFiltrosOpen(false)}
+              />
+            ) : null}
+          </div>
         }
         footer={
           <TableFooter
-            info={`Mostrando ${transferenciasFiltradas.length} de ${transferenciasBase.length} transferências`}
+            info={
+              hasActiveTransferenciasTableFiltros(tableFiltros)
+                ? `Mostrando ${transferenciasFiltradas.length} de ${transferenciasBase.length} transferências`
+                : `Mostrando ${transferenciasFiltradas.length} transferências`
+            }
             actionLabel="Nova transferência"
           />
         }

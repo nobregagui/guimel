@@ -25,13 +25,14 @@ export function TableToolbar({ title, subtitle, actions }: TableToolbarProps) {
 interface TableFooterProps {
   info: string
   actionLabel?: string
+  onAction?: () => void
 }
 
-export function TableFooter({ info, actionLabel = 'Ver todos' }: TableFooterProps) {
+export function TableFooter({ info, actionLabel = 'Ver todos', onAction }: TableFooterProps) {
   return (
     <div className={styles.tableFooter}>
       <span className={styles.tableFooterInfo}>{info}</span>
-      <button type="button" className={styles.tableFooterLink}>
+      <button type="button" className={styles.tableFooterLink} onClick={onAction}>
         {actionLabel} <ChevronRight size={12} />
       </button>
     </div>

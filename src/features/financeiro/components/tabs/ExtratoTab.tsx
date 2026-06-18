@@ -1,36 +1,41 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   ArrowDownLeft,
   ArrowUpRight,
   Landmark,
   List,
   MoreHorizontal,
-  SlidersHorizontal,
   Wallet,
 } from 'lucide-react'
 
 import { ContaIcon } from '@/features/financeiro/components/ContaIcon'
 import { ContaSelector } from '@/features/financeiro/components/ContaSelector'
 import { DataTable, TableFooter, TableSection, TableToolbar } from '@/features/financeiro/components/DataTable'
+import {
+  ExtratoTableFiltersButton,
+  ExtratoTableFiltersPanel,
+} from '@/features/financeiro/components/ExtratoTableFilters'
 import { ExtratoResumoCard } from '@/features/financeiro/components/ExtratoResumoCard'
-import { FilterPills, FinanceiroKpiCard, KpiGrid } from '@/features/financeiro/components/FinanceiroKpiCard'
-import { EXTRATO_FILTROS, EXTRATO_MOVIMENTOS } from '@/features/financeiro/data/extrato'
-import { CONTAS_BANCARIAS } from '@/features/financeiro/data/shared'
-import type { ExtratoContaFiltro, ExtratoFiltro, ExtratoMovimento, Periodo, TableColumn } from '@/features/financeiro/types'
+import { FinanceiroKpiCard, KpiGrid } from '@/features/financeiro/components/FinanceiroKpiCard'
+import { EXTRATO_CATEGORIAS } from '@/features/financeiro/data/extrato'
+import { EMPTY_EXTRATO_TABLE_FILTROS } from '@/features/financeiro/data/shared'
+import { useFinanceiroStore } from '@/features/financeiro/store/useFinanceiroStore'
+import type { ExtratoContaFiltro, ExtratoMovimento, ExtratoTableFiltros, Periodo, TableColumn } from '@/features/financeiro/types'
 import {
   buildExtratoResumo,
-  filterExtrato,
+  countActiveExtratoTableFiltros,
   formatBRL,
+  getExtratoBaseMovimentos,
+  getExtratoTableMovimentos,
   getPeriodoLabel,
+  hasActiveExtratoTableFiltros,
   sumExtratoPorTipo,
 } from '@/features/financeiro/utils'
 import styles from '@/pages/financeiro/FinanceiroPage.module.css'
 
 interface ExtratoTabProps {
   periodo: Periodo
-  filtro: ExtratoFiltro
   contaId: ExtratoContaFiltro
-  onFiltroChange: (filtro: ExtratoFiltro) => void
   onContaChange: (contaId: ExtratoContaFiltro) => void
 }
 
@@ -50,30 +55,38 @@ function ExtratoTipoBadge({ tipo }: { tipo: ExtratoMovimento['tipo'] }) {
   )
 }
 
-export function ExtratoTab({ periodo, filtro, contaId, onFiltroChange, onContaChange }: ExtratoTabProps) {
+export function ExtratoTab({ periodo, contaId, onContaChange }: ExtratoTabProps) {
+  const movimentos = useFinanceiroStore((s) => s.extratoMovimentos)
+  const contasBancarias = useFinanceiroStore((s) => s.contasBancarias)
+  const [filtrosOpen, setFiltrosOpen] = useState(false)
+  const [tableFiltros, setTableFiltros] = useState<ExtratoTableFiltros>(EMPTY_EXTRATO_TABLE_FILTROS)
+  const showContaFilter = contaId === 'todas'
+
   const contaSelecionada = useMemo(
-    () => CONTAS_BANCARIAS.find((c) => c.id === contaId),
-    [contaId],
+    () => contasBancarias.find((c) => c.id === contaId),
+    [contasBancarias, contaId],
   )
 
   const movimentosBase = useMemo(
-    () => filterExtrato(EXTRATO_MOVIMENTOS, 'todos', contaId, periodo),
-    [contaId, periodo],
+    () => getExtratoBaseMovimentos(movimentos, contaId, periodo),
+    [movimentos, contaId, periodo],
   )
 
   const movimentosFiltrados = useMemo(
-    () => filterExtrato(EXTRATO_MOVIMENTOS, filtro, contaId, periodo),
-    [filtro, contaId, periodo],
+    () => getExtratoTableMovimentos(movimentos, tableFiltros, contaId, periodo),
+    [movimentos, tableFiltros, contaId, periodo],
   )
+
+  const activeTableFilters = countActiveExtratoTableFiltros(tableFiltros, showContaFilter)
 
   const resumo = useMemo(() => {
     const saldoAtual =
       contaId === 'todas'
-        ? CONTAS_BANCARIAS.reduce((acc, c) => acc + c.saldo, 0)
+        ? contasBancarias.reduce((acc, c) => acc + c.saldo, 0)
         : (contaSelecionada?.saldo ?? 0)
 
     return buildExtratoResumo(movimentosBase, saldoAtual)
-  }, [contaId, contaSelecionada, movimentosBase])
+  }, [contaId, contasBancarias, contaSelecionada, movimentosBase])
 
   const totalEntradas = useMemo(() => sumExtratoPorTipo(movimentosBase, 'entrada'), [movimentosBase])
   const totalSaidas = useMemo(() => sumExtratoPorTipo(movimentosBase, 'saida'), [movimentosBase])
@@ -105,7 +118,7 @@ export function ExtratoTab({ periodo, filtro, contaId, onFiltroChange, onContaCh
         key: 'conta',
         header: 'Conta',
         render: (row) => {
-          const conta = CONTAS_BANCARIAS.find((c) => c.id === row.contaId)
+          const conta = contasBancarias.find((c) => c.id === row.contaId)
           if (!conta) return '—'
           return (
             <span className={styles.extratoContaCell}>
@@ -164,7 +177,11 @@ export function ExtratoTab({ periodo, filtro, contaId, onFiltroChange, onContaCh
     })
 
     return base
-  }, [contaId])
+  }, [contaId, contasBancarias])
+
+  function handleClearTableFiltros() {
+    setTableFiltros(EMPTY_EXTRATO_TABLE_FILTROS)
+  }
 
   return (
     <>
@@ -215,11 +232,7 @@ export function ExtratoTab({ periodo, filtro, contaId, onFiltroChange, onContaCh
           <span className={styles.extratoFilterLabel}>
             <Landmark size={14} /> Conta
           </span>
-          <ContaSelector contas={CONTAS_BANCARIAS} value={contaId} onChange={onContaChange} />
-        </div>
-        <div className={styles.extratoFilterGroup}>
-          <span className={styles.extratoFilterLabel}>Tipo</span>
-          <FilterPills options={EXTRATO_FILTROS} value={filtro} onChange={onFiltroChange} />
+          <ContaSelector contas={contasBancarias} value={contaId} onChange={onContaChange} />
         </div>
       </div>
 
@@ -229,10 +242,10 @@ export function ExtratoTab({ periodo, filtro, contaId, onFiltroChange, onContaCh
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <h3 className={styles.cardTitle}>Contas vinculadas</h3>
-            <span className={styles.categoryHint}>{CONTAS_BANCARIAS.length} contas</span>
+            <span className={styles.categoryHint}>{contasBancarias.length} contas</span>
           </div>
           <div className={styles.contaList}>
-            {CONTAS_BANCARIAS.map((conta) => (
+            {contasBancarias.map((conta) => (
               <button
                 key={conta.id}
                 type="button"
@@ -252,19 +265,44 @@ export function ExtratoTab({ periodo, filtro, contaId, onFiltroChange, onContaCh
 
       <TableSection
         toolbar={
-          <TableToolbar
-            title="Extrato bancário"
-            subtitle={`${movimentosFiltrados.length} lançamentos — ${getPeriodoLabel(periodo)}`}
-            actions={
-              <button type="button" className={styles.btnSecondary}>
-                <SlidersHorizontal size={12} /> Filtros avançados
-              </button>
-            }
-          />
+          <div className={styles.tableToolbarStack}>
+            <TableToolbar
+              title="Extrato bancário"
+              subtitle={
+                hasActiveExtratoTableFiltros(tableFiltros, showContaFilter)
+                  ? `${movimentosFiltrados.length} de ${movimentosBase.length} lançamentos — ${getPeriodoLabel(periodo)}`
+                  : `${movimentosFiltrados.length} lançamentos — ${getPeriodoLabel(periodo)}`
+              }
+              actions={
+                <ExtratoTableFiltersButton
+                  open={filtrosOpen}
+                  activeCount={activeTableFilters}
+                  onToggle={() => setFiltrosOpen((current) => !current)}
+                />
+              }
+            />
+
+            {filtrosOpen ? (
+              <ExtratoTableFiltersPanel
+                filtros={tableFiltros}
+                activeCount={activeTableFilters}
+                categorias={EXTRATO_CATEGORIAS}
+                contas={contasBancarias}
+                showContaFilter={showContaFilter}
+                onChange={setTableFiltros}
+                onClear={handleClearTableFiltros}
+                onClose={() => setFiltrosOpen(false)}
+              />
+            ) : null}
+          </div>
         }
         footer={
           <TableFooter
-            info={`Mostrando ${movimentosFiltrados.length} de ${movimentosBase.length} movimentações`}
+            info={
+              hasActiveExtratoTableFiltros(tableFiltros, showContaFilter)
+                ? `Mostrando ${movimentosFiltrados.length} de ${movimentosBase.length} movimentações`
+                : `Mostrando ${movimentosFiltrados.length} movimentações`
+            }
             actionLabel="Exportar extrato"
           />
         }

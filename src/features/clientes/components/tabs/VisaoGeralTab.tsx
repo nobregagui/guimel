@@ -1,40 +1,59 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, MoreHorizontal, SlidersHorizontal, UserPlus, Users, Wallet } from 'lucide-react'
+import { Building2, MoreHorizontal, UserPlus, Users, Wallet } from 'lucide-react'
 
 import { ClienteNomeCell } from '@/features/clientes/components/ClienteNomeCell'
 import { ClienteStatusBadge } from '@/features/clientes/components/ClienteStatusBadge'
 import { ClientesKpiCard, KpiGrid } from '@/features/clientes/components/ClientesKpiCard'
 import { DataTable, TableFooter, TableSection, TableToolbar } from '@/features/clientes/components/DataTable'
+import {
+  RecentesTableFiltersButton,
+  RecentesTableFiltersPanel,
+} from '@/features/clientes/components/RecentesTableFilters'
 import { SegmentoBreakdown } from '@/features/clientes/components/SegmentoBreakdown'
 import { TopClientesCard } from '@/features/clientes/components/TopClientesCard'
+import { EMPTY_RECENTES_TABLE_FILTROS } from '@/features/clientes/data/shared'
 import { useClientesStore } from '@/features/clientes/store/useClientesStore'
-import type { Cliente, TableColumn } from '@/features/clientes/types'
+import type { Cliente, RecentesTableFiltros, TableColumn } from '@/features/clientes/types'
 import {
+  countActiveRecentesTableFiltros,
   countByStatus,
   countByTipo,
   countNovosNoMes,
   filterClientes,
   formatBRL,
-  getClientesRecentes,
+  getRecentesTableClientes,
   getTicketMedio,
   getTopClientes,
   groupBySegmento,
+  hasActiveRecentesTableFiltros,
   sumTotalVendas,
 } from '@/features/clientes/utils'
 import styles from '@/pages/clientes/ClientesPage.module.css'
 
 interface VisaoGeralTabProps {
   busca: string
+  onVerTodosClientes?: () => void
 }
 
-export function VisaoGeralTab({ busca }: VisaoGeralTabProps) {
+export function VisaoGeralTab({ busca, onVerTodosClientes }: VisaoGeralTabProps) {
   const navigate = useNavigate()
   const clientes = useClientesStore((state) => state.clientes)
+  const [filtrosOpen, setFiltrosOpen] = useState(false)
+  const [tableFiltros, setTableFiltros] = useState<RecentesTableFiltros>(EMPTY_RECENTES_TABLE_FILTROS)
+
   const clientesFiltrados = useMemo(() => filterClientes(clientes, 'todos', busca), [clientes, busca])
   const segmentos = useMemo(() => groupBySegmento(clientesFiltrados), [clientesFiltrados])
   const topClientes = useMemo(() => getTopClientes(clientesFiltrados, 5), [clientesFiltrados])
-  const recentes = useMemo(() => getClientesRecentes(clientesFiltrados, 5), [clientesFiltrados])
+  const recentes = useMemo(
+    () => getRecentesTableClientes(clientes, tableFiltros, busca),
+    [clientes, tableFiltros, busca],
+  )
+  const activeTableFilters = countActiveRecentesTableFiltros(tableFiltros)
+  const recentesBaseCount = useMemo(
+    () => getRecentesTableClientes(clientes, EMPTY_RECENTES_TABLE_FILTROS, busca).length,
+    [clientes, busca],
+  )
 
   const columns = useMemo<TableColumn<Cliente>[]>(
     () => [
@@ -77,6 +96,10 @@ export function VisaoGeralTab({ busca }: VisaoGeralTabProps) {
     ],
     [navigate],
   )
+
+  function handleClearTableFiltros() {
+    setTableFiltros(EMPTY_RECENTES_TABLE_FILTROS)
+  }
 
   return (
     <>
@@ -133,20 +156,43 @@ export function VisaoGeralTab({ busca }: VisaoGeralTabProps) {
 
       <TableSection
         toolbar={
-          <TableToolbar
-            title="Cadastros recentes"
-            subtitle={`${recentes.length} últimos clientes adicionados`}
-            actions={
-              <button type="button" className={styles.btnSecondary}>
-                <SlidersHorizontal size={12} /> Filtros
-              </button>
-            }
-          />
+          <div className={styles.tableToolbarStack}>
+            <TableToolbar
+              title="Cadastros recentes"
+              subtitle={
+                hasActiveRecentesTableFiltros(tableFiltros)
+                  ? `${recentes.length} de ${recentesBaseCount} clientes recentes`
+                  : `${recentes.length} últimos clientes adicionados`
+              }
+              actions={
+                <RecentesTableFiltersButton
+                  open={filtrosOpen}
+                  activeCount={activeTableFilters}
+                  onToggle={() => setFiltrosOpen((current) => !current)}
+                />
+              }
+            />
+
+            {filtrosOpen ? (
+              <RecentesTableFiltersPanel
+                filtros={tableFiltros}
+                activeCount={activeTableFilters}
+                onChange={setTableFiltros}
+                onClear={handleClearTableFiltros}
+                onClose={() => setFiltrosOpen(false)}
+              />
+            ) : null}
+          </div>
         }
         footer={
           <TableFooter
-            info={`Mostrando ${recentes.length} clientes recentes`}
+            info={
+              hasActiveRecentesTableFiltros(tableFiltros)
+                ? `Mostrando ${recentes.length} de ${recentesBaseCount} clientes recentes`
+                : `Mostrando ${recentes.length} clientes recentes`
+            }
             actionLabel="Ver todos os clientes"
+            onAction={onVerTodosClientes}
           />
         }
       >
@@ -154,7 +200,7 @@ export function VisaoGeralTab({ busca }: VisaoGeralTabProps) {
           columns={columns}
           data={recentes}
           getRowKey={(row) => row.id}
-          emptyMessage="Nenhum cliente encontrado."
+          emptyMessage="Nenhum cliente encontrado para os filtros selecionados."
         />
       </TableSection>
     </>

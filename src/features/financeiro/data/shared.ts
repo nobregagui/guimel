@@ -1,4 +1,12 @@
-import type { ContaBancaria, FluxoPonto, Lancamento } from '@/features/financeiro/types'
+import type {
+  ContaBancaria,
+  FluxoPonto,
+  Lancamento,
+  LancamentosTableFiltros,
+  ContasTituloTableFiltros,
+  ExtratoTableFiltros,
+  TransferenciasTableFiltros,
+} from '@/features/financeiro/types'
 
 export const CONTAS_BANCARIAS: ContaBancaria[] = [
   { id: '1', nome: 'Itaú C/C', banco: 'itau', saldo: 24500 },
@@ -41,3 +49,84 @@ export const LANCAMENTO_FILTROS = [
   { id: 'pagar' as const, label: 'A pagar' },
   { id: 'vencidos' as const, label: 'Vencidos' },
 ]
+
+export const LANCAMENTO_CATEGORIAS = [...new Set(LANCAMENTOS.map((l) => l.categoria))].sort()
+
+export const LANCAMENTOS_VENCIMENTO_FILTROS = [
+  { id: 'todos' as const, label: 'Todos' },
+  { id: 'mes_atual' as const, label: 'Junho/2026' },
+  { id: 'ultimos_30' as const, label: 'Últimos 30 dias' },
+  { id: 'proximos_7' as const, label: 'Próximos 7 dias' },
+  { id: 'vencidos' as const, label: 'Vencidos' },
+]
+
+export const LANCAMENTOS_TIPO_FILTROS = [
+  { id: 'todos' as const, label: 'Todos' },
+  { id: 'receber' as const, label: 'A receber' },
+  { id: 'pagar' as const, label: 'A pagar' },
+]
+
+export const LANCAMENTOS_STATUS_FILTROS = [
+  { id: 'todos' as const, label: 'Todos' },
+  { id: 'pago' as const, label: 'Pago' },
+  { id: 'pendente' as const, label: 'Pendente' },
+  { id: 'vencido' as const, label: 'Vencido' },
+]
+
+export const EMPTY_LANCAMENTOS_TABLE_FILTROS: LancamentosTableFiltros = {
+  descricao: '',
+  categoria: '',
+  vencimento: 'todos',
+  tipo: 'todos',
+  status: 'todos',
+}
+
+export const FINANCEIRO_DATA_FILTROS = [
+  { id: 'todos' as const, label: 'Todos' },
+  { id: 'mes_atual' as const, label: 'Junho/2026' },
+  { id: 'ultimos_30' as const, label: 'Últimos 30 dias' },
+  { id: 'ultimos_7' as const, label: 'Últimos 7 dias' },
+]
+
+export const EXTRATO_TIPO_TABLE_FILTROS = [
+  { id: 'todos' as const, label: 'Todos' },
+  { id: 'entrada' as const, label: 'Entradas' },
+  { id: 'saida' as const, label: 'Saídas' },
+]
+
+export const TRANSFERENCIAS_STATUS_TABLE_FILTROS = [
+  { id: 'todos' as const, label: 'Todos' },
+  { id: 'concluida' as const, label: 'Concluídas' },
+  { id: 'agendada' as const, label: 'Agendadas' },
+  { id: 'cancelada' as const, label: 'Canceladas' },
+]
+
+export const FORMA_PAGAMENTO_TABLE_FILTROS = [
+  { id: 'boleto' as const, label: 'Boleto' },
+  { id: 'pix' as const, label: 'PIX' },
+  { id: 'transferencia' as const, label: 'Transferência' },
+  { id: 'cartao' as const, label: 'Cartão' },
+  { id: 'debito' as const, label: 'Débito' },
+]
+
+export const EMPTY_CONTAS_TITULO_TABLE_FILTROS: ContasTituloTableFiltros = {
+  parte: '',
+  categoria: '',
+  vencimento: 'todos',
+  formaPagamento: '',
+  status: 'todos',
+}
+
+export const EMPTY_EXTRATO_TABLE_FILTROS: ExtratoTableFiltros = {
+  descricao: '',
+  categoria: '',
+  conta: '',
+  tipo: 'todos',
+  data: 'todos',
+}
+
+export const EMPTY_TRANSFERENCIAS_TABLE_FILTROS: TransferenciasTableFiltros = {
+  descricao: '',
+  data: 'todos',
+  status: 'todos',
+}
