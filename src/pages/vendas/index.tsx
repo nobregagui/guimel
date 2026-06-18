@@ -381,7 +381,7 @@ export function VendasPage() {
                       <span className={styles.cellMuted}>
                         {FORMA_PAGAMENTO_LABEL[pedido.formaPagamento]}
                       </span>
-                      <p className={styles.cellSubDesc}>{pedido.condicaoPagamento}</p>
+                      <p className={styles.cellSubDesc}>{pedido.condicaoPagamentoDescricao}</p>
                     </td>
                     <td className={styles.cellStatusCenter}>
                       <StatusBadge status={pedido.status} />

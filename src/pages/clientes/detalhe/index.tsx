@@ -42,6 +42,8 @@ export function ClienteDetalhePage() {
       estado: cliente.estado,
       observacao: cliente.observacao ?? '',
       formaPagamentoPreferida: cliente.formaPagamentoPreferida,
+      parcelasPreferidas: cliente.parcelasPreferidas,
+      taxaJurosMensalPreferida: cliente.taxaJurosMensalPreferida,
     }
   }, [cliente])
 

@@ -2,12 +2,14 @@ import type {
   CidadeSummary,
   Cliente,
   ClienteFiltro,
+  ClienteFormaPagamento,
   ClienteFormValues,
   ClienteStatus,
   RecentesCadastroFiltro,
   RecentesTableFiltros,
   SegmentoSummary,
 } from '@/features/clientes/types'
+import { CONFIG_FORMA } from '@/features/vendas/utils/pagamento'
 
 const REFERENCE_DATE = new Date('2026-06-15')
 
@@ -20,6 +22,28 @@ export function getIniciais(nome: string): string {
   if (partes.length === 0) return '?'
   if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase()
   return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase()
+}
+
+export function normalizeDocumentoDigits(documento: string): string {
+  return documento.replace(/\D/g, '')
+}
+
+export function findClienteByDocumento(clientes: Cliente[], documento: string): Cliente | undefined {
+  const digits = normalizeDocumentoDigits(documento)
+  if (digits.length !== 11 && digits.length !== 14) return undefined
+  return clientes.find((cliente) => normalizeDocumentoDigits(cliente.documento) === digits)
+}
+
+export function resolveCondicaoDescricao(
+  forma: ClienteFormaPagamento,
+  parcelas: number,
+  taxa: number,
+): string {
+  const config = CONFIG_FORMA[forma]
+  const opcao =
+    config.opcoesParcelas.find((o) => o.parcelas === parcelas && o.taxaMensal === taxa) ??
+    config.opcoesParcelas[0]
+  return opcao.label
 }
 
 export function filterClientes(clientes: Cliente[], filtro: ClienteFiltro, busca: string): Cliente[] {
@@ -212,6 +236,13 @@ export function buildClienteFromForm(input: ClienteFormValues, currentCount: num
     estado: input.estado.trim(),
     segmento: input.segmento,
     formaPagamentoPreferida: input.formaPagamentoPreferida,
+    parcelasPreferidas: input.parcelasPreferidas,
+    taxaJurosMensalPreferida: input.taxaJurosMensalPreferida,
+    condicaoPagamentoDescricao: resolveCondicaoDescricao(
+      input.formaPagamentoPreferida,
+      input.parcelasPreferidas,
+      input.taxaJurosMensalPreferida,
+    ),
     status: 'pendente',
     cadastroIso,
     cadastro: formatIsoToDisplay(cadastroIso),

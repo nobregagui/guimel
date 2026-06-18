@@ -1,11 +1,11 @@
 import type { FormaPagamento, Pedido, StatusPedido } from '@/features/vendas/types'
 
 export const FORMA_PAGAMENTO_LABEL: Record<FormaPagamento, string> = {
-  boleto: 'Boleto',
   pix: 'PIX',
-  cartao_credito: 'Cartão de crédito',
-  cartao_debito: 'Cartão de débito',
+  boleto: 'Boleto',
   transferencia: 'Transferência',
+  cartao: 'Cartão de crédito',
+  debito: 'Débito',
 }
 
 export const STATUS_PEDIDO_LABEL: Record<StatusPedido, string> = {
@@ -32,7 +32,7 @@ export function calcularSubtotalItem(
 ): number {
   const bruto = quantidade * valorUnitario
   if (tipoDesconto === 'percentual') return bruto * (1 - desconto / 100)
-  return bruto - desconto
+  return Math.max(0, bruto - desconto)
 }
 
 export function formatarMoeda(valor: number): string {
@@ -57,7 +57,13 @@ export const PEDIDOS_MOCK: Pedido[] = [
     vendedorNome: 'Carlos Mendes',
     status: 'entregue',
     formaPagamento: 'boleto',
-    condicaoPagamento: '30/60 dias',
+    parcelas: 2,
+    taxaJurosMensal: 0,
+    condicaoPagamentoDescricao: '2× sem juros (30/60)',
+    cronograma: [
+      { numero: 1, vencimentoIso: '2025-07-10T00:00:00Z', valor: 1575, juros: 0, valorComJuros: 1575 },
+      { numero: 2, vencimentoIso: '2025-08-10T00:00:00Z', valor: 1575, juros: 0, valorComJuros: 1575 },
+    ],
     dataIso: '2025-06-10T14:00:00Z',
     dataEntregaIso: '2025-06-14T10:00:00Z',
     itens: [
@@ -67,6 +73,8 @@ export const PEDIDOS_MOCK: Pedido[] = [
     subtotal: 3275,
     descontoTotal: 125,
     total: 3150,
+    totalComJuros: 3150,
+    totalJuros: 0,
     observacao: null,
     nfeChave: '35250612345678000199550010000000011234567890',
   },
@@ -80,7 +88,12 @@ export const PEDIDOS_MOCK: Pedido[] = [
     vendedorNome: 'Ana Oliveira',
     status: 'confirmado',
     formaPagamento: 'pix',
-    condicaoPagamento: 'À vista',
+    parcelas: 1,
+    taxaJurosMensal: 0,
+    condicaoPagamentoDescricao: 'À vista (PIX)',
+    cronograma: [
+      { numero: 1, vencimentoIso: '2025-06-12T09:30:00Z', valor: 8100, juros: 0, valorComJuros: 8100 },
+    ],
     dataIso: '2025-06-12T09:30:00Z',
     dataEntregaIso: '2025-06-18T00:00:00Z',
     itens: [
@@ -89,6 +102,8 @@ export const PEDIDOS_MOCK: Pedido[] = [
     subtotal: 9000,
     descontoTotal: 900,
     total: 8100,
+    totalComJuros: 8100,
+    totalJuros: 0,
     observacao: 'Entrega no período da manhã.',
     nfeChave: null,
   },
@@ -101,8 +116,18 @@ export const PEDIDOS_MOCK: Pedido[] = [
     vendedorId: 'v1',
     vendedorNome: 'Carlos Mendes',
     status: 'orcamento',
-    formaPagamento: 'boleto',
-    condicaoPagamento: '30 dias',
+    formaPagamento: 'cartao',
+    parcelas: 6,
+    taxaJurosMensal: 0,
+    condicaoPagamentoDescricao: '6× sem juros',
+    cronograma: [
+      { numero: 1, vencimentoIso: '2025-07-15T00:00:00Z', valor: 125, juros: 0, valorComJuros: 125 },
+      { numero: 2, vencimentoIso: '2025-08-15T00:00:00Z', valor: 125, juros: 0, valorComJuros: 125 },
+      { numero: 3, vencimentoIso: '2025-09-15T00:00:00Z', valor: 125, juros: 0, valorComJuros: 125 },
+      { numero: 4, vencimentoIso: '2025-10-15T00:00:00Z', valor: 125, juros: 0, valorComJuros: 125 },
+      { numero: 5, vencimentoIso: '2025-11-15T00:00:00Z', valor: 125, juros: 0, valorComJuros: 125 },
+      { numero: 6, vencimentoIso: '2025-12-15T00:00:00Z', valor: 125, juros: 0, valorComJuros: 125 },
+    ],
     dataIso: '2025-06-15T16:00:00Z',
     dataEntregaIso: null,
     itens: [
@@ -111,6 +136,8 @@ export const PEDIDOS_MOCK: Pedido[] = [
     subtotal: 750,
     descontoTotal: 0,
     total: 750,
+    totalComJuros: 750,
+    totalJuros: 0,
     observacao: 'Aguardando aprovação do cliente.',
     nfeChave: null,
   },
@@ -123,8 +150,15 @@ export const PEDIDOS_MOCK: Pedido[] = [
     vendedorId: 'v2',
     vendedorNome: 'Ana Oliveira',
     status: 'faturado',
-    formaPagamento: 'transferencia',
-    condicaoPagamento: '60/90 dias',
+    formaPagamento: 'boleto',
+    parcelas: 3,
+    taxaJurosMensal: 0,
+    condicaoPagamentoDescricao: '3× sem juros',
+    cronograma: [
+      { numero: 1, vencimentoIso: '2025-07-08T00:00:00Z', valor: 2066.67, juros: 0, valorComJuros: 2066.67 },
+      { numero: 2, vencimentoIso: '2025-08-08T00:00:00Z', valor: 2066.67, juros: 0, valorComJuros: 2066.67 },
+      { numero: 3, vencimentoIso: '2025-09-08T00:00:00Z', valor: 2066.66, juros: 0, valorComJuros: 2066.66 },
+    ],
     dataIso: '2025-06-08T11:00:00Z',
     dataEntregaIso: '2025-06-20T00:00:00Z',
     itens: [
@@ -133,6 +167,8 @@ export const PEDIDOS_MOCK: Pedido[] = [
     subtotal: 6200,
     descontoTotal: 0,
     total: 6200,
+    totalComJuros: 6200,
+    totalJuros: 0,
     observacao: null,
     nfeChave: '35250611222333000144550010000000041987654321',
   },
@@ -145,14 +181,19 @@ export const PEDIDOS_MOCK: Pedido[] = [
     vendedorId: null,
     vendedorNome: null,
     status: 'cancelado',
-    formaPagamento: 'cartao_credito',
-    condicaoPagamento: '3x sem juros',
+    formaPagamento: 'cartao',
+    parcelas: 3,
+    taxaJurosMensal: 0,
+    condicaoPagamentoDescricao: '3× sem juros',
+    cronograma: [],
     dataIso: '2025-06-05T08:00:00Z',
     dataEntregaIso: null,
     itens: [],
     subtotal: 0,
     descontoTotal: 0,
     total: 0,
+    totalComJuros: 0,
+    totalJuros: 0,
     observacao: 'Cliente desistiu da compra.',
     nfeChave: null,
   },

@@ -514,6 +514,48 @@
   text-decoration: underline;
 }
 
+.jurosValor {
+  color: #ea580c;
+}
+
+.cronogramaList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.cronogramaItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.cronogramaItem:last-child {
+  border-bottom: none;
+}
+
+.cronogramaNum {
+  width: 28px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.cronogramaData {
+  flex: 1;
+  font-size: 13px;
+  color: #374151;
+}
+
+.cronogramaValor {
+  font-size: 13px;
+  font-weight: 600;
+  color: #15803d;
+}
+
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   .contentGrid {

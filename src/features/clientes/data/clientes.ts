@@ -1,6 +1,14 @@
 import type { Cliente } from '@/features/clientes/types'
+import { resolveCondicaoDescricao } from '@/features/clientes/utils'
+import { CONFIG_FORMA } from '@/features/vendas/utils/pagamento'
 
-export const CLIENTES: Cliente[] = [
+type ClienteSeed = Omit<
+  Cliente,
+  'parcelasPreferidas' | 'taxaJurosMensalPreferida' | 'condicaoPagamentoDescricao'
+> &
+  Partial<Pick<Cliente, 'parcelasPreferidas' | 'taxaJurosMensalPreferida' | 'condicaoPagamentoDescricao'>>
+
+const CLIENTES_SEED: ClienteSeed[] = [
   {
     id: '1',
     nome: 'Cliente Alfa Ltda.',
@@ -236,3 +244,21 @@ export const CLIENTES: Cliente[] = [
     quantidadePedidos: 6,
   },
 ]
+
+function seedToCliente(cliente: ClienteSeed): Cliente {
+  const opcoes = CONFIG_FORMA[cliente.formaPagamentoPreferida].opcoesParcelas
+  const fallback = opcoes[Math.min(1, opcoes.length - 1)] ?? opcoes[0]
+  const parcelas = cliente.parcelasPreferidas ?? fallback.parcelas
+  const taxa = cliente.taxaJurosMensalPreferida ?? fallback.taxaMensal
+
+  return {
+    ...cliente,
+    parcelasPreferidas: parcelas,
+    taxaJurosMensalPreferida: taxa,
+    condicaoPagamentoDescricao:
+      cliente.condicaoPagamentoDescricao ??
+      resolveCondicaoDescricao(cliente.formaPagamentoPreferida, parcelas, taxa),
+  }
+}
+
+export const CLIENTES: Cliente[] = CLIENTES_SEED.map(seedToCliente)

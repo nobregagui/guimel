@@ -39,6 +39,10 @@ export function ClienteDetalheDados({ cliente }: ClienteDetalheDadosProps) {
           <dd>{FORMA_PAGAMENTO_LABEL[cliente.formaPagamentoPreferida]}</dd>
         </div>
         <div className={styles.dadoItem}>
+          <dt>Condição de pagamento</dt>
+          <dd>{cliente.condicaoPagamentoDescricao}</dd>
+        </div>
+        <div className={styles.dadoItem}>
           <dt>Localização</dt>
           <dd>{cliente.cidade}/{cliente.estado}</dd>
         </div>

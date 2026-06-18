@@ -1,8 +1,27 @@
 export type StatusPedido = 'orcamento' | 'confirmado' | 'faturado' | 'entregue' | 'cancelado'
 
-export type FormaPagamento = 'boleto' | 'pix' | 'cartao_credito' | 'cartao_debito' | 'transferencia'
+export type FormaPagamento = 'pix' | 'boleto' | 'transferencia' | 'cartao' | 'debito'
 
 export type TipoDesconto = 'percentual' | 'valor'
+
+export interface Parcela {
+  numero: number
+  vencimentoIso: string
+  valor: number
+  juros: number
+  valorComJuros: number
+}
+
+export interface CondicaoPagamento {
+  formaPagamento: FormaPagamento
+  parcelas: number
+  intervaloDias: number
+  taxaJurosMensal: number
+  descricao: string
+  cronograma: Parcela[]
+  totalComJuros: number
+  totalJuros: number
+}
 
 export interface ItemPedido {
   id: string
@@ -25,13 +44,18 @@ export interface Pedido {
   vendedorNome: string | null
   status: StatusPedido
   formaPagamento: FormaPagamento
-  condicaoPagamento: string
+  parcelas: number
+  taxaJurosMensal: number
+  condicaoPagamentoDescricao: string
+  cronograma: Parcela[]
   dataIso: string
   dataEntregaIso: string | null
   itens: ItemPedido[]
   subtotal: number
   descontoTotal: number
   total: number
+  totalComJuros: number
+  totalJuros: number
   observacao: string | null
   nfeChave: string | null
 }
@@ -40,10 +64,12 @@ export interface PedidoFormValues {
   clienteId: string
   clienteNome: string
   clienteDocumento: string
+  clienteFormaPagamentoPreferida: FormaPagamento | ''
   vendedorId: string
   vendedorNome: string
   formaPagamento: FormaPagamento
-  condicaoPagamento: string
+  parcelas: number
+  taxaJurosMensal: number
   dataEntregaIso: string
   itens: Omit<ItemPedido, 'id'>[]
   observacao: string

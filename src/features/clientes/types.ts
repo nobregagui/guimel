@@ -26,6 +26,8 @@ export interface ClienteFormValues {
   estado: string
   observacao: string
   formaPagamentoPreferida: ClienteFormaPagamento
+  parcelasPreferidas: number
+  taxaJurosMensalPreferida: number
 }
 
 export interface ClientePedido {
@@ -51,6 +53,9 @@ export interface Cliente {
   segmento: string
   status: ClienteStatus
   formaPagamentoPreferida: ClienteFormaPagamento
+  parcelasPreferidas: number
+  taxaJurosMensalPreferida: number
+  condicaoPagamentoDescricao: string
   cadastroIso: string
   cadastro: string
   ultimaCompraIso: string | null

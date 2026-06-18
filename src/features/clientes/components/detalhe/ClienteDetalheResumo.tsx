@@ -30,6 +30,10 @@ export function ClienteDetalheResumo({ cliente, pedidosPendentes }: ClienteDetal
             <span>Pagamento preferencial</span>
             <strong>{FORMA_PAGAMENTO_LABEL[cliente.formaPagamentoPreferida]}</strong>
           </div>
+          <div className={styles.resumoItem}>
+            <span>Condição</span>
+            <strong>{cliente.condicaoPagamentoDescricao}</strong>
+          </div>
         </div>
       </section>
 

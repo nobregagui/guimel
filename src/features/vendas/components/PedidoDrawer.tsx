@@ -1,16 +1,21 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { CnpjConsultaStatus } from '@/features/clientes/components/CnpjConsultaStatus'
 import { useCnpjConsulta } from '@/features/clientes/hooks/useCnpjConsulta'
+import { useClientesStore } from '@/features/clientes/store/useClientesStore'
+import type { Cliente } from '@/features/clientes/types'
+import { CondicaoPagamentoFields } from '@/features/vendas/components/CondicaoPagamentoFields'
 import {
   FORMA_PAGAMENTO_LABEL,
   calcularSubtotalItem,
   formatarMoeda,
 } from '@/features/vendas/data/shared'
 import type { FormaPagamento, ItemPedido, PedidoFormValues } from '@/features/vendas/types'
+import { CONFIG_FORMA } from '@/features/vendas/utils/pagamento'
 import {
   getCnpjSaveBlockMessage,
   isCnpjComplete,
+  isCnpjSaveBlocked,
   isCnpjVerifiedForSave,
 } from '@/services/opencnpj.service'
 import { documentoMask, isCnpjDocument } from '@/utils/masks'
@@ -23,6 +28,8 @@ interface PedidoDrawerProps {
   mode?: 'create' | 'edit'
   initialValues?: Partial<PedidoFormValues>
 }
+
+type DrawerTab = 'dados' | 'pagamento' | 'itens'
 
 function itemVazio(): Omit<ItemPedido, 'id'> {
   return {
@@ -60,27 +67,97 @@ function IconTrash() {
   )
 }
 
+function IconUser() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" /><circle cx="12" cy="7" r="4" />
+    </svg>
+  )
+}
+
+function IconCard() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
+    </svg>
+  )
+}
+
 export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initialValues }: PedidoDrawerProps) {
+  const [tab, setTab] = useState<DrawerTab>('dados')
   const [clienteNome, setClienteNome] = useState(initialValues?.clienteNome ?? '')
   const [clienteDocumento, setClienteDocumento] = useState(initialValues?.clienteDocumento ?? '')
   const [vendedorNome, setVendedorNome] = useState(initialValues?.vendedorNome ?? '')
+  const [dataEntrega, setDataEntrega] = useState(initialValues?.dataEntregaIso?.slice(0, 10) ?? '')
+  const [observacao, setObservacao] = useState(initialValues?.observacao ?? '')
+  const [clienteFormaPref, setClienteFormaPref] = useState<FormaPagamento | ''>(
+    initialValues?.clienteFormaPagamentoPreferida ?? '',
+  )
   const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>(
     initialValues?.formaPagamento ?? 'boleto',
   )
-  const [condicaoPagamento, setCondicaoPagamento] = useState(initialValues?.condicaoPagamento ?? '')
-  const [dataEntrega, setDataEntrega] = useState(
-    initialValues?.dataEntregaIso ? initialValues.dataEntregaIso.slice(0, 10) : '',
-  )
-  const [observacao, setObservacao] = useState(initialValues?.observacao ?? '')
-  const [itens, setItens] = useState<Omit<ItemPedido, 'id'>[]>(
-    initialValues?.itens ?? [itemVazio()],
-  )
+  const [parcelas, setParcelas] = useState(initialValues?.parcelas ?? 1)
+  const [taxaMensal, setTaxaMensal] = useState(initialValues?.taxaJurosMensal ?? 0)
+  const [itens, setItens] = useState<Omit<ItemPedido, 'id'>[]>(initialValues?.itens ?? [itemVazio()])
   const [documentoError, setDocumentoError] = useState('')
+  const [clienteEncontrado, setClienteEncontrado] = useState<Cliente | null>(null)
+  const [clienteId, setClienteId] = useState(initialValues?.clienteId ?? '')
+
+  const getClienteByDocumento = useClientesStore((state) => state.getClienteByDocumento)
 
   const isCnpj = isCnpjDocument(clienteDocumento)
   const cnpjConsulta = useCnpjConsulta(clienteDocumento, isCnpj)
-  const isCnpjSaveBlocked =
-    isCnpj && isCnpjComplete(clienteDocumento) && !isCnpjVerifiedForSave(cnpjConsulta)
+  const isCnpjSaveDisabled = isCnpjSaveBlocked(clienteDocumento, cnpjConsulta, isCnpj)
+
+  const subtotal = itens.reduce((acc, item) => acc + item.quantidade * item.valorUnitario, 0)
+  const descontoTotal = itens.reduce(
+    (acc, item) => acc + (item.quantidade * item.valorUnitario - item.subtotal),
+    0,
+  )
+  const total = subtotal - descontoTotal
+
+  const prevFormaRef = useRef(formaPagamento)
+  const lastAppliedDocRef = useRef('')
+
+  useEffect(() => {
+    if (prevFormaRef.current === formaPagamento) return
+    prevFormaRef.current = formaPagamento
+    const primeiraOpcao = CONFIG_FORMA[formaPagamento].opcoesParcelas[0]
+    setParcelas(primeiraOpcao.parcelas)
+    setTaxaMensal(primeiraOpcao.taxaMensal)
+  }, [formaPagamento])
+
+  useEffect(() => {
+    const digits = clienteDocumento.replace(/\D/g, '')
+    if (digits.length !== 11 && digits.length !== 14) {
+      if (lastAppliedDocRef.current) {
+        lastAppliedDocRef.current = ''
+        setClienteEncontrado(null)
+        setClienteId('')
+      }
+      return
+    }
+
+    if (lastAppliedDocRef.current === digits) return
+
+    const cliente = getClienteByDocumento(clienteDocumento)
+    lastAppliedDocRef.current = digits
+
+    if (!cliente) {
+      setClienteEncontrado(null)
+      setClienteId('')
+      return
+    }
+
+    setClienteEncontrado(cliente)
+    setClienteId(cliente.id)
+    setClienteNome(cliente.nome)
+    setClienteFormaPref(cliente.formaPagamentoPreferida)
+    prevFormaRef.current = cliente.formaPagamentoPreferida
+    setFormaPagamento(cliente.formaPagamentoPreferida)
+    setParcelas(cliente.parcelasPreferidas)
+    setTaxaMensal(cliente.taxaJurosMensalPreferida)
+  }, [clienteDocumento, getClienteByDocumento])
 
   useEffect(() => {
     if (!isCnpj) {
@@ -98,10 +175,31 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
       return
     }
 
+    if (cnpjConsulta.status === 'error' && isCnpjComplete(clienteDocumento)) {
+      setDocumentoError(getCnpjSaveBlockMessage(cnpjConsulta))
+      return
+    }
+
     setDocumentoError('')
   }, [isCnpj, cnpjConsulta, clienteDocumento])
 
-  if (!open) return null
+  useEffect(() => {
+    if (!open) return undefined
+    const fn = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', fn)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', fn)
+      document.body.style.overflow = ''
+    }
+  }, [open, onClose])
+
+  function handleOpcaoParcela(p: number, t: number) {
+    setParcelas(p)
+    setTaxaMensal(t)
+  }
 
   function atualizarItem(idx: number, campo: keyof Omit<ItemPedido, 'id'>, valor: string | number) {
     setItens((prev) => {
@@ -118,42 +216,38 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
     })
   }
 
-  function adicionarItem() {
-    setItens((prev) => [...prev, itemVazio()])
-  }
-
-  function removerItem(idx: number) {
-    setItens((prev) => prev.filter((_, i) => i !== idx))
-  }
-
-  const subtotal = itens.reduce((acc, i) => acc + i.quantidade * i.valorUnitario, 0)
-  const descontoTotal = itens.reduce((acc, i) => {
-    const bruto = i.quantidade * i.valorUnitario
-    return acc + (bruto - i.subtotal)
-  }, 0)
-  const total = subtotal - descontoTotal
-
   function handleSubmit() {
-    if (!clienteNome.trim()) return
+    if (!clienteNome.trim() || itens.length === 0) return
 
-    if (isCnpj && isCnpjComplete(clienteDocumento) && !isCnpjVerifiedForSave(cnpjConsulta)) {
+    if (isCnpjSaveDisabled) {
       setDocumentoError(getCnpjSaveBlockMessage(cnpjConsulta))
+      setTab('dados')
       return
     }
 
     onSubmit({
-      clienteId: `c_${clienteDocumento.replace(/\D/g, '')}`,
+      clienteId: clienteId || `c_${clienteDocumento.replace(/\D/g, '')}`,
       clienteNome: clienteNome.trim(),
       clienteDocumento: clienteDocumento.trim(),
+      clienteFormaPagamentoPreferida: clienteFormaPref,
       vendedorId: vendedorNome ? `v_${vendedorNome.replace(/\s/g, '_').toLowerCase()}` : '',
       vendedorNome: vendedorNome.trim(),
       formaPagamento,
-      condicaoPagamento: condicaoPagamento.trim(),
+      parcelas,
+      taxaJurosMensal: taxaMensal,
       dataEntregaIso: dataEntrega ? new Date(dataEntrega).toISOString() : '',
       itens,
       observacao: observacao.trim(),
     })
   }
+
+  if (!open) return null
+
+  const submitDisabled =
+    !clienteNome.trim() ||
+    isCnpjSaveDisabled ||
+    itens.length === 0 ||
+    itens.every((item) => item.subtotal === 0)
 
   return (
     <div className={styles.drawerRoot}>
@@ -166,7 +260,7 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
             </h2>
             <p className={styles.drawerSubtitle}>
               {mode === 'create'
-                ? 'Preencha os dados para criar um orçamento ou pedido'
+                ? 'Preencha os dados, itens e condições de pagamento'
                 : 'Atualize as informações do pedido'}
             </p>
           </div>
@@ -175,185 +269,239 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
           </button>
         </div>
 
+        <div className={styles.drawerTabs}>
+          {(
+            [
+              { id: 'dados', label: '1. Cliente' },
+              { id: 'itens', label: '2. Itens' },
+              { id: 'pagamento', label: '3. Pagamento' },
+            ] as { id: DrawerTab; label: string }[]
+          ).map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className={`${styles.drawerTab} ${tab === t.id ? styles.drawerTabActive : ''}`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
         <div className={styles.drawerBody}>
-          <fieldset className={styles.formSection}>
-            <legend className={styles.formLegend}>Cliente</legend>
-            <div className={styles.formGrid}>
-              <div className={`${styles.formField} ${styles.fieldFull}`}>
-                <label htmlFor="pedido-cliente-nome">Nome / Razão social *</label>
-                <input
-                  id="pedido-cliente-nome"
-                  type="text"
-                  placeholder="Nome do cliente"
-                  value={clienteNome}
-                  onChange={(e) => setClienteNome(e.target.value)}
-                />
-              </div>
-              <div className={styles.formField}>
-                <label htmlFor="pedido-cliente-doc">{isCnpj ? 'CNPJ' : 'CPF / CNPJ'}</label>
-                <input
-                  id="pedido-cliente-doc"
-                  type="text"
-                  inputMode="numeric"
-                  placeholder={isCnpj ? '00.000.000/0001-00' : '000.000.000-00'}
-                  value={clienteDocumento}
-                  onChange={(event) => setClienteDocumento(documentoMask(event.target.value))}
-                />
-                {documentoError ? <span className={styles.fieldError}>{documentoError}</span> : null}
-                {isCnpj ? <CnpjConsultaStatus result={cnpjConsulta} /> : null}
-              </div>
-              <div className={styles.formField}>
-                <label htmlFor="pedido-vendedor">Vendedor</label>
-                <input
-                  id="pedido-vendedor"
-                  type="text"
-                  placeholder="Nome do vendedor"
-                  value={vendedorNome}
-                  onChange={(e) => setVendedorNome(e.target.value)}
-                />
-              </div>
-            </div>
-          </fieldset>
-
-          <fieldset className={styles.formSection}>
-            <legend className={styles.formLegend}>Condições comerciais</legend>
-
-            <p className={styles.formHint}>Forma de pagamento</p>
-            <div className={styles.formaPagamentoGrid}>
-              {(Object.entries(FORMA_PAGAMENTO_LABEL) as [FormaPagamento, string][]).map(([k, v]) => (
-                <label
-                  key={k}
-                  className={`${styles.formaPagamentoOption} ${formaPagamento === k ? styles.formaPagamentoOptionActive : ''}`}
-                >
-                  <input
-                    type="radio"
-                    name="formaPagamento"
-                    value={k}
-                    checked={formaPagamento === k}
-                    onChange={() => setFormaPagamento(k)}
-                  />
-                  {v}
-                </label>
-              ))}
-            </div>
-
-            <div className={styles.formGrid}>
-              <div className={styles.formField}>
-                <label htmlFor="pedido-condicao">Condição de pagamento</label>
-                <input
-                  id="pedido-condicao"
-                  type="text"
-                  placeholder="ex: 30/60/90 dias"
-                  value={condicaoPagamento}
-                  onChange={(e) => setCondicaoPagamento(e.target.value)}
-                />
-              </div>
-              <div className={styles.formField}>
-                <label htmlFor="pedido-entrega">Data de entrega</label>
-                <input
-                  id="pedido-entrega"
-                  type="date"
-                  value={dataEntrega}
-                  onChange={(e) => setDataEntrega(e.target.value)}
-                />
-              </div>
-            </div>
-          </fieldset>
-
-          <fieldset className={styles.formSection}>
-            <legend className={styles.formLegend}>Itens do pedido</legend>
-
-            {itens.length > 0 ? (
-              <div className={styles.itemRowHeader}>
-                <span className={styles.itemHeaderLabel}>Descrição</span>
-                <span className={styles.itemHeaderLabel}>Qtd</span>
-                <span className={styles.itemHeaderLabel}>Vlr unit.</span>
-                <span className={styles.itemHeaderLabel}>Desconto %</span>
-                <span />
-              </div>
-            ) : null}
-
-            <div className={styles.itensList}>
-              {itens.map((item, idx) => (
-                <div key={idx} className={styles.itemRow}>
-                  <input
-                    type="text"
-                    placeholder="Produto / serviço"
-                    value={item.descricao}
-                    onChange={(e) => atualizarItem(idx, 'descricao', e.target.value)}
-                    className={styles.itemInput}
-                  />
-                  <input
-                    type="number"
-                    min={1}
-                    value={item.quantidade}
-                    onChange={(e) => atualizarItem(idx, 'quantidade', Number(e.target.value))}
-                    className={styles.itemInput}
-                  />
-                  <input
-                    type="number"
-                    min={0}
-                    step={0.01}
-                    placeholder="0,00"
-                    value={item.valorUnitario}
-                    onChange={(e) => atualizarItem(idx, 'valorUnitario', Number(e.target.value))}
-                    className={styles.itemInput}
-                  />
-                  <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    placeholder="0"
-                    value={item.desconto}
-                    onChange={(e) => atualizarItem(idx, 'desconto', Number(e.target.value))}
-                    className={styles.itemInput}
-                  />
-                  <button
-                    type="button"
-                    className={styles.btnRemoveItem}
-                    onClick={() => removerItem(idx)}
-                    title="Remover item"
-                  >
-                    <IconTrash />
-                  </button>
+          {tab === 'dados' ? (
+            <>
+              <fieldset className={styles.formSection}>
+                <legend className={styles.formLegend}>Cliente</legend>
+                <div className={styles.formGrid}>
+                  <div className={`${styles.formField} ${styles.fieldFull}`}>
+                    <label htmlFor="pedido-cliente-nome">Nome / Razão social *</label>
+                    <input
+                      id="pedido-cliente-nome"
+                      type="text"
+                      placeholder="Nome do cliente"
+                      value={clienteNome}
+                      onChange={(e) => setClienteNome(e.target.value)}
+                    />
+                  </div>
+                  <div className={styles.formField}>
+                    <label htmlFor="pedido-cliente-doc">{isCnpj ? 'CNPJ' : 'CPF / CNPJ'}</label>
+                    <input
+                      id="pedido-cliente-doc"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder={isCnpj ? '00.000.000/0001-00' : '000.000.000-00'}
+                      value={clienteDocumento}
+                      onChange={(e) => setClienteDocumento(documentoMask(e.target.value))}
+                    />
+                    {documentoError ? <span className={styles.fieldError}>{documentoError}</span> : null}
+                    {isCnpj ? <CnpjConsultaStatus result={cnpjConsulta} /> : null}
+                  </div>
+                  <div className={styles.formField}>
+                    <label htmlFor="pedido-vendedor">Vendedor</label>
+                    <input
+                      id="pedido-vendedor"
+                      type="text"
+                      placeholder="Nome do vendedor"
+                      value={vendedorNome}
+                      onChange={(e) => setVendedorNome(e.target.value)}
+                    />
+                  </div>
+                  <div className={styles.formField}>
+                    <label htmlFor="pedido-entrega">Previsão de entrega</label>
+                    <input
+                      id="pedido-entrega"
+                      type="date"
+                      value={dataEntrega}
+                      onChange={(e) => setDataEntrega(e.target.value)}
+                    />
+                  </div>
                 </div>
-              ))}
 
-              <button type="button" className={styles.btnAddItem} onClick={adicionarItem}>
-                <IconPlus /> Adicionar item
+                {clienteEncontrado ? (
+                  <div className={styles.clientePrefBanner}>
+                    <span className={styles.clientePrefIcon}>
+                      <IconUser />
+                    </span>
+                    <p className={styles.clientePrefText}>
+                      Cliente cadastrado encontrado: <strong>{clienteEncontrado.nome}</strong>.
+                      Forma preferida: <strong>{FORMA_PAGAMENTO_LABEL[clienteEncontrado.formaPagamentoPreferida]}</strong>.
+                      Condição: <strong>{clienteEncontrado.condicaoPagamentoDescricao}</strong>.
+                      Pagamento e parcelas foram pré-configurados na aba correspondente.
+                    </p>
+                  </div>
+                ) : null}
+              </fieldset>
+
+              <fieldset className={styles.formSection}>
+                <legend className={styles.formLegend}>Observações</legend>
+                <div className={styles.formField}>
+                  <textarea
+                    placeholder="Informações adicionais sobre o pedido…"
+                    value={observacao}
+                    onChange={(e) => setObservacao(e.target.value)}
+                  />
+                </div>
+              </fieldset>
+
+              <button type="button" className={styles.btnTabNext} onClick={() => setTab('itens')}>
+                Próximo: Itens →
               </button>
-            </div>
-          </fieldset>
-
-          {total > 0 ? (
-            <div className={styles.drawerResumo}>
-              <div className={styles.drawerResumoRow}>
-                <span>Subtotal</span>
-                <strong>{formatarMoeda(subtotal)}</strong>
-              </div>
-              {descontoTotal > 0 ? (
-                <div className={styles.drawerResumoRow}>
-                  <span>Desconto</span>
-                  <strong className={styles.descontoValor}>- {formatarMoeda(descontoTotal)}</strong>
-                </div>
-              ) : null}
-              <div className={`${styles.drawerResumoRow} ${styles.drawerResumoTotal}`}>
-                <span>Total</span>
-                <strong>{formatarMoeda(total)}</strong>
-              </div>
-            </div>
+            </>
           ) : null}
 
-          <fieldset className={styles.formSection}>
-            <legend className={styles.formLegend}>Observações</legend>
-            <div className={styles.formField}>
-              <textarea
-                placeholder="Informações adicionais sobre o pedido…"
-                value={observacao}
-                onChange={(e) => setObservacao(e.target.value)}
+          {tab === 'itens' ? (
+            <>
+              <fieldset className={styles.formSection}>
+                <legend className={styles.formLegend}>Itens do pedido</legend>
+
+                {itens.length > 0 ? (
+                  <div className={styles.itemRowHeader}>
+                    <span className={styles.itemHeaderLabel}>Produto / Serviço</span>
+                    <span className={styles.itemHeaderLabel}>Qtd</span>
+                    <span className={styles.itemHeaderLabel}>Vlr unit.</span>
+                    <span className={styles.itemHeaderLabel}>Desc. %</span>
+                    <span />
+                  </div>
+                ) : null}
+
+                <div className={styles.itensList}>
+                  {itens.map((item, idx) => (
+                    <div key={idx} className={styles.itemRow}>
+                      <input
+                        type="text"
+                        placeholder="Descrição"
+                        value={item.descricao}
+                        onChange={(e) => atualizarItem(idx, 'descricao', e.target.value)}
+                        className={styles.itemInput}
+                      />
+                      <input
+                        type="number"
+                        min={1}
+                        value={item.quantidade}
+                        onChange={(e) => atualizarItem(idx, 'quantidade', Number(e.target.value))}
+                        className={styles.itemInput}
+                      />
+                      <input
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        placeholder="0,00"
+                        value={item.valorUnitario || ''}
+                        onChange={(e) => atualizarItem(idx, 'valorUnitario', Number(e.target.value))}
+                        className={styles.itemInput}
+                      />
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        placeholder="0"
+                        value={item.desconto || ''}
+                        onChange={(e) => atualizarItem(idx, 'desconto', Number(e.target.value))}
+                        className={styles.itemInput}
+                      />
+                      <button
+                        type="button"
+                        className={styles.btnRemoveItem}
+                        onClick={() => setItens((prev) => prev.filter((_, i) => i !== idx))}
+                        title="Remover"
+                      >
+                        <IconTrash />
+                      </button>
+                    </div>
+                  ))}
+
+                  <button
+                    type="button"
+                    className={styles.btnAddItem}
+                    onClick={() => setItens((prev) => [...prev, itemVazio()])}
+                  >
+                    <IconPlus /> Adicionar item
+                  </button>
+                </div>
+              </fieldset>
+
+              {total > 0 ? (
+                <div className={styles.drawerResumo}>
+                  <div className={styles.drawerResumoRow}>
+                    <span>Subtotal bruto</span>
+                    <strong>{formatarMoeda(subtotal)}</strong>
+                  </div>
+                  {descontoTotal > 0 ? (
+                    <div className={styles.drawerResumoRow}>
+                      <span>Descontos</span>
+                      <strong className={styles.descontoValor}>− {formatarMoeda(descontoTotal)}</strong>
+                    </div>
+                  ) : null}
+                  <div className={`${styles.drawerResumoRow} ${styles.drawerResumoTotal}`}>
+                    <span>Total dos itens</span>
+                    <strong>{formatarMoeda(total)}</strong>
+                  </div>
+                </div>
+              ) : null}
+
+              <button type="button" className={styles.btnTabNext} onClick={() => setTab('pagamento')}>
+                Próximo: Pagamento →
+              </button>
+            </>
+          ) : null}
+
+          {tab === 'pagamento' ? (
+            <>
+              {clienteEncontrado ? (
+                <div className={styles.clientePrefBanner}>
+                  <span className={styles.clientePrefIcon}>
+                    <IconCard />
+                  </span>
+                  <p className={styles.clientePrefText}>
+                    Condição preferencial do cadastro:
+                    <strong> {clienteEncontrado.condicaoPagamentoDescricao}</strong>
+                    ({FORMA_PAGAMENTO_LABEL[clienteEncontrado.formaPagamentoPreferida]}).
+                    Você pode ajustar abaixo se necessário.
+                  </p>
+                </div>
+              ) : null}
+
+              <CondicaoPagamentoFields
+                formaPagamento={formaPagamento}
+                parcelas={parcelas}
+                taxaMensal={taxaMensal}
+                total={total}
+                formaPreferida={clienteFormaPref}
+                onFormaChange={setFormaPagamento}
+                onOpcaoChange={handleOpcaoParcela}
+                showResumo={total > 0}
+                showCronograma={total > 0}
               />
-            </div>
-          </fieldset>
+
+              {total <= 0 ? (
+                <p className={styles.formHint}>
+                  Adicione itens na aba anterior para calcular o resumo financeiro e o cronograma de
+                  vencimentos com valores reais.
+                </p>
+              ) : null}
+            </>
+          ) : null}
         </div>
 
         <div className={styles.drawerFooter}>
@@ -364,7 +512,7 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
             type="button"
             className={styles.btnPrimary}
             onClick={handleSubmit}
-            disabled={!clienteNome.trim() || isCnpjSaveBlocked}
+            disabled={submitDisabled}
           >
             {mode === 'create' ? 'Criar orçamento' : 'Salvar alterações'}
           </button>

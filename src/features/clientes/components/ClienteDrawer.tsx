@@ -3,16 +3,19 @@ import { useForm } from 'react-hook-form'
 import { Building2, User, X } from 'lucide-react'
 
 import { CnpjConsultaStatus } from '@/features/clientes/components/CnpjConsultaStatus'
-import { CLIENTE_SEGMENTOS, CLIENTE_FORMAS_PAGAMENTO, EMPTY_CLIENTE_FORM, ESTADOS_BR } from '@/features/clientes/data/shared'
+import { EMPTY_CLIENTE_FORM, ESTADOS_BR, CLIENTE_SEGMENTOS } from '@/features/clientes/data/shared'
 import { useCnpjConsulta } from '@/features/clientes/hooks/useCnpjConsulta'
 import { clienteFormSchema } from '@/features/clientes/schemas/clienteFormSchema'
 import type { ClienteFormValues } from '@/features/clientes/types'
+import { CondicaoPagamentoFields } from '@/features/vendas/components/CondicaoPagamentoFields'
+import { CONFIG_FORMA } from '@/features/vendas/utils/pagamento'
 import {
   getCnpjSaveBlockMessage,
   isCnpjComplete,
+  isCnpjSaveBlocked,
   isCnpjVerifiedForSave,
 } from '@/services/opencnpj.service'
-import { cnpjMask, cpfMask } from '@/utils/masks'
+import { cnpjMask, cpfMask, phoneMask } from '@/utils/masks'
 import styles from '@/pages/clientes/ClientesPage.module.css'
 
 interface ClienteDrawerProps {
@@ -36,6 +39,7 @@ export function ClienteDrawer({
     watch,
     reset,
     setError,
+    setValue,
     clearErrors,
     formState: { isSubmitting, errors },
   } = useForm<ClienteFormValues>({
@@ -45,14 +49,17 @@ export function ClienteDrawer({
   const tipo = watch('tipo')
   const documento = watch('documento')
   const formaPagamento = watch('formaPagamentoPreferida')
+  const parcelasPreferidas = watch('parcelasPreferidas')
+  const taxaJurosMensalPreferida = watch('taxaJurosMensalPreferida')
   const isEdit = mode === 'edit'
   const wasOpenRef = useRef(false)
+  const prevFormaRef = useRef(formaPagamento)
   const shouldConsultCnpj = !isEdit && tipo === 'pj'
   const cnpjConsulta = useCnpjConsulta(documento, shouldConsultCnpj)
-  const isCnpjSaveBlocked =
-    shouldConsultCnpj && isCnpjComplete(documento) && !isCnpjVerifiedForSave(cnpjConsulta)
+  const isCnpjSaveDisabled = isCnpjSaveBlocked(documento, cnpjConsulta, shouldConsultCnpj)
 
   const { onChange: onDocumentoChange, ...documentoRegister } = register('documento')
+  const { onChange: onTelefoneChange, ...telefoneRegister } = register('telefone')
 
   useEffect(() => {
     if (!shouldConsultCnpj) return
@@ -64,8 +71,24 @@ export function ClienteDrawer({
 
     if (cnpjConsulta.status === 'not_found' && isCnpjComplete(documento)) {
       setError('documento', { message: getCnpjSaveBlockMessage(cnpjConsulta) })
+      return
     }
+
+    if (cnpjConsulta.status === 'error' && isCnpjComplete(documento)) {
+      setError('documento', { message: getCnpjSaveBlockMessage(cnpjConsulta) })
+      return
+    }
+
+    clearErrors('documento')
   }, [shouldConsultCnpj, cnpjConsulta, documento, clearErrors, setError])
+
+  useEffect(() => {
+    if (prevFormaRef.current === formaPagamento) return
+    prevFormaRef.current = formaPagamento
+    const primeiraOpcao = CONFIG_FORMA[formaPagamento].opcoesParcelas[0]
+    setValue('parcelasPreferidas', primeiraOpcao.parcelas)
+    setValue('taxaJurosMensalPreferida', primeiraOpcao.taxaMensal)
+  }, [formaPagamento, setValue])
 
   useEffect(() => {
     if (!open) return undefined
@@ -85,7 +108,9 @@ export function ClienteDrawer({
 
   useEffect(() => {
     if (open && !wasOpenRef.current) {
-      reset(isEdit && initialValues ? initialValues : EMPTY_CLIENTE_FORM)
+      const values = isEdit && initialValues ? initialValues : EMPTY_CLIENTE_FORM
+      reset(values)
+      prevFormaRef.current = values.formaPagamentoPreferida
     }
 
     wasOpenRef.current = open
@@ -105,7 +130,7 @@ export function ClienteDrawer({
       return
     }
 
-    if (shouldConsultCnpj && isCnpjComplete(parsed.data.documento) && !isCnpjVerifiedForSave(cnpjConsulta)) {
+    if (isCnpjSaveDisabled) {
       setError('documento', { message: getCnpjSaveBlockMessage(cnpjConsulta) })
       return
     }
@@ -157,23 +182,29 @@ export function ClienteDrawer({
             <legend className={styles.formLegend}>Identificação</legend>
             <div className={styles.formGrid}>
               <div className={styles.formField}>
-                <label htmlFor="cliente-nome">{tipo === 'pj' ? 'Razão social' : 'Nome completo'}</label>
+                <label htmlFor="cliente-nome">
+                  {tipo === 'pj' ? 'Razão social' : 'Nome completo'} *
+                </label>
                 <input id="cliente-nome" {...register('nome')} placeholder={tipo === 'pj' ? 'Empresa LTDA' : 'Nome completo'} />
                 {errors.nome ? <span className={styles.fieldError}>{errors.nome.message}</span> : null}
               </div>
 
               {tipo === 'pj' ? (
                 <div className={styles.formField}>
-                  <label htmlFor="cliente-fantasia">Nome fantasia</label>
-                  <input id="cliente-fantasia" {...register('nomeFantasia')} placeholder="Opcional" />
+                  <label htmlFor="cliente-fantasia">Nome fantasia *</label>
+                  <input id="cliente-fantasia" {...register('nomeFantasia')} placeholder="Nome comercial" />
+                  {errors.nomeFantasia ? (
+                    <span className={styles.fieldError}>{errors.nomeFantasia.message}</span>
+                  ) : null}
                 </div>
               ) : null}
 
               <div className={styles.formField}>
-                <label htmlFor="cliente-documento">{tipo === 'pj' ? 'CNPJ' : 'CPF'}</label>
+                <label htmlFor="cliente-documento">{tipo === 'pj' ? 'CNPJ' : 'CPF'} *</label>
                 <input
                   id="cliente-documento"
                   {...documentoRegister}
+                  inputMode="numeric"
                   placeholder={tipo === 'pj' ? '00.000.000/0001-00' : '000.000.000-00'}
                   onChange={(event) => {
                     const maskedValue = tipo === 'pj' ? cnpjMask(event.target.value) : cpfMask(event.target.value)
@@ -186,7 +217,7 @@ export function ClienteDrawer({
               </div>
 
               <div className={styles.formField}>
-                <label htmlFor="cliente-segmento">Segmento</label>
+                <label htmlFor="cliente-segmento">Segmento *</label>
                 <select id="cliente-segmento" {...register('segmento')}>
                   <option value="">Selecione</option>
                   {CLIENTE_SEGMENTOS.map((segmento) => (
@@ -202,22 +233,39 @@ export function ClienteDrawer({
             <legend className={styles.formLegend}>Contato</legend>
             <div className={styles.formGrid}>
               <div className={styles.formField}>
-                <label htmlFor="cliente-email">E-mail</label>
-                <input id="cliente-email" type="email" {...register('email')} placeholder="contato@empresa.com" />
+                <label htmlFor="cliente-email">E-mail *</label>
+                <input
+                  id="cliente-email"
+                  type="email"
+                  autoComplete="email"
+                  {...register('email')}
+                  placeholder="contato@empresa.com"
+                />
                 {errors.email ? <span className={styles.fieldError}>{errors.email.message}</span> : null}
               </div>
               <div className={styles.formField}>
-                <label htmlFor="cliente-telefone">Telefone</label>
-                <input id="cliente-telefone" {...register('telefone')} placeholder="(11) 99999-9999" />
+                <label htmlFor="cliente-telefone">Telefone *</label>
+                <input
+                  id="cliente-telefone"
+                  {...telefoneRegister}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="(11) 99999-9999"
+                  onChange={(event) => {
+                    event.target.value = phoneMask(event.target.value)
+                    onTelefoneChange(event)
+                  }}
+                />
                 {errors.telefone ? <span className={styles.fieldError}>{errors.telefone.message}</span> : null}
               </div>
               <div className={styles.formField}>
-                <label htmlFor="cliente-cidade">Cidade</label>
+                <label htmlFor="cliente-cidade">Cidade *</label>
                 <input id="cliente-cidade" {...register('cidade')} placeholder="São Paulo" />
                 {errors.cidade ? <span className={styles.fieldError}>{errors.cidade.message}</span> : null}
               </div>
               <div className={styles.formField}>
-                <label htmlFor="cliente-estado">Estado</label>
+                <label htmlFor="cliente-estado">Estado *</label>
                 <select id="cliente-estado" {...register('estado')}>
                   {ESTADOS_BR.map((uf) => (
                     <option key={uf} value={uf}>{uf}</option>
@@ -229,29 +277,43 @@ export function ClienteDrawer({
           </fieldset>
 
           <fieldset className={styles.formSection}>
-            <legend className={styles.formLegend}>Pagamento preferencial</legend>
-            <p className={styles.formHint}>Será pré-preenchida em vendas, cobranças e contas a receber.</p>
-            <div className={styles.formaPagamentoGrid}>
-              {CLIENTE_FORMAS_PAGAMENTO.map((forma) => (
-                <label
-                  key={forma.id}
-                  className={`${styles.formaPagamentoOption} ${formaPagamento === forma.id ? styles.formaPagamentoOptionActive : ''}`}
-                >
-                  <input type="radio" value={forma.id} {...register('formaPagamentoPreferida')} />
-                  {forma.label}
-                </label>
-              ))}
-            </div>
+            <legend className={styles.formLegend}>Condições de pagamento preferenciais *</legend>
+            <p className={styles.formHint}>
+              Serão pré-preenchidas automaticamente em novos pedidos de venda para este cliente.
+            </p>
+            <CondicaoPagamentoFields
+              formaPagamento={formaPagamento}
+              parcelas={parcelasPreferidas}
+              taxaMensal={taxaJurosMensalPreferida}
+              total={0}
+              previewTotal={1000}
+              previewHint="Simulação com R$ 1.000,00. Os valores reais serão calculados com o total do pedido."
+              onFormaChange={(forma) =>
+                setValue('formaPagamentoPreferida', forma, { shouldValidate: true })
+              }
+              onOpcaoChange={(parcelas, taxa) => {
+                setValue('parcelasPreferidas', parcelas)
+                setValue('taxaJurosMensalPreferida', taxa)
+              }}
+            />
             {errors.formaPagamentoPreferida ? (
               <span className={styles.fieldError}>{errors.formaPagamentoPreferida.message}</span>
             ) : null}
           </fieldset>
 
           <fieldset className={styles.formSection}>
-            <legend className={styles.formLegend}>Observações</legend>
+            <legend className={styles.formLegend}>Observações *</legend>
             <div className={styles.formField}>
               <label htmlFor="cliente-observacao">Notas internas</label>
-              <textarea id="cliente-observacao" rows={3} {...register('observacao')} placeholder="Informações comerciais, restrições ou follow-up..." />
+              <textarea
+                id="cliente-observacao"
+                rows={3}
+                {...register('observacao')}
+                placeholder="Informações comerciais, restrições ou follow-up..."
+              />
+              {errors.observacao ? (
+                <span className={styles.fieldError}>{errors.observacao.message}</span>
+              ) : null}
             </div>
           </fieldset>
         </form>
@@ -264,7 +326,8 @@ export function ClienteDrawer({
             type="submit"
             form="cliente-drawer-form"
             className={styles.btnPrimary}
-            disabled={isSubmitting || isCnpjSaveBlocked}
+            disabled={isSubmitting || isCnpjSaveDisabled}
+            aria-disabled={isSubmitting || isCnpjSaveDisabled}
           >
             {isEdit ? 'Salvar alterações' : 'Salvar cliente'}
           </button>

@@ -113,8 +113,16 @@
   transition: background-color 0.15s;
 }
 
-.btnPrimary:hover {
+.btnPrimary:hover:not(:disabled) {
   background-color: #15803d;
+}
+
+.btnPrimary:disabled {
+  background-color: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 1;
+  box-shadow: none;
 }
 
 /* ─── Tabs ───────────────────────────────────────────────────────────────────── */

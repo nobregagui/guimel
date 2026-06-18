@@ -1,3 +1,4 @@
+export { CondicaoPagamentoFields } from '@/features/vendas/components/CondicaoPagamentoFields'
 export { PedidoDrawer } from '@/features/vendas/components/PedidoDrawer'
 export { useVendasStore } from '@/features/vendas/store/useVendasStore'
 
@@ -11,3 +12,10 @@ export {
   formatarData,
   formatarMoeda,
 } from '@/features/vendas/data/shared'
+export {
+  CONFIG_FORMA,
+  calcularCondicao,
+  calcularCronograma,
+  formatarDataCurta,
+  normalizeFormaPagamento,
+} from '@/features/vendas/utils/pagamento'

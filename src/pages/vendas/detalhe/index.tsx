@@ -8,6 +8,7 @@ import {
   formatarData,
   formatarMoeda,
 } from '@/features/vendas/data/shared'
+import { formatarDataCurta } from '@/features/vendas/utils/pagamento'
 import { useVendasStore } from '@/features/vendas/store/useVendasStore'
 import type { StatusPedido } from '@/features/vendas/types'
 import styles from '@/pages/vendas/VendaDetalhePage.module.css'
@@ -243,7 +244,7 @@ export function VendaDetalhePage() {
                 </div>
                 <div className={styles.dadoItem}>
                   <dt>Condição de pagamento</dt>
-                  <dd>{pedido.condicaoPagamento || '—'}</dd>
+                  <dd>{pedido.condicaoPagamentoDescricao || '—'}</dd>
                 </div>
                 <div className={styles.dadoItem}>
                   <dt>Data do pedido</dt>
@@ -288,12 +289,39 @@ export function VendaDetalhePage() {
                     <strong className={styles.descontoValor}>- {formatarMoeda(pedido.descontoTotal)}</strong>
                   </div>
                 ) : null}
+                {pedido.totalJuros > 0 ? (
+                  <div className={styles.resumoItem}>
+                    <span>Juros</span>
+                    <strong className={styles.jurosValor}>+ {formatarMoeda(pedido.totalJuros)}</strong>
+                  </div>
+                ) : null}
                 <div className={`${styles.resumoItem} ${styles.resumoItemTotal}`}>
-                  <span className={styles.resumoTotalLabel}>Total</span>
-                  <strong className={styles.colorGreen}>{formatarMoeda(pedido.total)}</strong>
+                  <span className={styles.resumoTotalLabel}>
+                    {pedido.totalComJuros > pedido.total ? 'Total a pagar' : 'Total'}
+                  </span>
+                  <strong className={styles.colorGreen}>
+                    {formatarMoeda(pedido.totalComJuros || pedido.total)}
+                  </strong>
                 </div>
               </div>
             </div>
+
+            {pedido.cronograma.length > 0 ? (
+              <div className={styles.card}>
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.cardTitle}>Cronograma de vencimentos</h2>
+                </div>
+                <div className={styles.cronogramaList}>
+                  {pedido.cronograma.map((parcela) => (
+                    <div key={parcela.numero} className={styles.cronogramaItem}>
+                      <span className={styles.cronogramaNum}>{parcela.numero}ª</span>
+                      <span className={styles.cronogramaData}>{formatarDataCurta(parcela.vencimentoIso)}</span>
+                      <strong className={styles.cronogramaValor}>{formatarMoeda(parcela.valorComJuros)}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             {pedido.status !== 'cancelado' && pedido.status !== 'entregue' ? (
               <div className={styles.card}>

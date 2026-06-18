@@ -79,4 +79,6 @@ export const EMPTY_CLIENTE_FORM = {
   estado: 'SP',
   observacao: '',
   formaPagamentoPreferida: 'pix' as const,
+  parcelasPreferidas: 1,
+  taxaJurosMensalPreferida: 0,
 }

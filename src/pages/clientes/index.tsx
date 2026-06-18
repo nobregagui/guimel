@@ -11,6 +11,7 @@ import {
   type ClienteFiltro,
   type ClientesAba,
 } from '@/features/clientes'
+import { useToast } from '@/components/ui/Toast'
 import { getBuscaFromState } from '@/routes/navigationState'
 
 import styles from './ClientesPage.module.css'
@@ -19,6 +20,7 @@ export function ClientesPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const addCliente = useClientesStore((state) => state.addCliente)
+  const { showToast } = useToast()
 
   const [abaAtiva, setAbaAtiva] = useState<ClientesAba>('visao-geral')
   const [filtro, setFiltro] = useState<ClienteFiltro>('todos')
@@ -58,6 +60,10 @@ export function ClientesPage() {
         onClose={() => setDrawerOpen(false)}
         onSubmit={(values) => {
           const cliente = addCliente(values)
+          showToast({
+            message: `Cliente "${cliente.nome}" cadastrado com sucesso.`,
+            variant: 'success',
+          })
           navigate(`/clientes/${cliente.id}`)
         }}
       />
