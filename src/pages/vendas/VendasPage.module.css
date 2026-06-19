@@ -758,6 +758,74 @@
   color: #dc2626;
 }
 
+.clienteLookupWrap {
+  position: relative;
+  z-index: 5;
+}
+
+.clienteLookupResults {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid rgba(22, 163, 74, 0.12);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.clienteLookupResult {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.clienteLookupResult:hover {
+  background: rgba(22, 163, 74, 0.06);
+}
+
+.clienteLookupResultLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #18181b;
+}
+
+.clienteLookupResultDescription {
+  font-size: 11px;
+  line-height: 1.45;
+  color: #71717a;
+}
+
+.clienteLookupEmpty {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  padding: 12px;
+  border: 1px solid rgba(22, 163, 74, 0.12);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12);
+  font-size: 12px;
+  color: #71717a;
+}
+
 .itemInput {
   height: 40px;
   border: 1px solid #e5e7eb;
@@ -947,9 +1015,9 @@
 .drawerTabs {
   display: flex;
   gap: 0;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid #fed7aa;
   padding: 0 24px;
-  background-color: #fafafa;
+  background-color: #fff7ed;
 }
 
 .drawerTab {

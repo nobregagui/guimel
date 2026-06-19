@@ -2,13 +2,14 @@ import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { Building2, User, X } from 'lucide-react'
 
+import { EnderecoFields } from '@/components/form/EnderecoFields'
 import { CnpjConsultaStatus } from '@/features/clientes/components/CnpjConsultaStatus'
-import { EMPTY_CLIENTE_FORM, ESTADOS_BR, CLIENTE_SEGMENTOS } from '@/features/clientes/data/shared'
+import { EMPTY_CLIENTE_FORM, CLIENTE_SEGMENTOS } from '@/features/clientes/data/shared'
 import { useCnpjConsulta } from '@/features/clientes/hooks/useCnpjConsulta'
 import { clienteFormSchema } from '@/features/clientes/schemas/clienteFormSchema'
 import type { ClienteFormValues } from '@/features/clientes/types'
 import { CondicaoPagamentoFields } from '@/features/vendas/components/CondicaoPagamentoFields'
-import { CONFIG_FORMA } from '@/features/vendas/utils/pagamento'
+import { CONFIG_FORMA, defaultDiasVencimento } from '@/features/vendas/utils/pagamento'
 import {
   getCnpjSaveBlockMessage,
   isCnpjComplete,
@@ -46,11 +47,22 @@ export function ClienteDrawer({
     defaultValues: EMPTY_CLIENTE_FORM,
   })
 
+  // Register address fields so react-hook-form tracks them on submit
+  register('cep')
+  register('logradouro')
+  register('numero')
+  register('complemento')
+  register('bairro')
+  register('cidade')
+  register('estado')
+
   const tipo = watch('tipo')
   const documento = watch('documento')
   const formaPagamento = watch('formaPagamentoPreferida')
   const parcelasPreferidas = watch('parcelasPreferidas')
   const taxaJurosMensalPreferida = watch('taxaJurosMensalPreferida')
+  const diasVencimentoPreferidos = watch('diasVencimentoPreferidos')
+  const endereco = watch(['cep', 'logradouro', 'numero', 'complemento', 'bairro', 'cidade', 'estado'])
   const isEdit = mode === 'edit'
   const wasOpenRef = useRef(false)
   const prevFormaRef = useRef(formaPagamento)
@@ -88,6 +100,10 @@ export function ClienteDrawer({
     const primeiraOpcao = CONFIG_FORMA[formaPagamento].opcoesParcelas[0]
     setValue('parcelasPreferidas', primeiraOpcao.parcelas)
     setValue('taxaJurosMensalPreferida', primeiraOpcao.taxaMensal)
+    setValue(
+      'diasVencimentoPreferidos',
+      defaultDiasVencimento(primeiraOpcao.parcelas, formaPagamento),
+    )
   }, [formaPagamento, setValue])
 
   useEffect(() => {
@@ -259,21 +275,38 @@ export function ClienteDrawer({
                 />
                 {errors.telefone ? <span className={styles.fieldError}>{errors.telefone.message}</span> : null}
               </div>
-              <div className={styles.formField}>
-                <label htmlFor="cliente-cidade">Cidade *</label>
-                <input id="cliente-cidade" {...register('cidade')} placeholder="São Paulo" />
-                {errors.cidade ? <span className={styles.fieldError}>{errors.cidade.message}</span> : null}
-              </div>
-              <div className={styles.formField}>
-                <label htmlFor="cliente-estado">Estado *</label>
-                <select id="cliente-estado" {...register('estado')}>
-                  {ESTADOS_BR.map((uf) => (
-                    <option key={uf} value={uf}>{uf}</option>
-                  ))}
-                </select>
-                {errors.estado ? <span className={styles.fieldError}>{errors.estado.message}</span> : null}
-              </div>
             </div>
+          </fieldset>
+
+          <fieldset className={styles.formSection}>
+            <legend className={styles.formLegend}>Endereço *</legend>
+            <p className={styles.formHint}>
+              Informe o CEP para preencher logradouro, bairro, cidade e estado automaticamente.
+            </p>
+            <EnderecoFields
+              idPrefix="cliente"
+              values={{
+                cep: endereco[0] ?? '',
+                logradouro: endereco[1] ?? '',
+                numero: endereco[2] ?? '',
+                complemento: endereco[3] ?? '',
+                bairro: endereco[4] ?? '',
+                cidade: endereco[5] ?? '',
+                estado: endereco[6] ?? 'SP',
+              }}
+              errors={{
+                cep: errors.cep?.message,
+                logradouro: errors.logradouro?.message,
+                numero: errors.numero?.message,
+                complemento: errors.complemento?.message,
+                bairro: errors.bairro?.message,
+                cidade: errors.cidade?.message,
+                estado: errors.estado?.message,
+              }}
+              onChange={(field, value) =>
+                setValue(field, value, { shouldValidate: true, shouldDirty: true })
+              }
+            />
           </fieldset>
 
           <fieldset className={styles.formSection}>
@@ -285,6 +318,7 @@ export function ClienteDrawer({
               formaPagamento={formaPagamento}
               parcelas={parcelasPreferidas}
               taxaMensal={taxaJurosMensalPreferida}
+              diasVencimento={diasVencimentoPreferidos}
               total={0}
               previewTotal={1000}
               previewHint="Simulação com R$ 1.000,00. Os valores reais serão calculados com o total do pedido."
@@ -294,15 +328,25 @@ export function ClienteDrawer({
               onOpcaoChange={(parcelas, taxa) => {
                 setValue('parcelasPreferidas', parcelas)
                 setValue('taxaJurosMensalPreferida', taxa)
+                setValue(
+                  'diasVencimentoPreferidos',
+                  defaultDiasVencimento(parcelas, formaPagamento),
+                )
               }}
+              onDiasVencimentoChange={(dias) =>
+                setValue('diasVencimentoPreferidos', dias, { shouldValidate: true })
+              }
             />
             {errors.formaPagamentoPreferida ? (
               <span className={styles.fieldError}>{errors.formaPagamentoPreferida.message}</span>
             ) : null}
+            {errors.diasVencimentoPreferidos ? (
+              <span className={styles.fieldError}>{errors.diasVencimentoPreferidos.message}</span>
+            ) : null}
           </fieldset>
 
           <fieldset className={styles.formSection}>
-            <legend className={styles.formLegend}>Observações *</legend>
+            <legend className={styles.formLegend}>Observações</legend>
             <div className={styles.formField}>
               <label htmlFor="cliente-observacao">Notas internas</label>
               <textarea

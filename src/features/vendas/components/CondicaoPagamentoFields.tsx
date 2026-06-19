@@ -3,7 +3,9 @@ import { FORMA_PAGAMENTO_LABEL, formatarMoeda } from '@/features/vendas/data/sha
 import {
   CONFIG_FORMA,
   calcularCondicao,
+  dataVencimentoPorDias,
   formatarDataCurta,
+  normalizarDiasVencimento,
 } from '@/features/vendas/utils/pagamento'
 import styles from '@/features/vendas/components/CondicaoPagamentoFields.module.css'
 
@@ -35,36 +37,59 @@ export interface CondicaoPagamentoFieldsProps {
   formaPagamento: FormaPagamento
   parcelas: number
   taxaMensal: number
+  diasVencimento?: number[]
   total: number
   onFormaChange: (forma: FormaPagamento) => void
   onOpcaoChange: (parcelas: number, taxaMensal: number) => void
+  onDiasVencimentoChange?: (dias: number[]) => void
   formaPreferida?: FormaPagamento | ''
   previewTotal?: number
   previewHint?: string
   showResumo?: boolean
   showCronograma?: boolean
+  dataReferencia?: Date
 }
 
 export function CondicaoPagamentoFields({
   formaPagamento,
   parcelas,
   taxaMensal,
+  diasVencimento = [],
   total,
   onFormaChange,
   onOpcaoChange,
+  onDiasVencimentoChange,
   formaPreferida = '',
   previewTotal,
   previewHint,
   showResumo = true,
   showCronograma = true,
+  dataReferencia,
 }: CondicaoPagamentoFieldsProps) {
   const configForma = CONFIG_FORMA[formaPagamento]
   const temJuros = taxaMensal > 0
   const valorBase = total > 0 ? total : (previewTotal ?? 0)
-  const condicao = calcularCondicao(valorBase, formaPagamento, parcelas, taxaMensal)
-  const opcaoAtiva =
-    configForma.opcoesParcelas.find((o) => o.parcelas === parcelas && o.taxaMensal === taxaMensal) ??
-    configForma.opcoesParcelas[0]
+  const isBoletoPrazo = formaPagamento === 'boleto_prazo'
+  const diasNorm = isBoletoPrazo
+    ? normalizarDiasVencimento(diasVencimento, parcelas, formaPagamento)
+    : []
+  const dataBase = dataReferencia ?? new Date()
+  const condicao = calcularCondicao(
+    valorBase,
+    formaPagamento,
+    parcelas,
+    taxaMensal,
+    isBoletoPrazo ? diasNorm : undefined,
+    dataBase,
+  )
+
+  function handleDiaChange(index: number, raw: string) {
+    if (!onDiasVencimentoChange) return
+    const parsed = parseInt(raw, 10)
+    const next = [...diasNorm]
+    next[index] = Number.isFinite(parsed) && parsed >= 1 ? parsed : 1
+    onDiasVencimentoChange(next)
+  }
 
   return (
     <>
@@ -119,6 +144,44 @@ export function CondicaoPagamentoFields({
         </div>
       </fieldset>
 
+      {isBoletoPrazo && onDiasVencimentoChange ? (
+        <fieldset className={styles.formSection}>
+          <legend className={styles.formLegend}>Vencimentos (dias após a venda)</legend>
+          <p className={styles.diasHint}>
+            Informe em quantos dias cada parcela vence a partir da data da venda. Ex.: venda no dia 19,
+            com 10 e 12 dias → vencimentos nos dias 29 e 31.
+          </p>
+          <div className={styles.diasVencimentoList}>
+            {diasNorm.map((dias, index) => {
+              const vencimento = dataVencimentoPorDias(dias, dataBase)
+              return (
+                <div key={index} className={styles.diasVencimentoRow}>
+                  <label htmlFor={`dias-venc-${index}`} className={styles.diasVencimentoLabel}>
+                    {index + 1}ª parcela
+                  </label>
+                  <div className={styles.diasVencimentoInputWrap}>
+                    <input
+                      id={`dias-venc-${index}`}
+                      type="number"
+                      min={1}
+                      max={365}
+                      className={styles.diasVencimentoInput}
+                      value={dias}
+                      onChange={(e) => handleDiaChange(index, e.target.value)}
+                    />
+                    <span className={styles.diasVencimentoSuffix}>dias</span>
+                  </div>
+                  <span className={styles.diasVencimentoPreview}>
+                    <IconCalendar />
+                    {formatarDataCurta(vencimento.toISOString())}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </fieldset>
+      ) : null}
+
       {previewHint && valorBase > 0 && total <= 0 ? (
         <p className={styles.previewHint}>{previewHint}</p>
       ) : null}
@@ -147,7 +210,7 @@ export function CondicaoPagamentoFields({
             </div>
             <div className={styles.resumoFinanceiroRow}>
               <span>Condição</span>
-              <strong className={styles.condicaoLabel}>{opcaoAtiva.label}</strong>
+              <strong className={styles.condicaoLabel}>{condicao.descricao}</strong>
             </div>
           </div>
 
@@ -175,6 +238,11 @@ export function CondicaoPagamentoFields({
                     <IconCalendar />
                     {formatarDataCurta(parcela.vencimentoIso)}
                   </span>
+                  {isBoletoPrazo ? (
+                    <span className={styles.cronogramaDias}>
+                      {diasNorm[parcela.numero - 1]} dias após a venda
+                    </span>
+                  ) : null}
                   {parcela.juros > 0 ? (
                     <span className={styles.cronogramaJuros}>juros: {formatarMoeda(parcela.juros)}</span>
                   ) : null}

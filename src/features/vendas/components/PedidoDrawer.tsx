@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 
 import { CnpjConsultaStatus } from '@/features/clientes/components/CnpjConsultaStatus'
 import { useCnpjConsulta } from '@/features/clientes/hooks/useCnpjConsulta'
 import { useClientesStore } from '@/features/clientes/store/useClientesStore'
 import type { Cliente } from '@/features/clientes/types'
+import { filterClientesByNome } from '@/features/clientes/utils'
 import { CondicaoPagamentoFields } from '@/features/vendas/components/CondicaoPagamentoFields'
 import {
   FORMA_PAGAMENTO_LABEL,
@@ -11,7 +12,7 @@ import {
   formatarMoeda,
 } from '@/features/vendas/data/shared'
 import type { FormaPagamento, ItemPedido, PedidoFormValues } from '@/features/vendas/types'
-import { CONFIG_FORMA } from '@/features/vendas/utils/pagamento'
+import { CONFIG_FORMA, defaultDiasVencimento } from '@/features/vendas/utils/pagamento'
 import {
   getCnpjSaveBlockMessage,
   isCnpjComplete,
@@ -83,6 +84,18 @@ function IconCard() {
   )
 }
 
+function formatClienteLookupDescription(cliente: Cliente): string {
+  const partes: string[] = []
+
+  if (cliente.nomeFantasia && cliente.nomeFantasia !== cliente.nome) {
+    partes.push(cliente.nomeFantasia)
+  }
+
+  partes.push(cliente.documento, `${cliente.cidade}/${cliente.estado}`, cliente.condicaoPagamentoDescricao)
+
+  return partes.join(' · ')
+}
+
 export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initialValues }: PedidoDrawerProps) {
   const [tab, setTab] = useState<DrawerTab>('dados')
   const [clienteNome, setClienteNome] = useState(initialValues?.clienteNome ?? '')
@@ -98,16 +111,34 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
   )
   const [parcelas, setParcelas] = useState(initialValues?.parcelas ?? 1)
   const [taxaMensal, setTaxaMensal] = useState(initialValues?.taxaJurosMensal ?? 0)
+  const [diasVencimento, setDiasVencimento] = useState<number[]>(
+    initialValues?.diasVencimento ?? defaultDiasVencimento(initialValues?.parcelas ?? 1, initialValues?.formaPagamento ?? 'boleto'),
+  )
   const [itens, setItens] = useState<Omit<ItemPedido, 'id'>[]>(initialValues?.itens ?? [itemVazio()])
   const [documentoError, setDocumentoError] = useState('')
   const [clienteEncontrado, setClienteEncontrado] = useState<Cliente | null>(null)
   const [clienteId, setClienteId] = useState(initialValues?.clienteId ?? '')
+  const [clienteLookupOpen, setClienteLookupOpen] = useState(false)
 
-  const getClienteByDocumento = useClientesStore((state) => state.getClienteByDocumento)
+  const clientesListId = useId()
+  const clienteLookupRef = useRef<HTMLDivElement>(null)
+  const getClienteByNome = useClientesStore((state) => state.getClienteByNome)
+  const clientesCadastrados = useClientesStore((state) => state.clientes)
+
+  const clientesFiltrados = useMemo(() => {
+    const termo = clienteNome.trim()
+    const base =
+      termo.length >= 2
+        ? filterClientesByNome(clientesCadastrados, termo)
+        : clientesCadastrados
+
+    return [...base].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).slice(0, 8)
+  }, [clienteNome, clientesCadastrados])
 
   const isCnpj = isCnpjDocument(clienteDocumento)
   const cnpjConsulta = useCnpjConsulta(clienteDocumento, isCnpj)
-  const isCnpjSaveDisabled = isCnpjSaveBlocked(clienteDocumento, cnpjConsulta, isCnpj)
+  const isCnpjSaveDisabled =
+    !clienteEncontrado && isCnpjSaveBlocked(clienteDocumento, cnpjConsulta, isCnpj)
 
   const subtotal = itens.reduce((acc, item) => acc + item.quantidade * item.valorUnitario, 0)
   const descontoTotal = itens.reduce(
@@ -117,7 +148,63 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
   const total = subtotal - descontoTotal
 
   const prevFormaRef = useRef(formaPagamento)
-  const lastAppliedDocRef = useRef('')
+  const lastAppliedClienteIdRef = useRef('')
+
+  function limparClienteCadastrado() {
+    setClienteEncontrado(null)
+    setClienteId('')
+    setClienteFormaPref('')
+    setClienteDocumento('')
+    lastAppliedClienteIdRef.current = ''
+  }
+
+  function aplicarCliente(cliente: Cliente) {
+    setClienteEncontrado(cliente)
+    setClienteId(cliente.id)
+    setClienteNome(cliente.nome)
+    setClienteDocumento(cliente.documento)
+    setClienteFormaPref(cliente.formaPagamentoPreferida)
+    prevFormaRef.current = cliente.formaPagamentoPreferida
+    setFormaPagamento(cliente.formaPagamentoPreferida)
+    setParcelas(cliente.parcelasPreferidas)
+    setTaxaMensal(cliente.taxaJurosMensalPreferida)
+    setDiasVencimento(
+      cliente.diasVencimentoPreferidos.length > 0
+        ? cliente.diasVencimentoPreferidos
+        : defaultDiasVencimento(cliente.parcelasPreferidas, cliente.formaPagamentoPreferida),
+    )
+    lastAppliedClienteIdRef.current = cliente.id
+  }
+
+  function selecionarCliente(cliente: Cliente) {
+    aplicarCliente(cliente)
+    setClienteLookupOpen(false)
+  }
+
+  useEffect(() => {
+    if (!open) setClienteLookupOpen(false)
+  }, [open])
+
+  useEffect(() => {
+    if (!open || !clienteLookupOpen) return undefined
+
+    function handleClickOutside(event: MouseEvent) {
+      if (!clienteLookupRef.current?.contains(event.target as Node)) {
+        setClienteLookupOpen(false)
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setClienteLookupOpen(false)
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [open, clienteLookupOpen])
 
   useEffect(() => {
     if (prevFormaRef.current === formaPagamento) return
@@ -125,39 +212,25 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
     const primeiraOpcao = CONFIG_FORMA[formaPagamento].opcoesParcelas[0]
     setParcelas(primeiraOpcao.parcelas)
     setTaxaMensal(primeiraOpcao.taxaMensal)
+    setDiasVencimento(defaultDiasVencimento(primeiraOpcao.parcelas, formaPagamento))
   }, [formaPagamento])
 
   useEffect(() => {
-    const digits = clienteDocumento.replace(/\D/g, '')
-    if (digits.length !== 11 && digits.length !== 14) {
-      if (lastAppliedDocRef.current) {
-        lastAppliedDocRef.current = ''
-        setClienteEncontrado(null)
-        setClienteId('')
-      }
+    const termo = clienteNome.trim()
+    if (termo.length < 2) {
+      if (lastAppliedClienteIdRef.current) limparClienteCadastrado()
       return
     }
 
-    if (lastAppliedDocRef.current === digits) return
-
-    const cliente = getClienteByDocumento(clienteDocumento)
-    lastAppliedDocRef.current = digits
-
-    if (!cliente) {
-      setClienteEncontrado(null)
-      setClienteId('')
+    const cliente = getClienteByNome(clienteNome)
+    if (cliente) {
+      if (lastAppliedClienteIdRef.current === cliente.id) return
+      aplicarCliente(cliente)
       return
     }
 
-    setClienteEncontrado(cliente)
-    setClienteId(cliente.id)
-    setClienteNome(cliente.nome)
-    setClienteFormaPref(cliente.formaPagamentoPreferida)
-    prevFormaRef.current = cliente.formaPagamentoPreferida
-    setFormaPagamento(cliente.formaPagamentoPreferida)
-    setParcelas(cliente.parcelasPreferidas)
-    setTaxaMensal(cliente.taxaJurosMensalPreferida)
-  }, [clienteDocumento, getClienteByDocumento])
+    if (lastAppliedClienteIdRef.current) limparClienteCadastrado()
+  }, [clienteNome, getClienteByNome])
 
   useEffect(() => {
     if (!isCnpj) {
@@ -199,6 +272,7 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
   function handleOpcaoParcela(p: number, t: number) {
     setParcelas(p)
     setTaxaMensal(t)
+    setDiasVencimento(defaultDiasVencimento(p, formaPagamento))
   }
 
   function atualizarItem(idx: number, campo: keyof Omit<ItemPedido, 'id'>, valor: string | number) {
@@ -235,6 +309,7 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
       formaPagamento,
       parcelas,
       taxaJurosMensal: taxaMensal,
+      diasVencimento,
       dataEntregaIso: dataEntrega ? new Date(dataEntrega).toISOString() : '',
       itens,
       observacao: observacao.trim(),
@@ -294,15 +369,50 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
               <fieldset className={styles.formSection}>
                 <legend className={styles.formLegend}>Cliente</legend>
                 <div className={styles.formGrid}>
-                  <div className={`${styles.formField} ${styles.fieldFull}`}>
+                  <div
+                    ref={clienteLookupRef}
+                    className={`${styles.formField} ${styles.fieldFull} ${styles.clienteLookupWrap}`}
+                  >
                     <label htmlFor="pedido-cliente-nome">Nome / Razão social *</label>
                     <input
                       id="pedido-cliente-nome"
                       type="text"
-                      placeholder="Nome do cliente"
+                      placeholder="Digite ou selecione o cliente cadastrado"
                       value={clienteNome}
-                      onChange={(e) => setClienteNome(e.target.value)}
+                      role="combobox"
+                      aria-controls={clientesListId}
+                      aria-expanded={clienteLookupOpen}
+                      aria-autocomplete="list"
+                      autoComplete="off"
+                      onChange={(e) => {
+                        setClienteNome(e.target.value)
+                        setClienteLookupOpen(true)
+                      }}
+                      onFocus={() => setClienteLookupOpen(true)}
                     />
+
+                    {clienteLookupOpen && clientesFiltrados.length > 0 ? (
+                      <ul id={clientesListId} className={styles.clienteLookupResults} role="listbox">
+                        {clientesFiltrados.map((cliente) => (
+                          <li key={cliente.id} role="option">
+                            <button
+                              type="button"
+                              className={styles.clienteLookupResult}
+                              onClick={() => selecionarCliente(cliente)}
+                            >
+                              <span className={styles.clienteLookupResultLabel}>{cliente.nome}</span>
+                              <span className={styles.clienteLookupResultDescription}>
+                                {formatClienteLookupDescription(cliente)}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+
+                    {clienteLookupOpen && clienteNome.trim().length >= 2 && clientesFiltrados.length === 0 ? (
+                      <div className={styles.clienteLookupEmpty}>Nenhum cliente encontrado</div>
+                    ) : null}
                   </div>
                   <div className={styles.formField}>
                     <label htmlFor="pedido-cliente-doc">{isCnpj ? 'CNPJ' : 'CPF / CNPJ'}</label>
@@ -313,6 +423,7 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
                       placeholder={isCnpj ? '00.000.000/0001-00' : '000.000.000-00'}
                       value={clienteDocumento}
                       onChange={(e) => setClienteDocumento(documentoMask(e.target.value))}
+                      readOnly={!!clienteEncontrado}
                     />
                     {documentoError ? <span className={styles.fieldError}>{documentoError}</span> : null}
                     {isCnpj ? <CnpjConsultaStatus result={cnpjConsulta} /> : null}
@@ -344,10 +455,10 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
                       <IconUser />
                     </span>
                     <p className={styles.clientePrefText}>
-                      Cliente cadastrado encontrado: <strong>{clienteEncontrado.nome}</strong>.
+                      Cliente cadastrado encontrado pelo nome: <strong>{clienteEncontrado.nome}</strong>.
+                      Documento e condição de pagamento foram carregados do cadastro.
                       Forma preferida: <strong>{FORMA_PAGAMENTO_LABEL[clienteEncontrado.formaPagamentoPreferida]}</strong>.
                       Condição: <strong>{clienteEncontrado.condicaoPagamentoDescricao}</strong>.
-                      Pagamento e parcelas foram pré-configurados na aba correspondente.
                     </p>
                   </div>
                 ) : null}
@@ -486,10 +597,12 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
                 formaPagamento={formaPagamento}
                 parcelas={parcelas}
                 taxaMensal={taxaMensal}
+                diasVencimento={diasVencimento}
                 total={total}
                 formaPreferida={clienteFormaPref}
                 onFormaChange={setFormaPagamento}
                 onOpcaoChange={handleOpcaoParcela}
+                onDiasVencimentoChange={setDiasVencimento}
                 showResumo={total > 0}
                 showCronograma={total > 0}
               />

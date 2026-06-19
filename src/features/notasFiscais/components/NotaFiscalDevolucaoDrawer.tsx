@@ -7,8 +7,8 @@ import {
   ALIQUOTA_PIS,
   createEmptyDevolucaoForm,
 } from '@/features/notasFiscais/data/shared'
+import { DestinatarioEnderecoFields } from '@/features/notasFiscais/components/DestinatarioEnderecoFields'
 import {
-  ESTADO_OPTIONS,
   FORMA_PAGAMENTO_NF_LABEL,
   MOTIVO_DEVOLUCAO_LABEL,
   TIPO_DEVOLUCAO_LABEL,
@@ -363,38 +363,27 @@ export function NotaFiscalDevolucaoDrawer({
                   onChange={(event) => set('destinatarioIe', event.target.value)}
                 />
               </div>
-              <div className={`${styles.formField} ${styles.formFieldFull}`}>
-                <label htmlFor="dev-endereco">Endereço</label>
-                <input
-                  id="dev-endereco"
-                  type="text"
-                  value={values.destinatarioEndereco}
-                  onChange={(event) => set('destinatarioEndereco', event.target.value)}
-                />
-              </div>
-              <div className={styles.formField}>
-                <label htmlFor="dev-cidade">Cidade</label>
-                <input
-                  id="dev-cidade"
-                  type="text"
-                  value={values.destinatarioCidade}
-                  onChange={(event) => set('destinatarioCidade', event.target.value)}
-                />
-              </div>
-              <div className={styles.formField}>
-                <label htmlFor="dev-estado">Estado</label>
-                <select
-                  id="dev-estado"
-                  value={values.destinatarioEstado}
-                  onChange={(event) => set('destinatarioEstado', event.target.value)}
-                >
-                  {ESTADO_OPTIONS.map((uf) => (
-                    <option key={uf} value={uf}>
-                      {uf}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            </div>
+
+            <p className={styles.formHint}>
+              Informe o CEP para preencher logradouro, bairro, cidade e estado automaticamente.
+            </p>
+
+            <DestinatarioEnderecoFields
+              idPrefix="dev"
+              values={{
+                destinatarioCep: values.destinatarioCep,
+                destinatarioLogradouro: values.destinatarioLogradouro,
+                destinatarioNumero: values.destinatarioNumero,
+                destinatarioComplemento: values.destinatarioComplemento,
+                destinatarioBairro: values.destinatarioBairro,
+                destinatarioCidade: values.destinatarioCidade,
+                destinatarioEstado: values.destinatarioEstado,
+              }}
+              onChange={(field, value) => set(field, value)}
+            />
+
+            <div className={styles.formGrid}>
               <div className={styles.formField}>
                 <label htmlFor="dev-pagamento">Forma de pagamento</label>
                 <select

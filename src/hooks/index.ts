@@ -1,4 +1,5 @@
 export * from './useAuth'
+export * from './useCepConsulta'
 export * from './useDebounce'
 export * from './usePagination'
 export * from './usePermissions'

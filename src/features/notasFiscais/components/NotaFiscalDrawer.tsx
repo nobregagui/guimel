@@ -10,8 +10,8 @@ import {
   NATUREZAS_ENTRADA,
   NATUREZAS_SAIDA,
 } from '@/features/notasFiscais/data/shared'
+import { DestinatarioEnderecoFields } from '@/features/notasFiscais/components/DestinatarioEnderecoFields'
 import {
-  ESTADO_OPTIONS,
   FORMA_PAGAMENTO_NF_LABEL,
   NATUREZA_OPERACAO_LABEL,
   type FormaPagamentoNF,
@@ -216,41 +216,25 @@ export function NotaFiscalDrawer({ tipo, onClose, onSubmit }: NotaFiscalDrawerPr
                   onChange={(event) => set('destinatarioIe', event.target.value)}
                 />
               </div>
-              <div className={`${styles.formField} ${styles.formFieldFull}`}>
-                <label htmlFor="nf-endereco">Endereço</label>
-                <input
-                  id="nf-endereco"
-                  type="text"
-                  placeholder="Rua, número, complemento, bairro"
-                  value={values.destinatarioEndereco}
-                  onChange={(event) => set('destinatarioEndereco', event.target.value)}
-                />
-              </div>
-              <div className={styles.formField}>
-                <label htmlFor="nf-cidade">Cidade</label>
-                <input
-                  id="nf-cidade"
-                  type="text"
-                  placeholder="São Paulo"
-                  value={values.destinatarioCidade}
-                  onChange={(event) => set('destinatarioCidade', event.target.value)}
-                />
-              </div>
-              <div className={styles.formField}>
-                <label htmlFor="nf-estado">Estado</label>
-                <select
-                  id="nf-estado"
-                  value={values.destinatarioEstado}
-                  onChange={(event) => set('destinatarioEstado', event.target.value)}
-                >
-                  {ESTADO_OPTIONS.map((uf) => (
-                    <option key={uf} value={uf}>
-                      {uf}
-                    </option>
-                  ))}
-                </select>
-              </div>
             </div>
+
+            <p className={styles.formHint}>
+              Informe o CEP para preencher logradouro, bairro, cidade e estado automaticamente.
+            </p>
+
+            <DestinatarioEnderecoFields
+              idPrefix="nf"
+              values={{
+                destinatarioCep: values.destinatarioCep,
+                destinatarioLogradouro: values.destinatarioLogradouro,
+                destinatarioNumero: values.destinatarioNumero,
+                destinatarioComplemento: values.destinatarioComplemento,
+                destinatarioBairro: values.destinatarioBairro,
+                destinatarioCidade: values.destinatarioCidade,
+                destinatarioEstado: values.destinatarioEstado,
+              }}
+              onChange={(field, value) => set(field, value)}
+            />
           </fieldset>
 
           <fieldset className={styles.formSection}>

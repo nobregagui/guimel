@@ -42,6 +42,7 @@ export const useVendasStore = create<VendasState>((set) => ({
       values.formaPagamento,
       values.parcelas,
       values.taxaJurosMensal,
+      values.formaPagamento === 'boleto_prazo' ? values.diasVencimento : undefined,
     )
 
     const novo: Pedido = {
@@ -56,6 +57,7 @@ export const useVendasStore = create<VendasState>((set) => ({
       formaPagamento: values.formaPagamento,
       parcelas: condicao.parcelas,
       taxaJurosMensal: condicao.taxaJurosMensal,
+      diasVencimento: condicao.diasVencimento ?? [],
       condicaoPagamentoDescricao: condicao.descricao,
       cronograma: condicao.cronograma,
       dataIso: new Date().toISOString(),
@@ -96,7 +98,16 @@ export const useVendasStore = create<VendasState>((set) => ({
         const forma = values.formaPagamento ?? p.formaPagamento
         const parcelas = values.parcelas ?? p.parcelas
         const taxa = values.taxaJurosMensal ?? p.taxaJurosMensal
-        const condicao = calcularCondicao(total, forma, parcelas, taxa)
+        const dias =
+          values.diasVencimento ??
+          (forma === 'boleto_prazo' ? p.diasVencimento : undefined)
+        const condicao = calcularCondicao(
+          total,
+          forma,
+          parcelas,
+          taxa,
+          forma === 'boleto_prazo' ? dias : undefined,
+        )
 
         return {
           ...p,
@@ -107,6 +118,7 @@ export const useVendasStore = create<VendasState>((set) => ({
           total,
           parcelas: condicao.parcelas,
           taxaJurosMensal: condicao.taxaJurosMensal,
+          diasVencimento: condicao.diasVencimento ?? [],
           totalComJuros: condicao.totalComJuros,
           totalJuros: condicao.totalJuros,
           condicaoPagamentoDescricao: condicao.descricao,

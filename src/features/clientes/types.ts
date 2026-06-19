@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 export type ClienteTipo = 'pf' | 'pj'
 export type ClienteStatus = 'ativo' | 'inativo' | 'pendente'
-export type ClienteFormaPagamento = 'boleto' | 'pix' | 'transferencia' | 'cartao' | 'debito'
+export type ClienteFormaPagamento = 'boleto' | 'boleto_prazo' | 'pix' | 'transferencia' | 'cartao' | 'debito'
 export type ClienteFiltro = 'todos' | 'ativos' | 'inativos' | 'pendentes'
 export type ClientesAba = 'visao-geral' | 'clientes' | 'analise'
 export type RecentesCadastroFiltro = 'todos' | 'mes_atual' | 'ultimos_30' | 'ultimos_90'
@@ -22,12 +22,18 @@ export interface ClienteFormValues {
   email: string
   telefone: string
   segmento: string
+  cep: string
+  logradouro: string
+  numero: string
+  complemento: string
+  bairro: string
   cidade: string
   estado: string
   observacao: string
   formaPagamentoPreferida: ClienteFormaPagamento
   parcelasPreferidas: number
   taxaJurosMensalPreferida: number
+  diasVencimentoPreferidos: number[]
 }
 
 export interface ClientePedido {
@@ -48,6 +54,11 @@ export interface Cliente {
   documento: string
   email: string
   telefone: string
+  cep: string
+  logradouro: string
+  numero: string
+  complemento: string
+  bairro: string
   cidade: string
   estado: string
   segmento: string
@@ -55,6 +66,7 @@ export interface Cliente {
   formaPagamentoPreferida: ClienteFormaPagamento
   parcelasPreferidas: number
   taxaJurosMensalPreferida: number
+  diasVencimentoPreferidos: number[]
   condicaoPagamentoDescricao: string
   cadastroIso: string
   cadastro: string

@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { Bell, Search, Settings } from 'lucide-react'
+import { Bell, LogOut, Search, Settings } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { dashboardNotifications, globalSearchItems } from '@/features/dashboard/data'
@@ -8,6 +8,7 @@ import { filterGlobalSearchItems } from '@/features/dashboard/utils/globalSearch
 import shared from '@/features/dashboard/dashboard.module.css'
 import { APP_PATHS } from '@/routes/paths'
 import { createBuscaNavigationState } from '@/routes/navigationState'
+import { useAuthStore } from '@/store'
 
 import styles from './DashboardHeader.module.css'
 
@@ -15,18 +16,35 @@ interface DashboardHeaderProps {
   onMenuClick: () => void
 }
 
+function getIniciais(nome: string): string {
+  const partes = nome.trim().split(/\s+/).filter(Boolean)
+  if (partes.length === 0) return '?'
+  if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase()
+  return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase()
+}
+
 export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const navigate = useNavigate()
   const searchListId = useId()
   const notificationsListId = useId()
+  const userMenuId = useId()
 
   const searchRef = useRef<HTMLDivElement>(null)
   const notificationsRef = useRef<HTMLDivElement>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null)
+
+  const user = useAuthStore((state) => state.user)
+  const logout = useAuthStore((state) => state.logout)
 
   const [busca, setBusca] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [notifications, setNotifications] = useState<DashboardNotification[]>(dashboardNotifications)
+
+  const userName = user?.name ?? 'Alexandre Martins'
+  const userEmail = user?.email ?? 'alexandre@email.com'
+  const userInitials = getIniciais(userName)
 
   const searchResults = useMemo(
     () => filterGlobalSearchItems(globalSearchItems, busca),
@@ -36,7 +54,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const unreadCount = notifications.filter((notification) => !notification.read).length
 
   useEffect(() => {
-    if (!searchOpen && !notificationsOpen) return
+    if (!searchOpen && !notificationsOpen && !userMenuOpen) return
 
     function handleClickOutside(event: MouseEvent) {
       if (searchOpen && !searchRef.current?.contains(event.target as Node)) {
@@ -45,12 +63,16 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
       if (notificationsOpen && !notificationsRef.current?.contains(event.target as Node)) {
         setNotificationsOpen(false)
       }
+      if (userMenuOpen && !userMenuRef.current?.contains(event.target as Node)) {
+        setUserMenuOpen(false)
+      }
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setSearchOpen(false)
         setNotificationsOpen(false)
+        setUserMenuOpen(false)
       }
     }
 
@@ -60,7 +82,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
       document.removeEventListener('mousedown', handleClickOutside)
       document.removeEventListener('keydown', handleEscape)
     }
-  }, [notificationsOpen, searchOpen])
+  }, [notificationsOpen, searchOpen, userMenuOpen])
 
   function navigateToSearchItem(item: GlobalSearchItem) {
     const query = busca.trim()
@@ -81,6 +103,19 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   function toggleNotifications() {
     setNotificationsOpen((open) => !open)
     setSearchOpen(false)
+    setUserMenuOpen(false)
+  }
+
+  function toggleUserMenu() {
+    setUserMenuOpen((open) => !open)
+    setSearchOpen(false)
+    setNotificationsOpen(false)
+  }
+
+  function handleLogout() {
+    logout()
+    setUserMenuOpen(false)
+    navigate('/auth/login')
   }
 
   function markNotificationRead(id: string) {
@@ -106,7 +141,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           </svg>
         </button>
         <div>
-          <h1 className={styles.greeting}>Bom dia, Alexandre 👋</h1>
+          <h1 className={styles.greeting}>Bom dia, {userName.split(' ')[0]} 👋</h1>
           <p className={styles.subtext}>Aqui está o resumo financeiro da sua empresa.</p>
         </div>
       </div>
@@ -206,8 +241,31 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
           <span className={styles.companyName}>Empresa</span>
           <span className={styles.companyPlan}>Plano Pro</span>
         </div>
-        <div className={styles.avatar} aria-label="Usuário Alexandre">
-          AM
+
+        <div className={styles.actionWrap} ref={userMenuRef}>
+          <button
+            type="button"
+            className={styles.avatarBtn}
+            aria-label={`Menu do usuário ${userName}`}
+            aria-expanded={userMenuOpen}
+            aria-controls={userMenuId}
+            onClick={toggleUserMenu}
+          >
+            <span className={styles.avatar}>{userInitials}</span>
+          </button>
+
+          {userMenuOpen ? (
+            <div id={userMenuId} className={styles.userMenuPanel}>
+              <div className={styles.userMenuHeader}>
+                <span className={styles.userMenuName}>{userName}</span>
+                <span className={styles.userMenuEmail}>{userEmail}</span>
+              </div>
+              <button type="button" className={styles.userMenuItem} onClick={handleLogout}>
+                <LogOut size={16} aria-hidden />
+                Sair
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
     </header>

@@ -9,6 +9,7 @@
   box-shadow: 0 1px 0 rgba(249, 115, 22, 0.12);
   flex-wrap: wrap;
   position: relative;
+  z-index: 50;
 }
 
 .header::after {
@@ -205,7 +206,7 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  z-index: 30;
+  z-index: 1;
   width: min(320px, calc(100vw - 28px));
   border: 1px solid rgba(22, 163, 74, 0.12);
   border-radius: 12px;
@@ -328,6 +329,78 @@
   color: #fff;
   font-size: 0.6875rem;
   font-weight: 700;
+}
+
+.avatarBtn {
+  display: inline-flex;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.avatarBtn:hover .avatar,
+.avatarBtn:focus-visible .avatar {
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+}
+
+.avatarBtn:focus-visible {
+  outline: none;
+}
+
+.userMenuPanel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1;
+  width: min(240px, calc(100vw - 28px));
+  border: 1px solid rgba(22, 163, 74, 0.12);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14);
+  overflow: hidden;
+}
+
+.userMenuHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.userMenuName {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-primary, #18181b);
+}
+
+.userMenuEmail {
+  font-size: 0.6875rem;
+  color: var(--text-secondary, #71717a);
+  word-break: break-all;
+}
+
+.userMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #dc2626;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.userMenuItem:hover {
+  background: #fef2f2;
 }
 
 @media (min-width: 1100px) {

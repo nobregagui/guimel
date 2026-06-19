@@ -38,12 +38,18 @@ export function ClienteDetalhePage() {
       email: cliente.email,
       telefone: cliente.telefone,
       segmento: cliente.segmento,
+      cep: cliente.cep,
+      logradouro: cliente.logradouro,
+      numero: cliente.numero,
+      complemento: cliente.complemento,
+      bairro: cliente.bairro,
       cidade: cliente.cidade,
       estado: cliente.estado,
       observacao: cliente.observacao ?? '',
       formaPagamentoPreferida: cliente.formaPagamentoPreferida,
       parcelasPreferidas: cliente.parcelasPreferidas,
       taxaJurosMensalPreferida: cliente.taxaJurosMensalPreferida,
+      diasVencimentoPreferidos: cliente.diasVencimentoPreferidos,
     }
   }, [cliente])
 

@@ -1,5 +1,6 @@
 import { FORMA_PAGAMENTO_LABEL } from '@/features/clientes/data/shared'
 import type { Cliente } from '@/features/clientes/types'
+import { formatEnderecoCompleto } from '@/types/endereco'
 import styles from '@/pages/clientes/ClienteDetalhePage.module.css'
 
 interface ClienteDetalheDadosProps {
@@ -7,6 +8,16 @@ interface ClienteDetalheDadosProps {
 }
 
 export function ClienteDetalheDados({ cliente }: ClienteDetalheDadosProps) {
+  const enderecoCompleto = formatEnderecoCompleto({
+    cep: cliente.cep,
+    logradouro: cliente.logradouro,
+    numero: cliente.numero,
+    complemento: cliente.complemento,
+    bairro: cliente.bairro,
+    cidade: cliente.cidade,
+    estado: cliente.estado,
+  })
+
   return (
     <section className={styles.card}>
       <div className={styles.cardHeader}>
@@ -43,8 +54,8 @@ export function ClienteDetalheDados({ cliente }: ClienteDetalheDadosProps) {
           <dd>{cliente.condicaoPagamentoDescricao}</dd>
         </div>
         <div className={styles.dadoItem}>
-          <dt>Localização</dt>
-          <dd>{cliente.cidade}/{cliente.estado}</dd>
+          <dt>Endereço</dt>
+          <dd>{enderecoCompleto || `${cliente.cidade}/${cliente.estado}`}</dd>
         </div>
         <div className={styles.dadoItem}>
           <dt>Cadastro</dt>

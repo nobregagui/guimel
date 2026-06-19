@@ -1,12 +1,33 @@
 import type { Cliente } from '@/features/clientes/types'
 import { resolveCondicaoDescricao } from '@/features/clientes/utils'
-import { CONFIG_FORMA } from '@/features/vendas/utils/pagamento'
+import { CONFIG_FORMA, defaultDiasVencimento } from '@/features/vendas/utils/pagamento'
 
 type ClienteSeed = Omit<
   Cliente,
-  'parcelasPreferidas' | 'taxaJurosMensalPreferida' | 'condicaoPagamentoDescricao'
+  | 'parcelasPreferidas'
+  | 'taxaJurosMensalPreferida'
+  | 'diasVencimentoPreferidos'
+  | 'condicaoPagamentoDescricao'
+  | 'cep'
+  | 'logradouro'
+  | 'numero'
+  | 'complemento'
+  | 'bairro'
 > &
-  Partial<Pick<Cliente, 'parcelasPreferidas' | 'taxaJurosMensalPreferida' | 'condicaoPagamentoDescricao'>>
+  Partial<
+    Pick<
+      Cliente,
+      | 'parcelasPreferidas'
+      | 'taxaJurosMensalPreferida'
+      | 'diasVencimentoPreferidos'
+      | 'condicaoPagamentoDescricao'
+      | 'cep'
+      | 'logradouro'
+      | 'numero'
+      | 'complemento'
+      | 'bairro'
+    >
+  >
 
 const CLIENTES_SEED: ClienteSeed[] = [
   {
@@ -250,14 +271,28 @@ function seedToCliente(cliente: ClienteSeed): Cliente {
   const fallback = opcoes[Math.min(1, opcoes.length - 1)] ?? opcoes[0]
   const parcelas = cliente.parcelasPreferidas ?? fallback.parcelas
   const taxa = cliente.taxaJurosMensalPreferida ?? fallback.taxaMensal
+  const diasVencimentoPreferidos =
+    cliente.diasVencimentoPreferidos ??
+    defaultDiasVencimento(parcelas, cliente.formaPagamentoPreferida)
 
   return {
     ...cliente,
+    cep: cliente.cep ?? '',
+    logradouro: cliente.logradouro ?? '',
+    numero: cliente.numero ?? '',
+    complemento: cliente.complemento ?? '',
+    bairro: cliente.bairro ?? '',
     parcelasPreferidas: parcelas,
     taxaJurosMensalPreferida: taxa,
+    diasVencimentoPreferidos,
     condicaoPagamentoDescricao:
       cliente.condicaoPagamentoDescricao ??
-      resolveCondicaoDescricao(cliente.formaPagamentoPreferida, parcelas, taxa),
+      resolveCondicaoDescricao(
+        cliente.formaPagamentoPreferida,
+        parcelas,
+        taxa,
+        diasVencimentoPreferidos,
+      ),
   }
 }
 

@@ -1,6 +1,6 @@
 export type StatusPedido = 'orcamento' | 'confirmado' | 'faturado' | 'entregue' | 'cancelado'
 
-export type FormaPagamento = 'pix' | 'boleto' | 'transferencia' | 'cartao' | 'debito'
+export type FormaPagamento = 'pix' | 'boleto' | 'boleto_prazo' | 'transferencia' | 'cartao' | 'debito'
 
 export type TipoDesconto = 'percentual' | 'valor'
 
@@ -17,6 +17,7 @@ export interface CondicaoPagamento {
   parcelas: number
   intervaloDias: number
   taxaJurosMensal: number
+  diasVencimento?: number[]
   descricao: string
   cronograma: Parcela[]
   totalComJuros: number
@@ -46,6 +47,7 @@ export interface Pedido {
   formaPagamento: FormaPagamento
   parcelas: number
   taxaJurosMensal: number
+  diasVencimento: number[]
   condicaoPagamentoDescricao: string
   cronograma: Parcela[]
   dataIso: string
@@ -70,6 +72,7 @@ export interface PedidoFormValues {
   formaPagamento: FormaPagamento
   parcelas: number
   taxaJurosMensal: number
+  diasVencimento: number[]
   dataEntregaIso: string
   itens: Omit<ItemPedido, 'id'>[]
   observacao: string

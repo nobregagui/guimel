@@ -556,6 +556,23 @@
   .inputPassword {
     padding-right: 48px;
   }
+
+  /* Oculta o botão nativo de revelar senha (Edge/Chrome) — usamos o .eyeBtn */
+  .inputPassword::-ms-reveal,
+  .inputPassword::-ms-clear {
+    display: none;
+  }
+
+  .inputPassword::-webkit-textfield-decoration-container {
+    display: none;
+  }
+
+  .inputPassword::-webkit-credentials-auto-fill-button,
+  .inputPassword::-webkit-strong-password-auto-fill-button {
+    display: none !important;
+    visibility: hidden;
+    pointer-events: none;
+  }
   
   .passwordWrapper {
     position: relative;

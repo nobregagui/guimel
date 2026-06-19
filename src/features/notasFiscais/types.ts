@@ -166,7 +166,11 @@ export interface NotaFiscalDevolucaoFormValues {
   destinatarioCnpj: string
   destinatarioIe?: string
   destinatarioCpf?: string
-  destinatarioEndereco: string
+  destinatarioCep: string
+  destinatarioLogradouro: string
+  destinatarioNumero: string
+  destinatarioComplemento: string
+  destinatarioBairro: string
   destinatarioCidade: string
   destinatarioEstado: string
   itens: NotaFiscalDevolucaoItemFormValues[]
@@ -187,7 +191,11 @@ export interface NotaFiscalFormValues {
   destinatarioCnpj: string
   destinatarioIe?: string
   destinatarioCpf?: string
-  destinatarioEndereco: string
+  destinatarioCep: string
+  destinatarioLogradouro: string
+  destinatarioNumero: string
+  destinatarioComplemento: string
+  destinatarioBairro: string
   destinatarioCidade: string
   destinatarioEstado: string
   itens: NotaFiscalItemFormValues[]

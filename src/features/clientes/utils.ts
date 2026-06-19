@@ -9,7 +9,7 @@ import type {
   RecentesTableFiltros,
   SegmentoSummary,
 } from '@/features/clientes/types'
-import { CONFIG_FORMA } from '@/features/vendas/utils/pagamento'
+import { CONFIG_FORMA, descricaoCondicaoBoletoPrazo, normalizarDiasVencimento } from '@/features/vendas/utils/pagamento'
 
 const REFERENCE_DATE = new Date('2026-06-15')
 
@@ -34,11 +34,43 @@ export function findClienteByDocumento(clientes: Cliente[], documento: string): 
   return clientes.find((cliente) => normalizeDocumentoDigits(cliente.documento) === digits)
 }
 
+export function normalizeNomeBusca(nome: string): string {
+  return nome.trim().toLowerCase().replace(/\s+/g, ' ')
+}
+
+export function findClienteByNome(clientes: Cliente[], nome: string): Cliente | undefined {
+  const termo = normalizeNomeBusca(nome)
+  if (termo.length < 2) return undefined
+
+  return clientes.find((cliente) => {
+    const razao = normalizeNomeBusca(cliente.nome)
+    const fantasia = cliente.nomeFantasia ? normalizeNomeBusca(cliente.nomeFantasia) : ''
+    return razao === termo || fantasia === termo
+  })
+}
+
+export function filterClientesByNome(clientes: Cliente[], nome: string): Cliente[] {
+  const termo = normalizeNomeBusca(nome)
+  if (termo.length < 2) return []
+
+  return clientes.filter((cliente) => {
+    const razao = normalizeNomeBusca(cliente.nome)
+    const fantasia = cliente.nomeFantasia ? normalizeNomeBusca(cliente.nomeFantasia) : ''
+    return razao.includes(termo) || fantasia.includes(termo)
+  })
+}
+
 export function resolveCondicaoDescricao(
   forma: ClienteFormaPagamento,
   parcelas: number,
   taxa: number,
+  diasVencimento?: number[],
 ): string {
+  if (forma === 'boleto_prazo') {
+    const dias = normalizarDiasVencimento(diasVencimento ?? [], parcelas, forma)
+    return descricaoCondicaoBoletoPrazo(parcelas, dias)
+  }
+
   const config = CONFIG_FORMA[forma]
   const opcao =
     config.opcoesParcelas.find((o) => o.parcelas === parcelas && o.taxaMensal === taxa) ??
@@ -232,16 +264,23 @@ export function buildClienteFromForm(input: ClienteFormValues, currentCount: num
     documento: input.documento.trim(),
     email: input.email.trim(),
     telefone: input.telefone.trim(),
+    cep: input.cep.trim(),
+    logradouro: input.logradouro.trim(),
+    numero: input.numero.trim(),
+    complemento: input.complemento.trim(),
+    bairro: input.bairro.trim(),
     cidade: input.cidade.trim(),
     estado: input.estado.trim(),
     segmento: input.segmento,
     formaPagamentoPreferida: input.formaPagamentoPreferida,
     parcelasPreferidas: input.parcelasPreferidas,
     taxaJurosMensalPreferida: input.taxaJurosMensalPreferida,
+    diasVencimentoPreferidos: input.diasVencimentoPreferidos,
     condicaoPagamentoDescricao: resolveCondicaoDescricao(
       input.formaPagamentoPreferida,
       input.parcelasPreferidas,
       input.taxaJurosMensalPreferida,
+      input.diasVencimentoPreferidos,
     ),
     status: 'pendente',
     cadastroIso,

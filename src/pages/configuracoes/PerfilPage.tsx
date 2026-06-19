@@ -1,6 +1,16 @@
+import { useState } from 'react'
+
+import { EnderecoFields } from '@/components/form/EnderecoFields'
+import { EMPTY_ENDERECO } from '@/types/endereco'
 import styles from './PerfilPage.module.css'
 
 export function PerfilPage() {
+  const [endereco, setEndereco] = useState(EMPTY_ENDERECO)
+
+  function handleEnderecoChange(field: keyof typeof endereco, value: string) {
+    setEndereco((prev) => ({ ...prev, [field]: value }))
+  }
+
   return (
     <div className={styles.root}>
       <header className={styles.header}>
@@ -63,37 +73,15 @@ export function PerfilPage() {
               <h2 className={styles.cardTitle}>Endereço</h2>
             </div>
 
-            <div className={styles.formGrid}>
-              <div className={styles.field}>
-                <label htmlFor="cep">CEP</label>
-                <input id="cep" />
-              </div>
+            <p className={styles.fieldHint}>
+              Informe o CEP para preencher logradouro, bairro, cidade e estado automaticamente.
+            </p>
 
-              <div className={styles.field}>
-                <label htmlFor="rua">Rua</label>
-                <input id="rua" />
-              </div>
-
-              <div className={styles.field}>
-                <label htmlFor="numero">Número</label>
-                <input id="numero" />
-              </div>
-
-              <div className={styles.field}>
-                <label htmlFor="bairro">Bairro</label>
-                <input id="bairro" />
-              </div>
-
-              <div className={styles.field}>
-                <label htmlFor="cidade">Cidade</label>
-                <input id="cidade" />
-              </div>
-
-              <div className={styles.field}>
-                <label htmlFor="estado">Estado</label>
-                <input id="estado" />
-              </div>
-            </div>
+            <EnderecoFields
+              idPrefix="perfil"
+              values={endereco}
+              onChange={handleEnderecoChange}
+            />
           </section>
         </div>
 

@@ -107,6 +107,13 @@
   border-color: #16a34a;
 }
 
+.fieldHint {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.45;
+}
+
 .userSection {
   display: flex;
   gap: 20px;

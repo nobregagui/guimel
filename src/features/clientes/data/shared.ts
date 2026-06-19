@@ -54,6 +54,7 @@ export const ESTADOS_BR = [
 export const CLIENTE_FORMAS_PAGAMENTO = [
   { id: 'pix' as const, label: 'PIX' },
   { id: 'boleto' as const, label: 'Boleto' },
+  { id: 'boleto_prazo' as const, label: 'Boleto a prazo' },
   { id: 'transferencia' as const, label: 'Transferência' },
   { id: 'cartao' as const, label: 'Cartão' },
   { id: 'debito' as const, label: 'Débito' },
@@ -62,6 +63,7 @@ export const CLIENTE_FORMAS_PAGAMENTO = [
 export const FORMA_PAGAMENTO_LABEL: Record<(typeof CLIENTE_FORMAS_PAGAMENTO)[number]['id'], string> = {
   pix: 'PIX',
   boleto: 'Boleto',
+  boleto_prazo: 'Boleto a prazo',
   transferencia: 'Transferência',
   cartao: 'Cartão',
   debito: 'Débito',
@@ -75,10 +77,16 @@ export const EMPTY_CLIENTE_FORM = {
   email: '',
   telefone: '',
   segmento: '',
+  cep: '',
+  logradouro: '',
+  numero: '',
+  complemento: '',
+  bairro: '',
   cidade: '',
   estado: 'SP',
   observacao: '',
   formaPagamentoPreferida: 'pix' as const,
   parcelasPreferidas: 1,
   taxaJurosMensalPreferida: 0,
+  diasVencimentoPreferidos: [30],
 }

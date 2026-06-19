@@ -3,6 +3,7 @@ import type { FormaPagamento, Pedido, StatusPedido } from '@/features/vendas/typ
 export const FORMA_PAGAMENTO_LABEL: Record<FormaPagamento, string> = {
   pix: 'PIX',
   boleto: 'Boleto',
+  boleto_prazo: 'Boleto a prazo',
   transferencia: 'Transferência',
   cartao: 'Cartão de crédito',
   debito: 'Débito',
@@ -59,6 +60,7 @@ export const PEDIDOS_MOCK: Pedido[] = [
     formaPagamento: 'boleto',
     parcelas: 2,
     taxaJurosMensal: 0,
+    diasVencimento: [],
     condicaoPagamentoDescricao: '2× sem juros (30/60)',
     cronograma: [
       { numero: 1, vencimentoIso: '2025-07-10T00:00:00Z', valor: 1575, juros: 0, valorComJuros: 1575 },
@@ -90,6 +92,7 @@ export const PEDIDOS_MOCK: Pedido[] = [
     formaPagamento: 'pix',
     parcelas: 1,
     taxaJurosMensal: 0,
+    diasVencimento: [],
     condicaoPagamentoDescricao: 'À vista (PIX)',
     cronograma: [
       { numero: 1, vencimentoIso: '2025-06-12T09:30:00Z', valor: 8100, juros: 0, valorComJuros: 8100 },
@@ -119,6 +122,7 @@ export const PEDIDOS_MOCK: Pedido[] = [
     formaPagamento: 'cartao',
     parcelas: 6,
     taxaJurosMensal: 0,
+    diasVencimento: [],
     condicaoPagamentoDescricao: '6× sem juros',
     cronograma: [
       { numero: 1, vencimentoIso: '2025-07-15T00:00:00Z', valor: 125, juros: 0, valorComJuros: 125 },
@@ -153,6 +157,7 @@ export const PEDIDOS_MOCK: Pedido[] = [
     formaPagamento: 'boleto',
     parcelas: 3,
     taxaJurosMensal: 0,
+    diasVencimento: [],
     condicaoPagamentoDescricao: '3× sem juros',
     cronograma: [
       { numero: 1, vencimentoIso: '2025-07-08T00:00:00Z', valor: 2066.67, juros: 0, valorComJuros: 2066.67 },
@@ -184,6 +189,7 @@ export const PEDIDOS_MOCK: Pedido[] = [
     formaPagamento: 'cartao',
     parcelas: 3,
     taxaJurosMensal: 0,
+    diasVencimento: [],
     condicaoPagamentoDescricao: '3× sem juros',
     cronograma: [],
     dataIso: '2025-06-05T08:00:00Z',

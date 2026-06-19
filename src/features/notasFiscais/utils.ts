@@ -4,6 +4,7 @@ import {
   ALIQUOTA_PIS,
   MINHA_EMPRESA,
 } from '@/features/notasFiscais/data/shared'
+import { composeLogradouroLinha } from '@/types/endereco'
 import {
   CFOP_DEVOLUCAO_PADRAO,
   MOTIVO_DEVOLUCAO_LABEL,
@@ -117,7 +118,12 @@ export function buildNotaFromForm(
     nome: values.destinatarioNome,
     cnpj: values.destinatarioCnpj,
     ie: values.destinatarioIe ?? '',
-    endereco: values.destinatarioEndereco,
+    endereco: composeLogradouroLinha({
+      logradouro: values.destinatarioLogradouro,
+      numero: values.destinatarioNumero,
+      complemento: values.destinatarioComplemento,
+      bairro: values.destinatarioBairro,
+    }),
     cidade: values.destinatarioCidade,
     estado: values.destinatarioEstado,
   }
@@ -253,7 +259,11 @@ export function buildDevolucaoFormFromNota(
     destinatarioCnpj: contraparte.cnpj,
     destinatarioIe: contraparte.ie ?? '',
     destinatarioCpf: isDevolucaoVenda ? (notaOriginal.destinatario.cpf ?? '') : '',
-    destinatarioEndereco: contraparte.endereco,
+    destinatarioCep: '',
+    destinatarioLogradouro: contraparte.endereco,
+    destinatarioNumero: '',
+    destinatarioComplemento: '',
+    destinatarioBairro: '',
     destinatarioCidade: contraparte.cidade,
     destinatarioEstado: contraparte.estado,
     itens: notaOriginal.itens.map((item) => ({
@@ -299,7 +309,11 @@ export function buildNotaFromDevolucaoForm(
     destinatarioCnpj: values.destinatarioCnpj,
     destinatarioIe: values.destinatarioIe,
     destinatarioCpf: values.destinatarioCpf,
-    destinatarioEndereco: values.destinatarioEndereco,
+    destinatarioCep: values.destinatarioCep,
+    destinatarioLogradouro: values.destinatarioLogradouro,
+    destinatarioNumero: values.destinatarioNumero,
+    destinatarioComplemento: values.destinatarioComplemento,
+    destinatarioBairro: values.destinatarioBairro,
     destinatarioCidade: values.destinatarioCidade,
     destinatarioEstado: values.destinatarioEstado,
     itens: itensSelecionados,

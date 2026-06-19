@@ -40,3 +40,13 @@ export function phoneMask(value: string): string {
     .replace(/^(\d{2})(\d)/, '($1) $2')
     .replace(/(\d{5})(\d)/, '$1-$2')
 }
+
+export function cepMask(value: string): string {
+  const digits = onlyDigits(value).slice(0, 8)
+  if (digits.length <= 5) return digits
+  return `${digits.slice(0, 5)}-${digits.slice(5)}`
+}
+
+export function isCepComplete(value: string): boolean {
+  return onlyDigits(value).length === 8
+}

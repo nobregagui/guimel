@@ -16,6 +16,11 @@ export {
   CONFIG_FORMA,
   calcularCondicao,
   calcularCronograma,
+  calcularCronogramaComDias,
+  dataVencimentoPorDias,
+  defaultDiasVencimento,
+  descricaoCondicaoBoletoPrazo,
   formatarDataCurta,
+  normalizarDiasVencimento,
   normalizeFormaPagamento,
 } from '@/features/vendas/utils/pagamento'
