@@ -6,6 +6,7 @@ export const APP_PATHS = {
   vendas: '/vendas',
   relatorios: '/relatorios',
   notasFiscais: '/notas-fiscais',
+  conciliacaoBancaria: '/conciliacao-bancaria',
   cobrancas: '/cobrancas',
   integracoes: '/integracoes',
   configuracoes: '/configuracoes',

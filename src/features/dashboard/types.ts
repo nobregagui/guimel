@@ -40,7 +40,7 @@ export interface SidebarNavItem {
   id: string
   label: string
   to: string
-  icon: 'dashboard' | 'financeiro' | 'vendas' | 'clientes' | 'produtos' | 'notas' | 'relatorios' | 'cobrancas' | 'integracoes' | 'configuracoes'
+  icon: 'dashboard' | 'financeiro' | 'vendas' | 'clientes' | 'produtos' | 'notas' | 'relatorios' | 'conciliacao' | 'cobrancas' | 'integracoes' | 'configuracoes'
 }
 
 export interface GlobalSearchItem {

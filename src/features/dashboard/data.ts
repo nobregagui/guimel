@@ -84,6 +84,7 @@ export const sidebarNavItems: SidebarNavItem[] = [
   { id: 'relatorios', label: 'Relatórios', to: '/relatorios', icon: 'relatorios' },
   { id: 'cobrancas', label: 'Cobranças', to: '/cobrancas', icon: 'cobrancas' },
   { id: 'integracoes', label: 'Integrações', to: '/integracoes', icon: 'integracoes' },
+  { id: 'conciliacao', label: 'Conciliação', to: '/conciliacao-bancaria', icon: 'conciliacao' },
   { id: 'configuracoes', label: 'Configurações', to: '/configuracoes', icon: 'configuracoes' },
 ]
 

@@ -11,6 +11,8 @@ export const CONTAS_PAGAR: ContaPagar[] = [
     valor: 5800,
     formaPagamento: 'boleto',
     status: 'vencido',
+    modoLancamento: 'unico',
+    tipoCusto: 'variavel',
   },
   {
     id: 'cp-2',
@@ -22,6 +24,11 @@ export const CONTAS_PAGAR: ContaPagar[] = [
     valor: 3200,
     formaPagamento: 'transferencia',
     status: 'pendente',
+    modoLancamento: 'recorrente',
+    tipoCusto: 'fixo',
+    recorrenciaId: 'rec-mock-aluguel',
+    recorrenciaParcela: 1,
+    recorrenciaTotal: 12,
   },
   {
     id: 'cp-3',
@@ -33,6 +40,11 @@ export const CONTAS_PAGAR: ContaPagar[] = [
     valor: 6000,
     formaPagamento: 'pix',
     status: 'pendente',
+    modoLancamento: 'recorrente',
+    tipoCusto: 'fixo',
+    recorrenciaId: 'rec-mock-prolabore',
+    recorrenciaParcela: 1,
+    recorrenciaTotal: 12,
   },
   {
     id: 'cp-4',
@@ -44,6 +56,8 @@ export const CONTAS_PAGAR: ContaPagar[] = [
     valor: 890,
     formaPagamento: 'boleto',
     status: 'pendente',
+    modoLancamento: 'unico',
+    tipoCusto: 'variavel',
   },
   {
     id: 'cp-5',
@@ -55,6 +69,11 @@ export const CONTAS_PAGAR: ContaPagar[] = [
     valor: 420,
     formaPagamento: 'debito',
     status: 'pago',
+    modoLancamento: 'recorrente',
+    tipoCusto: 'fixo',
+    recorrenciaId: 'rec-mock-internet',
+    recorrenciaParcela: 1,
+    recorrenciaTotal: 12,
   },
   {
     id: 'cp-6',
@@ -66,6 +85,11 @@ export const CONTAS_PAGAR: ContaPagar[] = [
     valor: 1800,
     formaPagamento: 'pix',
     status: 'pendente',
+    modoLancamento: 'recorrente',
+    tipoCusto: 'fixo',
+    recorrenciaId: 'rec-mock-contabilidade',
+    recorrenciaParcela: 1,
+    recorrenciaTotal: 12,
   },
   {
     id: 'cp-7',
@@ -77,6 +101,8 @@ export const CONTAS_PAGAR: ContaPagar[] = [
     valor: 2340,
     formaPagamento: 'cartao',
     status: 'pendente',
+    modoLancamento: 'unico',
+    tipoCusto: 'variavel',
   },
   {
     id: 'cp-8',
@@ -88,6 +114,8 @@ export const CONTAS_PAGAR: ContaPagar[] = [
     valor: 4150,
     formaPagamento: 'boleto',
     status: 'pago',
+    modoLancamento: 'unico',
+    tipoCusto: 'variavel',
   },
   {
     id: 'cp-9',
@@ -99,6 +127,11 @@ export const CONTAS_PAGAR: ContaPagar[] = [
     valor: 3650,
     formaPagamento: 'boleto',
     status: 'pendente',
+    modoLancamento: 'recorrente',
+    tipoCusto: 'fixo',
+    recorrenciaId: 'rec-mock-das',
+    recorrenciaParcela: 1,
+    recorrenciaTotal: 12,
   },
   {
     id: 'cp-10',
@@ -110,6 +143,11 @@ export const CONTAS_PAGAR: ContaPagar[] = [
     valor: 980,
     formaPagamento: 'debito',
     status: 'pendente',
+    modoLancamento: 'recorrente',
+    tipoCusto: 'fixo',
+    recorrenciaId: 'rec-mock-seguro',
+    recorrenciaParcela: 1,
+    recorrenciaTotal: 12,
   },
 ]
 

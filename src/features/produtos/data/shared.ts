@@ -101,10 +101,14 @@ export function statusEstoque(produto: Produto): 'ok' | 'baixo' | 'critico' | 's
 export const CATEGORIAS_MOCK: Categoria[] = [
   { id: 'cat1', nome: 'Eletrônicos', cor: '#3b82f6' },
   { id: 'cat2', nome: 'Alimentos', cor: '#f97316' },
-  { id: 'cat3', nome: 'Serviços', cor: '#8b5cf6' },
+  { id: 'cat3', nome: 'Serviço', cor: '#8b5cf6' },
   { id: 'cat4', nome: 'Ferramentas', cor: '#f59e0b' },
   { id: 'cat5', nome: 'Higiene', cor: '#10b981' },
   { id: 'cat6', nome: 'Informática', cor: '#6366f1' },
+  { id: 'cat7', nome: 'Produto Acabado', cor: '#0ea5e9' },
+  { id: 'cat8', nome: 'Mercado', cor: '#22c55e' },
+  { id: 'cat9', nome: 'Marmita', cor: '#ef4444' },
+  { id: 'cat10', nome: 'Loja de tinta', cor: '#a855f7' },
 ]
 
 export const PRODUTOS_MOCK: Produto[] = [
@@ -177,7 +181,7 @@ export const PRODUTOS_MOCK: Produto[] = [
     tipo: 'servico',
     status: 'ativo',
     categoriaId: 'cat3',
-    categoriaNome: 'Serviços',
+    categoriaNome: 'Serviço',
     unidadeMedida: 'hr',
     precoCusto: 80,
     precoVenda: 200,

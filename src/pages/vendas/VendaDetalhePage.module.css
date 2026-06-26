@@ -430,6 +430,17 @@
   color: #15803d;
 }
 
+.actionBtnPrimary {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+.actionBtnPrimary:hover {
+  background-color: #dcfce7;
+  border-color: #86efac;
+}
+
 .actionBtnDanger {
   color: #dc2626;
 }

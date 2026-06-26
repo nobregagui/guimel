@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react'
+
 import type { FormaPagamento } from '@/features/vendas/types'
 import { FORMA_PAGAMENTO_LABEL, formatarMoeda } from '@/features/vendas/data/shared'
 import {
@@ -50,6 +52,14 @@ export interface CondicaoPagamentoFieldsProps {
   dataReferencia?: Date
 }
 
+function parseDiasInput(raw: string): number | null {
+  const trimmed = raw.trim()
+  if (trimmed === '') return null
+  const parsed = parseInt(trimmed, 10)
+  if (!Number.isFinite(parsed) || parsed < 1 || parsed > 365) return null
+  return parsed
+}
+
 export function CondicaoPagamentoFields({
   formaPagamento,
   parcelas,
@@ -73,6 +83,12 @@ export function CondicaoPagamentoFields({
   const diasNorm = isBoletoPrazo
     ? normalizarDiasVencimento(diasVencimento, parcelas, formaPagamento)
     : []
+  const [diasDraft, setDiasDraft] = useState<string[]>(() => diasNorm.map(String))
+
+  useEffect(() => {
+    setDiasDraft(diasNorm.map(String))
+  }, [diasNorm.join('|')])
+
   const dataBase = dataReferencia ?? new Date()
   const condicao = calcularCondicao(
     valorBase,
@@ -83,12 +99,28 @@ export function CondicaoPagamentoFields({
     dataBase,
   )
 
-  function handleDiaChange(index: number, raw: string) {
+  function handleDiaInputChange(index: number, raw: string) {
+    if (raw !== '' && !/^\d+$/.test(raw)) return
+    setDiasDraft((current) => {
+      const next = [...current]
+      next[index] = raw
+      return next
+    })
+  }
+
+  function handleDiaBlur(index: number) {
     if (!onDiasVencimentoChange) return
-    const parsed = parseInt(raw, 10)
+
+    const parsed = parseDiasInput(diasDraft[index] ?? '')
+    const valor = parsed ?? diasNorm[index] ?? 1
     const next = [...diasNorm]
-    next[index] = Number.isFinite(parsed) && parsed >= 1 ? parsed : 1
+    next[index] = valor
     onDiasVencimentoChange(next)
+    setDiasDraft((current) => {
+      const updated = [...current]
+      updated[index] = String(valor)
+      return updated
+    })
   }
 
   return (
@@ -153,7 +185,8 @@ export function CondicaoPagamentoFields({
           </p>
           <div className={styles.diasVencimentoList}>
             {diasNorm.map((dias, index) => {
-              const vencimento = dataVencimentoPorDias(dias, dataBase)
+              const diasPreview = parseDiasInput(diasDraft[index] ?? '') ?? dias
+              const vencimento = dataVencimentoPorDias(diasPreview, dataBase)
               return (
                 <div key={index} className={styles.diasVencimentoRow}>
                   <label htmlFor={`dias-venc-${index}`} className={styles.diasVencimentoLabel}>
@@ -162,12 +195,13 @@ export function CondicaoPagamentoFields({
                   <div className={styles.diasVencimentoInputWrap}>
                     <input
                       id={`dias-venc-${index}`}
-                      type="number"
-                      min={1}
-                      max={365}
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
                       className={styles.diasVencimentoInput}
-                      value={dias}
-                      onChange={(e) => handleDiaChange(index, e.target.value)}
+                      value={diasDraft[index] ?? String(dias)}
+                      onChange={(e) => handleDiaInputChange(index, e.target.value)}
+                      onBlur={() => handleDiaBlur(index)}
                     />
                     <span className={styles.diasVencimentoSuffix}>dias</span>
                   </div>

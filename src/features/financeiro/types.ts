@@ -50,6 +50,21 @@ export type ExtratoMovimentoTipo = 'entrada' | 'saida'
 export type TransferenciaStatus = 'concluida' | 'agendada' | 'cancelada'
 export type TransferenciasFiltro = 'todos' | 'concluidas' | 'agendadas' | 'canceladas'
 export type FormaPagamento = 'boleto' | 'pix' | 'transferencia' | 'cartao' | 'debito'
+export type ModoLancamentoContaPagar = 'unico' | 'recorrente'
+export type TipoCustoPagar = 'fixo' | 'variavel'
+
+export interface OpcaoRepeticaoContaPagar {
+  vezes: number
+  label: string
+  descricao: string
+}
+
+export const OPCOES_REPETICAO_CONTA_PAGAR: OpcaoRepeticaoContaPagar[] = [
+  { vezes: 2, label: '2×', descricao: 'Repetir por 2 meses' },
+  { vezes: 3, label: '3×', descricao: 'Repetir por 3 meses' },
+  { vezes: 6, label: '6×', descricao: 'Repetir por 6 meses' },
+  { vezes: 12, label: '12×', descricao: 'Todo mês · 1 ano' },
+]
 
 export interface ContaTituloBase {
   id: string
@@ -65,6 +80,11 @@ export interface ContaTituloBase {
 export interface ContaPagar extends ContaTituloBase {
   fornecedor: string
   documento: string
+  modoLancamento: ModoLancamentoContaPagar
+  tipoCusto: TipoCustoPagar
+  recorrenciaId?: string | null
+  recorrenciaParcela?: number | null
+  recorrenciaTotal?: number | null
 }
 
 export interface ContaReceber extends ContaTituloBase {
@@ -141,6 +161,9 @@ export interface ContaPagarFormValues {
   valor: number
   formaPagamento: FormaPagamento
   status: LancamentoStatus
+  modoLancamento: ModoLancamentoContaPagar
+  tipoCusto: TipoCustoPagar
+  repeticoes: number
 }
 
 export interface ContaReceberFormValues {

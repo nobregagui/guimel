@@ -82,6 +82,17 @@ export function NavIcon({ icon, className, size = defaults.size }: { icon: Sideb
           <polyline points="8 6 2 12 8 18" />
         </svg>
       )
+    case 'conciliacao':
+      return (
+        <svg {...props}>
+          <path d="M8 3H5a2 2 0 00-2 2v3" />
+          <path d="M21 8V5a2 2 0 00-2-2h-3" />
+          <path d="M3 16v3a2 2 0 002 2h3" />
+          <path d="M16 21h3a2 2 0 002-2v-3" />
+          <line x1="9" y1="12" x2="15" y2="12" />
+          <line x1="12" y1="9" x2="12" y2="15" />
+        </svg>
+      )
     case 'configuracoes':
       return (
         <svg {...props}>

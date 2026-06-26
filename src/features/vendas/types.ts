@@ -55,6 +55,10 @@ export interface Pedido {
   itens: ItemPedido[]
   subtotal: number
   descontoTotal: number
+  frete: number
+  jurosAdicionais: number
+  descontoAdicional: number
+  multa: number
   total: number
   totalComJuros: number
   totalJuros: number
@@ -75,6 +79,10 @@ export interface PedidoFormValues {
   diasVencimento: number[]
   dataEntregaIso: string
   itens: Omit<ItemPedido, 'id'>[]
+  frete: number
+  jurosAdicionais: number
+  descontoAdicional: number
+  multa: number
   observacao: string
 }
 

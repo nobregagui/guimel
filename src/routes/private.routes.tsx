@@ -6,6 +6,7 @@ import { DashboardPage } from '@/pages/dashboard'
 import { ClientesPage } from '@/pages/clientes'
 import { ClienteDetalhePage } from '@/pages/clientes/detalhe'
 import { PerfilPage } from '@/pages/configuracoes'
+import { ConciliacaoBancariaPage } from '@/pages/conciliacao-bancaria'
 import { FinanceiroPage } from '@/pages/financeiro'
 import { ModulePlaceholder } from '@/pages/ModulePlaceholder'
 import { NotasFiscaisPage } from '@/pages/notas-fiscais'
@@ -28,6 +29,7 @@ export const privateRoutes: RouteObject[] = [
           { path: '/clientes/:id', element: <ClienteDetalhePage /> },
           { path: '/produtos', element: <ProdutosPage /> },
           { path: '/financeiro', element: <FinanceiroPage /> },
+          { path: '/conciliacao-bancaria', element: <ConciliacaoBancariaPage /> },
           { path: '/vendas', element: <VendasPage /> },
           { path: '/vendas/:id', element: <VendaDetalhePage /> },
           { path: '/relatorios', element: <RelatoriosPage /> },

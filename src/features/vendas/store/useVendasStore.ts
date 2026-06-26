@@ -9,6 +9,7 @@ interface VendasState {
   addPedido: (values: PedidoFormValues) => void
   updatePedido: (id: string, values: Partial<PedidoFormValues>) => void
   updateStatus: (id: string, status: StatusPedido) => void
+  converterOrcamentoEmVenda: (id: string) => Pedido | null
   deletePedido: (id: string) => void
   emitirNfe: (id: string) => void
 }
@@ -23,7 +24,7 @@ function proximoNumero(): string {
   return `PV-${String(_counter).padStart(4, '0')}`
 }
 
-export const useVendasStore = create<VendasState>((set) => ({
+export const useVendasStore = create<VendasState>((set, get) => ({
   pedidos: PEDIDOS_MOCK,
 
   addPedido: (values) => {
@@ -35,7 +36,11 @@ export const useVendasStore = create<VendasState>((set) => ({
       const bruto = item.quantidade * item.valorUnitario
       return acc + (bruto - item.subtotal)
     }, 0)
-    const total = subtotalBruto - descontoTotal
+    const frete = values.frete ?? 0
+    const jurosAdicionais = values.jurosAdicionais ?? 0
+    const descontoAdicional = values.descontoAdicional ?? 0
+    const multa = values.multa ?? 0
+    const total = subtotalBruto - descontoTotal + frete + jurosAdicionais - descontoAdicional + multa
 
     const condicao = calcularCondicao(
       total,
@@ -65,6 +70,10 @@ export const useVendasStore = create<VendasState>((set) => ({
       itens: values.itens.map((item, idx) => ({ ...item, id: `i${Date.now()}${idx}` })),
       subtotal: subtotalBruto,
       descontoTotal,
+      frete,
+      jurosAdicionais,
+      descontoAdicional,
+      multa,
       total,
       totalComJuros: condicao.totalComJuros,
       totalJuros: condicao.totalJuros,
@@ -93,7 +102,11 @@ export const useVendasStore = create<VendasState>((set) => ({
           const bruto = item.quantidade * item.valorUnitario
           return acc + (bruto - item.subtotal)
         }, 0)
-        const total = subtotalBruto - descontoTotal
+        const frete = values.frete ?? p.frete ?? 0
+        const jurosAdicionais = values.jurosAdicionais ?? p.jurosAdicionais ?? 0
+        const descontoAdicional = values.descontoAdicional ?? p.descontoAdicional ?? 0
+        const multa = values.multa ?? p.multa ?? 0
+        const total = subtotalBruto - descontoTotal + frete + jurosAdicionais - descontoAdicional + multa
 
         const forma = values.formaPagamento ?? p.formaPagamento
         const parcelas = values.parcelas ?? p.parcelas
@@ -115,6 +128,10 @@ export const useVendasStore = create<VendasState>((set) => ({
           itens,
           subtotal: subtotalBruto,
           descontoTotal,
+          frete,
+          jurosAdicionais,
+          descontoAdicional,
+          multa,
           total,
           parcelas: condicao.parcelas,
           taxaJurosMensal: condicao.taxaJurosMensal,
@@ -132,6 +149,39 @@ export const useVendasStore = create<VendasState>((set) => ({
     set((state) => ({
       pedidos: state.pedidos.map((p) => (p.id === id ? { ...p, status } : p)),
     }))
+  },
+
+  converterOrcamentoEmVenda: (id) => {
+    const pedido = get().pedidos.find((p) => p.id === id)
+    if (!pedido || pedido.status !== 'orcamento') return null
+
+    const condicao = calcularCondicao(
+      pedido.total,
+      pedido.formaPagamento,
+      pedido.parcelas,
+      pedido.taxaJurosMensal,
+      pedido.formaPagamento === 'boleto_prazo' ? pedido.diasVencimento : undefined,
+      new Date(),
+    )
+
+    const atualizado: Pedido = {
+      ...pedido,
+      status: 'confirmado',
+      dataIso: new Date().toISOString(),
+      parcelas: condicao.parcelas,
+      taxaJurosMensal: condicao.taxaJurosMensal,
+      diasVencimento: condicao.diasVencimento ?? [],
+      condicaoPagamentoDescricao: condicao.descricao,
+      cronograma: condicao.cronograma,
+      totalComJuros: condicao.totalComJuros,
+      totalJuros: condicao.totalJuros,
+    }
+
+    set((state) => ({
+      pedidos: state.pedidos.map((p) => (p.id === id ? atualizado : p)),
+    }))
+
+    return atualizado
   },
 
   deletePedido: (id) => {

@@ -115,6 +115,10 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
     initialValues?.diasVencimento ?? defaultDiasVencimento(initialValues?.parcelas ?? 1, initialValues?.formaPagamento ?? 'boleto'),
   )
   const [itens, setItens] = useState<Omit<ItemPedido, 'id'>[]>(initialValues?.itens ?? [itemVazio()])
+  const [frete, setFrete] = useState(initialValues?.frete ?? 0)
+  const [jurosAdicionais, setJurosAdicionais] = useState(initialValues?.jurosAdicionais ?? 0)
+  const [descontoAdicional, setDescontoAdicional] = useState(initialValues?.descontoAdicional ?? 0)
+  const [multa, setMulta] = useState(initialValues?.multa ?? 0)
   const [documentoError, setDocumentoError] = useState('')
   const [clienteEncontrado, setClienteEncontrado] = useState<Cliente | null>(null)
   const [clienteId, setClienteId] = useState(initialValues?.clienteId ?? '')
@@ -145,7 +149,8 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
     (acc, item) => acc + (item.quantidade * item.valorUnitario - item.subtotal),
     0,
   )
-  const total = subtotal - descontoTotal
+  const total =
+    subtotal - descontoTotal + frete + jurosAdicionais - descontoAdicional + multa
 
   const prevFormaRef = useRef(formaPagamento)
   const lastAppliedClienteIdRef = useRef('')
@@ -312,6 +317,10 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
       diasVencimento,
       dataEntregaIso: dataEntrega ? new Date(dataEntrega).toISOString() : '',
       itens,
+      frete,
+      jurosAdicionais,
+      descontoAdicional,
+      multa,
       observacao: observacao.trim(),
     })
   }
@@ -552,20 +561,98 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
                 </div>
               </fieldset>
 
-              {total > 0 ? (
+              <fieldset className={styles.formSection}>
+                <legend className={styles.formLegend}>Acréscimos e descontos do pedido</legend>
+                <div className={styles.formGrid}>
+                  <div className={styles.formField}>
+                    <label htmlFor="pedido-frete">Frete (R$)</label>
+                    <input
+                      id="pedido-frete"
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      placeholder="0,00"
+                      value={frete || ''}
+                      onChange={(e) => setFrete(Math.max(0, Number(e.target.value)))}
+                    />
+                  </div>
+                  <div className={styles.formField}>
+                    <label htmlFor="pedido-juros-adicionais">Juros / Encargos (R$)</label>
+                    <input
+                      id="pedido-juros-adicionais"
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      placeholder="0,00"
+                      value={jurosAdicionais || ''}
+                      onChange={(e) => setJurosAdicionais(Math.max(0, Number(e.target.value)))}
+                    />
+                  </div>
+                  <div className={styles.formField}>
+                    <label htmlFor="pedido-desconto-adicional">Desconto global (R$)</label>
+                    <input
+                      id="pedido-desconto-adicional"
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      placeholder="0,00"
+                      value={descontoAdicional || ''}
+                      onChange={(e) => setDescontoAdicional(Math.max(0, Number(e.target.value)))}
+                    />
+                  </div>
+                  <div className={styles.formField}>
+                    <label htmlFor="pedido-multa">Multa (R$)</label>
+                    <input
+                      id="pedido-multa"
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      placeholder="0,00"
+                      value={multa || ''}
+                      onChange={(e) => setMulta(Math.max(0, Number(e.target.value)))}
+                    />
+                  </div>
+                </div>
+              </fieldset>
+
+              {subtotal > 0 ? (
                 <div className={styles.drawerResumo}>
                   <div className={styles.drawerResumoRow}>
-                    <span>Subtotal bruto</span>
+                    <span>Subtotal dos itens</span>
                     <strong>{formatarMoeda(subtotal)}</strong>
                   </div>
                   {descontoTotal > 0 ? (
                     <div className={styles.drawerResumoRow}>
-                      <span>Descontos</span>
+                      <span>Descontos nos itens</span>
                       <strong className={styles.descontoValor}>− {formatarMoeda(descontoTotal)}</strong>
                     </div>
                   ) : null}
+                  {frete > 0 ? (
+                    <div className={styles.drawerResumoRow}>
+                      <span>Frete</span>
+                      <strong>{formatarMoeda(frete)}</strong>
+                    </div>
+                  ) : null}
+                  {jurosAdicionais > 0 ? (
+                    <div className={styles.drawerResumoRow}>
+                      <span>Juros / Encargos</span>
+                      <strong className={styles.jurosValor}>{formatarMoeda(jurosAdicionais)}</strong>
+                    </div>
+                  ) : null}
+                  {descontoAdicional > 0 ? (
+                    <div className={styles.drawerResumoRow}>
+                      <span>Desconto global</span>
+                      <strong className={styles.descontoValor}>− {formatarMoeda(descontoAdicional)}</strong>
+                    </div>
+                  ) : null}
+                  {multa > 0 ? (
+                    <div className={styles.drawerResumoRow}>
+                      <span>Multa</span>
+                      <strong className={styles.jurosValor}>{formatarMoeda(multa)}</strong>
+                    </div>
+                  ) : null}
                   <div className={`${styles.drawerResumoRow} ${styles.drawerResumoTotal}`}>
-                    <span>Total dos itens</span>
+                    <span>Total do pedido</span>
                     <strong>{formatarMoeda(total)}</strong>
                   </div>
                 </div>

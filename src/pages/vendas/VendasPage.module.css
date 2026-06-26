@@ -121,7 +121,10 @@
 .tabs {
   display: flex;
   gap: 0;
-  margin-bottom: -1px;
+  margin: 0 -28px -1px;
+  padding: 0 28px;
+  background-color: #ffedd5;
+  border-top: 1px solid #fed7aa;
 }
 
 .tab {
@@ -130,21 +133,21 @@
   border: none;
   border-bottom: 2px solid transparent;
   background: transparent;
-  color: #6b7280;
+  color: #92400e;
   cursor: pointer;
   white-space: nowrap;
   transition: color 0.15s, border-color 0.15s;
 }
 
 .tab:hover {
-  color: #374151;
-  border-bottom-color: #e5e7eb;
+  color: #78350f;
+  border-bottom-color: #fdba74;
 }
 
 .tabActive {
-  color: #16a34a;
-  border-bottom-color: #16a34a;
-  font-weight: 500;
+  color: #c2410c;
+  border-bottom-color: #ea580c;
+  font-weight: 600;
 }
 
 .tabCount {
@@ -509,6 +512,33 @@
 
 .rowAction:hover { color: #4b5563; }
 
+.cellActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btnConvert {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  background-color: #16a34a;
+  color: #ffffff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s;
+}
+
+.btnConvert:hover {
+  background-color: #15803d;
+}
+
 /* ─── Badges de status ───────────────────────────────────────────────────────── */
 .badge {
   display: inline-flex;
@@ -845,6 +875,10 @@
   color: #ef4444;
 }
 
+.jurosValor {
+  color: #f97316;
+}
+
 /* ─── Itens do pedido ────────────────────────────────────────────────────────── */
 .itensList {
   display: flex;
@@ -1016,8 +1050,9 @@
   display: flex;
   gap: 0;
   border-bottom: 1px solid #fed7aa;
+  border-top: 1px solid #fed7aa;
   padding: 0 24px;
-  background-color: #fff7ed;
+  background-color: #ffedd5;
 }
 
 .drawerTab {
@@ -1353,6 +1388,8 @@
   .tabs {
     overflow-x: auto;
     scrollbar-width: none;
+    margin: 0 -16px -1px;
+    padding: 0 16px;
   }
 
   .tabs::-webkit-scrollbar {

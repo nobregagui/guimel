@@ -35,6 +35,34 @@ export function formatIsoToBR(iso: string): string {
   return `${day}/${month}/${year}`
 }
 
+export function addMonthsToIso(iso: string, months: number): string {
+  const [year, month, day] = iso.split('-').map(Number)
+  if (!year || !month || !day) return iso
+
+  const date = new Date(year, month - 1 + months, day)
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+export function formatMesAnoReferencia(iso: string): string {
+  const date = new Date(`${iso}T12:00:00`)
+  const month = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')
+  const year = String(date.getFullYear()).slice(-2)
+  return `${month}/${year}`
+}
+
+export function descreverRecorrenciaContaPagar(repeticoes: number, vencimentoIso: string): string {
+  const inicio = formatIsoToBR(vencimentoIso)
+  if (repeticoes <= 1) {
+    return `Será criado 1 título com vencimento em ${inicio}.`
+  }
+
+  const fim = formatIsoToBR(addMonthsToIso(vencimentoIso, repeticoes - 1))
+  return `Serão criados ${repeticoes} títulos mensais (${inicio} a ${fim}), sempre no mesmo dia de cada mês.`
+}
+
 export function isVencido(isoDate: string): boolean {
   return new Date(isoDate) < REFERENCE_DATE
 }

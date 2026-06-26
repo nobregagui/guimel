@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 
+import { useToast } from '@/components/ui/Toast'
 import { FORMA_PAGAMENTO_TABLE_FILTROS } from '@/features/financeiro/data/shared'
 import { useFinanceiroStore } from '@/features/financeiro/store/useFinanceiroStore'
 import type {
@@ -9,8 +10,12 @@ import type {
   FormaPagamento,
   LancamentoStatus,
   LancamentoTipo,
+  ModoLancamentoContaPagar,
+  TipoCustoPagar,
   TransferenciaStatus,
 } from '@/features/financeiro/types'
+import { OPCOES_REPETICAO_CONTA_PAGAR } from '@/features/financeiro/types'
+import { descreverRecorrenciaContaPagar, formatBRL } from '@/features/financeiro/utils'
 import styles from '@/pages/financeiro/FinanceiroPage.module.css'
 
 const HOJE_ISO = new Date().toISOString().slice(0, 10)
@@ -213,6 +218,7 @@ function LancamentoForm({ onClose }: { onClose: () => void }) {
 
 function ContaPagarForm({ onClose }: { onClose: () => void }) {
   const addContaPagar = useFinanceiroStore((s) => s.addContaPagar)
+  const { showToast } = useToast()
 
   const [fornecedor, setFornecedor] = useState('')
   const [documento, setDocumento] = useState('')
@@ -221,27 +227,148 @@ function ContaPagarForm({ onClose }: { onClose: () => void }) {
   const [valor, setValor] = useState('')
   const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>('boleto')
   const [status, setStatus] = useState<LancamentoStatus>('pendente')
+  const [modoLancamento, setModoLancamento] = useState<ModoLancamentoContaPagar>('unico')
+  const [tipoCusto, setTipoCusto] = useState<TipoCustoPagar>('variavel')
+  const [repeticoes, setRepeticoes] = useState(OPCOES_REPETICAO_CONTA_PAGAR[3].vezes)
   const [erro, setErro] = useState('')
+
+  const valorNumerico = parseValor(valor)
+  const isRecorrente = modoLancamento === 'recorrente'
+  const repeticoesEfetivas = isRecorrente ? repeticoes : 1
+
+  function handleModoChange(modo: ModoLancamentoContaPagar) {
+    setModoLancamento(modo)
+    if (modo === 'recorrente' && tipoCusto === 'variavel') {
+      setTipoCusto('fixo')
+    }
+  }
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     if (!fornecedor.trim()) return setErro('Informe o fornecedor.')
-    if (parseValor(valor) <= 0) return setErro('Informe um valor maior que zero.')
+    if (valorNumerico <= 0) return setErro('Informe um valor maior que zero.')
 
-    addContaPagar({
+    const quantidade = addContaPagar({
       fornecedor: fornecedor.trim(),
       documento: documento.trim(),
       categoria: categoria.trim(),
       vencimentoIso,
-      valor: parseValor(valor),
+      valor: valorNumerico,
       formaPagamento,
       status,
+      modoLancamento,
+      tipoCusto,
+      repeticoes: repeticoesEfetivas,
     })
+
+    if (isRecorrente) {
+      showToast({
+        message: `${quantidade} títulos recorrentes gerados (${repeticoesEfetivas}× · todo mês).`,
+        variant: 'success',
+      })
+    }
+
     onClose()
   }
 
   return (
     <form className={styles.drawerBody} onSubmit={handleSubmit}>
+      <fieldset className={styles.formSection}>
+        <legend className={styles.formLegend}>Modo do lançamento</legend>
+        <div className={styles.tipoSelector}>
+          <label className={`${styles.tipoOption} ${modoLancamento === 'unico' ? styles.tipoOptionActive : ''}`}>
+            <input
+              type="radio"
+              name="cp-modo-lancamento"
+              value="unico"
+              checked={modoLancamento === 'unico'}
+              onChange={() => handleModoChange('unico')}
+            />
+            Lançamento único
+          </label>
+          <label className={`${styles.tipoOption} ${modoLancamento === 'recorrente' ? styles.tipoOptionActive : ''}`}>
+            <input
+              type="radio"
+              name="cp-modo-lancamento"
+              value="recorrente"
+              checked={modoLancamento === 'recorrente'}
+              onChange={() => handleModoChange('recorrente')}
+            />
+            Lançamento recorrente
+          </label>
+        </div>
+        <p className={styles.formHint}>
+          {isRecorrente
+            ? 'Gera vários títulos automaticamente, um por mês, com o mesmo valor e dia de vencimento.'
+            : 'Registra apenas este título, sem repetir nos meses seguintes.'}
+        </p>
+      </fieldset>
+
+      {isRecorrente ? (
+        <fieldset className={styles.formSection}>
+          <legend className={styles.formLegend}>Quantas vezes repetir?</legend>
+          <div className={styles.repeticoesGrid}>
+            {OPCOES_REPETICAO_CONTA_PAGAR.map((opcao) => {
+              const ativa = repeticoes === opcao.vezes
+              return (
+                <label
+                  key={opcao.vezes}
+                  className={`${styles.repeticaoOption} ${ativa ? styles.repeticaoOptionActive : ''}`}
+                >
+                  <input
+                    type="radio"
+                    name="cp-repeticoes"
+                    checked={ativa}
+                    onChange={() => setRepeticoes(opcao.vezes)}
+                  />
+                  <span className={styles.repeticaoOptionLabel}>{opcao.label}</span>
+                  <span className={styles.repeticaoOptionDesc}>{opcao.descricao}</span>
+                </label>
+              )
+            })}
+          </div>
+          <div className={styles.recorrenciaResumo}>
+            <p>{descreverRecorrenciaContaPagar(repeticoes, vencimentoIso)}</p>
+            {valorNumerico > 0 ? (
+              <p className={styles.recorrenciaResumoTotal}>
+                Total programado: {formatBRL(valorNumerico * repeticoes)}
+              </p>
+            ) : null}
+          </div>
+        </fieldset>
+      ) : null}
+
+      <fieldset className={styles.formSection}>
+        <legend className={styles.formLegend}>Natureza do custo</legend>
+        <div className={styles.tipoSelector}>
+          <label className={`${styles.tipoOption} ${tipoCusto === 'fixo' ? styles.tipoOptionActive : ''}`}>
+            <input
+              type="radio"
+              name="cp-tipo-custo"
+              value="fixo"
+              checked={tipoCusto === 'fixo'}
+              onChange={() => setTipoCusto('fixo')}
+            />
+            Custo fixo
+          </label>
+          <label className={`${styles.tipoOption} ${tipoCusto === 'variavel' ? styles.tipoOptionActive : ''}`}>
+            <input
+              type="radio"
+              name="cp-tipo-custo"
+              value="variavel"
+              checked={tipoCusto === 'variavel'}
+              onChange={() => setTipoCusto('variavel')}
+            />
+            Custo variável
+          </label>
+        </div>
+        <p className={styles.formHint}>
+          {tipoCusto === 'fixo'
+            ? 'Valor estável todo mês (ex.: aluguel, internet, folha).'
+            : 'Valor que pode mudar a cada competência (ex.: energia, compras avulsas).'}
+        </p>
+      </fieldset>
+
       <fieldset className={styles.formSection}>
         <legend className={styles.formLegend}>Dados do título</legend>
         <div className={styles.formGrid}>
@@ -285,7 +412,14 @@ function ContaPagarForm({ onClose }: { onClose: () => void }) {
         {erro ? <span className={styles.fieldError}>{erro}</span> : null}
       </fieldset>
 
-      <Footer label="Salvar conta a pagar" onClose={onClose} />
+      <Footer
+        label={
+          isRecorrente
+            ? `Salvar e gerar ${repeticoes} títulos`
+            : 'Salvar lançamento único'
+        }
+        onClose={onClose}
+      />
     </form>
   )
 }

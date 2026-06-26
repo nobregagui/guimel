@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { useToast } from '@/components/ui/Toast'
 import {
   FORMA_PAGAMENTO_LABEL,
   STATUS_PEDIDO_LABEL,
@@ -94,8 +95,10 @@ function StatusTimeline({ current }: { current: StatusPedido }) {
 
 export function VendaDetalhePage() {
   const { id } = useParams<{ id: string }>()
+  const { showToast } = useToast()
   const pedido = useVendasStore((s) => s.pedidos.find((p) => p.id === id))
   const updateStatus = useVendasStore((s) => s.updateStatus)
+  const converterOrcamentoEmVenda = useVendasStore((s) => s.converterOrcamentoEmVenda)
   const emitirNfe = useVendasStore((s) => s.emitirNfe)
   const [confirmandoNfe, setConfirmandoNfe] = useState(false)
 
@@ -128,6 +131,17 @@ export function VendaDetalhePage() {
     setConfirmandoNfe(false)
   }
 
+  function handleConverterOrcamento() {
+    if (!id) return
+    const convertido = converterOrcamentoEmVenda(id)
+    if (!convertido) return
+
+    showToast({
+      message: `Orçamento ${convertido.numero} transformado em venda confirmada.`,
+      variant: 'success',
+    })
+  }
+
   return (
     <div className={styles.root}>
       <div className={styles.header}>
@@ -136,13 +150,19 @@ export function VendaDetalhePage() {
             <IconArrowLeft /> Voltar para vendas
           </Link>
           <div className={styles.headerActions}>
+            {pedido.status === 'orcamento' ? (
+              <button type="button" className={styles.btnPrimary} onClick={handleConverterOrcamento}>
+                <IconCheck />
+                Transformar em venda
+              </button>
+            ) : null}
             {pedido.status === 'confirmado' && !pedido.nfeChave ? (
               <button type="button" className={styles.btnPrimary} onClick={handleEmitirNfe}>
                 <IconFileText />
                 {confirmandoNfe ? 'Confirmar emissão?' : 'Emitir NF-e'}
               </button>
             ) : null}
-            {proximo ? (
+            {proximo && pedido.status !== 'orcamento' ? (
               <button
                 type="button"
                 className={styles.btnSecondary}
@@ -280,13 +300,37 @@ export function VendaDetalhePage() {
               </div>
               <div className={styles.resumoList}>
                 <div className={styles.resumoItem}>
-                  <span>Subtotal</span>
+                  <span>Subtotal dos itens</span>
                   <strong>{formatarMoeda(pedido.subtotal)}</strong>
                 </div>
                 {pedido.descontoTotal > 0 ? (
                   <div className={styles.resumoItem}>
-                    <span>Descontos</span>
+                    <span>Descontos nos itens</span>
                     <strong className={styles.descontoValor}>- {formatarMoeda(pedido.descontoTotal)}</strong>
+                  </div>
+                ) : null}
+                {pedido.frete > 0 ? (
+                  <div className={styles.resumoItem}>
+                    <span>Frete</span>
+                    <strong>{formatarMoeda(pedido.frete)}</strong>
+                  </div>
+                ) : null}
+                {pedido.jurosAdicionais > 0 ? (
+                  <div className={styles.resumoItem}>
+                    <span>Juros / Encargos</span>
+                    <strong className={styles.jurosValor}>+ {formatarMoeda(pedido.jurosAdicionais)}</strong>
+                  </div>
+                ) : null}
+                {pedido.descontoAdicional > 0 ? (
+                  <div className={styles.resumoItem}>
+                    <span>Desconto global</span>
+                    <strong className={styles.descontoValor}>- {formatarMoeda(pedido.descontoAdicional)}</strong>
+                  </div>
+                ) : null}
+                {pedido.multa > 0 ? (
+                  <div className={styles.resumoItem}>
+                    <span>Multa</span>
+                    <strong className={styles.jurosValor}>+ {formatarMoeda(pedido.multa)}</strong>
                   </div>
                 ) : null}
                 {pedido.totalJuros > 0 ? (
@@ -332,11 +376,11 @@ export function VendaDetalhePage() {
                   {pedido.status === 'orcamento' ? (
                     <button
                       type="button"
-                      className={styles.actionBtn}
-                      onClick={() => updateStatus(pedido.id, 'confirmado')}
+                      className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+                      onClick={handleConverterOrcamento}
                     >
                       <IconCheck />
-                      Confirmar pedido
+                      Transformar em venda
                     </button>
                   ) : null}
                   {pedido.status === 'confirmado' && !pedido.nfeChave ? (

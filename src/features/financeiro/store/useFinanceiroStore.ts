@@ -18,7 +18,7 @@ import type {
   Transferencia,
   TransferenciaFormValues,
 } from '@/features/financeiro/types'
-import { formatIsoToBR } from '@/features/financeiro/utils'
+import { addMonthsToIso, formatIsoToBR, formatMesAnoReferencia } from '@/features/financeiro/utils'
 
 interface FinanceiroState {
   contasBancarias: ContaBancaria[]
@@ -28,7 +28,7 @@ interface FinanceiroState {
   extratoMovimentos: ExtratoMovimento[]
   transferencias: Transferencia[]
   addLancamento: (values: LancamentoFormValues) => void
-  addContaPagar: (values: ContaPagarFormValues) => void
+  addContaPagar: (values: ContaPagarFormValues) => number
   addContaReceber: (values: ContaReceberFormValues) => void
   addExtratoMovimento: (values: ExtratoMovimentoFormValues) => void
   addTransferencia: (values: TransferenciaFormValues) => void
@@ -65,18 +65,41 @@ export const useFinanceiroStore = create<FinanceiroState>((set) => ({
   },
 
   addContaPagar: (values) => {
-    const novo: ContaPagar = {
-      id: uid('cp'),
-      fornecedor: values.fornecedor,
-      documento: values.documento || '—',
-      categoria: values.categoria || 'Outros',
-      vencimento: formatIsoToBR(values.vencimentoIso),
-      vencimentoIso: values.vencimentoIso,
-      valor: values.valor,
-      formaPagamento: values.formaPagamento,
-      status: values.status,
+    const isRecorrente = values.modoLancamento === 'recorrente'
+    const quantidade = isRecorrente ? values.repeticoes : 1
+    const recorrenciaId = isRecorrente ? uid('rec') : null
+    const documentoBase = values.documento.trim()
+    const novos: ContaPagar[] = []
+
+    for (let indice = 0; indice < quantidade; indice += 1) {
+      const vencimentoIso = addMonthsToIso(values.vencimentoIso, indice)
+      const referencia = formatMesAnoReferencia(vencimentoIso)
+      const documento = documentoBase
+        ? `${documentoBase} — ${referencia}`
+        : isRecorrente
+          ? `Recorrente — ${referencia}`
+          : '—'
+
+      novos.push({
+        id: uid('cp'),
+        fornecedor: values.fornecedor,
+        documento,
+        categoria: values.categoria || 'Outros',
+        vencimento: formatIsoToBR(vencimentoIso),
+        vencimentoIso,
+        valor: values.valor,
+        formaPagamento: values.formaPagamento,
+        status: indice === 0 ? values.status : 'pendente',
+        modoLancamento: values.modoLancamento,
+        tipoCusto: values.tipoCusto,
+        recorrenciaId,
+        recorrenciaParcela: isRecorrente ? indice + 1 : null,
+        recorrenciaTotal: isRecorrente ? quantidade : null,
+      })
     }
-    set((state) => ({ contasPagar: [novo, ...state.contasPagar] }))
+
+    set((state) => ({ contasPagar: [...novos, ...state.contasPagar] }))
+    return novos.length
   },
 
   addContaReceber: (values) => {

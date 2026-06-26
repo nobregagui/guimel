@@ -70,7 +70,18 @@ export function ContasPagarTab() {
         render: (row) => (
           <>
             <p className={styles.cellDescricao}>{row.fornecedor}</p>
-            <p className={styles.cellSubDesc}>{row.documento}</p>
+            <p className={styles.cellSubDesc}>
+              {row.documento}
+              {row.modoLancamento === 'recorrente' ? (
+                <span className={styles.recorrenciaTag}>
+                  {' '}
+                  · Recorrente
+                  {row.recorrenciaParcela && row.recorrenciaTotal
+                    ? ` ${row.recorrenciaParcela}/${row.recorrenciaTotal}`
+                    : ''}
+                </span>
+              ) : null}
+            </p>
           </>
         ),
       },

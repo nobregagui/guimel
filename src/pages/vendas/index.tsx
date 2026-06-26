@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { useToast } from '@/components/ui/Toast'
 import { PedidoDrawer } from '@/features/vendas/components/PedidoDrawer'
 import {
   FORMA_PAGAMENTO_LABEL,
@@ -42,6 +43,14 @@ function IconDownload() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  )
+}
+
+function IconCheck() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <polyline points="20 6 9 17 4 12" />
     </svg>
   )
 }
@@ -97,8 +106,10 @@ const TABS: { id: Tab; label: string }[] = [
 export function VendasPage() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const pedidos = useVendasStore((s) => s.pedidos)
   const addPedido = useVendasStore((s) => s.addPedido)
+  const converterOrcamentoEmVenda = useVendasStore((s) => s.converterOrcamentoEmVenda)
 
   const [tab, setTab] = useState<Tab>('todos')
   const [busca, setBusca] = useState('')
@@ -161,6 +172,16 @@ export function VendasPage() {
   function handleSubmit(values: PedidoFormValues) {
     addPedido(values)
     setDrawerOpen(false)
+  }
+
+  function handleConverterOrcamento(pedidoId: string, numero: string, clienteNome: string) {
+    const pedido = converterOrcamentoEmVenda(pedidoId)
+    if (!pedido) return
+
+    showToast({
+      message: `Orçamento ${numero} convertido em venda para ${clienteNome}.`,
+      variant: 'success',
+    })
   }
 
   return (
@@ -392,14 +413,29 @@ export function VendasPage() {
                       </p>
                     </td>
                     <td>
-                      <button
-                        type="button"
-                        className={styles.rowAction}
-                        onClick={() => navigate(`/vendas/${pedido.id}`)}
-                        title="Ver detalhes"
-                      >
-                        <IconChevronRight />
-                      </button>
+                      <div className={styles.cellActions}>
+                        {pedido.status === 'orcamento' ? (
+                          <button
+                            type="button"
+                            className={styles.btnConvert}
+                            title="Transformar orçamento em venda"
+                            onClick={() =>
+                              handleConverterOrcamento(pedido.id, pedido.numero, pedido.clienteNome)
+                            }
+                          >
+                            <IconCheck />
+                            Confirmar venda
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className={styles.rowAction}
+                          onClick={() => navigate(`/vendas/${pedido.id}`)}
+                          title="Ver detalhes"
+                        >
+                          <IconChevronRight />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
