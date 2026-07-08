@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-export type LancamentoStatus = 'pago' | 'pendente' | 'vencido'
+export type LancamentoStatus = 'pago' | 'pendente' | 'vencido' | 'parcial' | 'cancelado'
 export type LancamentoTipo = 'receber' | 'pagar'
 export type Periodo = '7d' | 'mes' | 'ano'
 export type FinanceiroAba = 'visao-geral' | 'a-pagar' | 'a-receber' | 'extrato' | 'transferencias'
@@ -47,7 +47,7 @@ export type ContasReceberFiltro = 'todos' | 'pendentes' | 'vencidas' | 'recebida
 export type ExtratoFiltro = 'todos' | 'entradas' | 'saidas'
 export type ExtratoContaFiltro = 'todas' | string
 export type ExtratoMovimentoTipo = 'entrada' | 'saida'
-export type TransferenciaStatus = 'concluida' | 'agendada' | 'cancelada'
+export type TransferenciaStatus = 'concluida' | 'agendada' | 'cancelada' | 'pendente' | 'falhou'
 export type TransferenciasFiltro = 'todos' | 'concluidas' | 'agendadas' | 'canceladas'
 export type FormaPagamento = 'boleto' | 'pix' | 'transferencia' | 'cartao' | 'debito'
 export type ModoLancamentoContaPagar = 'unico' | 'recorrente'
@@ -69,12 +69,22 @@ export const OPCOES_REPETICAO_CONTA_PAGAR: OpcaoRepeticaoContaPagar[] = [
 export interface ContaTituloBase {
   id: string
   categoria: string
+  centroCusto?: string
+  descricao?: string
   vencimento: string
   vencimentoIso: string
+  dataEmissaoIso?: string
   valor: number
+  valorBaixado?: number
+  juros?: number
+  multa?: number
+  desconto?: number
   formaPagamento: FormaPagamento
+  contaBancariaId?: string
   status: LancamentoStatus
   observacao?: string
+  vendaId?: string
+  criadoEmIso?: string
 }
 
 export interface ContaPagar extends ContaTituloBase {
@@ -122,6 +132,8 @@ export interface ExtratoMovimento {
   tipo: ExtratoMovimentoTipo
   valor: number
   saldoApos: number
+  conciliado?: boolean
+  manual?: boolean
 }
 
 export interface Transferencia {
@@ -170,11 +182,35 @@ export interface ContaReceberFormValues {
   cliente: string
   documento: string
   categoria: string
+  centroCusto?: string
+  descricao?: string
+  dataEmissaoIso: string
   vencimentoIso: string
   valor: number
+  juros?: number
+  multa?: number
+  desconto?: number
   formaPagamento: FormaPagamento
+  contaBancariaId?: string
   status: LancamentoStatus
+  observacao?: string
 }
+
+export interface BaixaTituloFormValues {
+  valor: number
+  dataIso: string
+  contaBancariaId: string
+  juros: number
+  desconto: number
+  multa: number
+  observacao: string
+}
+
+export type TituloModulo = 'receber' | 'pagar'
+
+export type FinanceiroExportFormato = 'csv' | 'xlsx' | 'pdf'
+
+export type FinanceiroToolbarAction = 'novo' | 'importar' | 'exportar' | 'atualizar' | 'filtros' | 'colunas' | 'relatorios'
 
 export interface ExtratoMovimentoFormValues {
   contaId: string

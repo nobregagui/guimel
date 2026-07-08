@@ -8,3 +8,11 @@ export { DashboardRecentActivities } from '@/features/dashboard/components/Dashb
 export { DashboardFinancialSummary } from '@/features/dashboard/components/DashboardFinancialSummary'
 export { DashboardAiInsights } from '@/features/dashboard/components/DashboardAiInsights'
 export { DashboardHealthScore } from '@/features/dashboard/components/DashboardHealthScore'
+export {
+  useDashboardKpisQuery,
+  useDashboardCashflowQuery,
+  useDashboardReceivablesQuery,
+  useDashboardActivitiesQuery,
+  useDashboardFinancialSummaryQuery,
+} from '@/features/dashboard/hooks/useDashboard'
+export * from '@/features/dashboard/utils'

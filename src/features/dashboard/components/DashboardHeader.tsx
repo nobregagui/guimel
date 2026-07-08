@@ -8,6 +8,7 @@ import { filterGlobalSearchItems } from '@/features/dashboard/utils/globalSearch
 import shared from '@/features/dashboard/dashboard.module.css'
 import { APP_PATHS } from '@/routes/paths'
 import { createBuscaNavigationState } from '@/routes/navigationState'
+import { logoutSession } from '@/services/authSession'
 import { useAuthStore } from '@/store'
 
 import styles from './DashboardHeader.module.css'
@@ -34,7 +35,6 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   const user = useAuthStore((state) => state.user)
-  const logout = useAuthStore((state) => state.logout)
 
   const [busca, setBusca] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
@@ -112,8 +112,8 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
     setNotificationsOpen(false)
   }
 
-  function handleLogout() {
-    logout()
+  async function handleLogout() {
+    await logoutSession()
     setUserMenuOpen(false)
     navigate('/auth/login')
   }

@@ -1,10 +1,16 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 
+import { LoadingButtonContent } from '@/components/ui/Loading'
 import { CnpjConsultaStatus } from '@/features/clientes/components/CnpjConsultaStatus'
 import { useCnpjConsulta } from '@/features/clientes/hooks/useCnpjConsulta'
+import { useClientesQuery } from '@/features/clientes/hooks/useClientes'
 import { useClientesStore } from '@/features/clientes/store/useClientesStore'
 import type { Cliente } from '@/features/clientes/types'
 import { filterClientesByNome } from '@/features/clientes/utils'
+import { useProdutosQuery } from '@/features/produtos/hooks/useProdutos'
+import { useProdutosStore } from '@/features/produtos/store/useProdutosStore'
+import type { Produto } from '@/features/produtos/types'
+import { filterProdutosByBusca } from '@/features/produtos/utils'
 import { CondicaoPagamentoFields } from '@/features/vendas/components/CondicaoPagamentoFields'
 import {
   FORMA_PAGAMENTO_LABEL,
@@ -25,9 +31,10 @@ import styles from '@/pages/vendas/VendasPage.module.css'
 interface PedidoDrawerProps {
   open: boolean
   onClose: () => void
-  onSubmit: (values: PedidoFormValues) => void
+  onSubmit: (values: PedidoFormValues) => void | Promise<void>
   mode?: 'create' | 'edit'
   initialValues?: Partial<PedidoFormValues>
+  isSaving?: boolean
 }
 
 type DrawerTab = 'dados' | 'pagamento' | 'itens'
@@ -96,7 +103,210 @@ function formatClienteLookupDescription(cliente: Cliente): string {
   return partes.join(' · ')
 }
 
-export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initialValues }: PedidoDrawerProps) {
+function formatProdutoLookupDescription(produto: Produto): string {
+  const partes = [produto.codigo]
+
+  if (produto.categoriaNome) partes.push(produto.categoriaNome)
+
+  partes.push(
+    formatarMoeda(produto.precoPromocional ?? produto.precoVenda),
+    produto.unidadeMedida.toUpperCase(),
+  )
+
+  return partes.join(' · ')
+}
+
+function precoVendaProduto(produto: Produto): number {
+  return produto.precoPromocional ?? produto.precoVenda
+}
+
+function quantidadeToDraft(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return ''
+  return String(value)
+}
+
+function parseQuantidadeDraft(raw: string): number {
+  const trimmed = raw.trim()
+  if (!trimmed) return 0
+  const parsed = Number(trimmed)
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0
+}
+
+interface ItemQuantidadeInputProps {
+  quantidade: number
+  onChange: (quantidade: number) => void
+}
+
+function ItemQuantidadeInput({ quantidade, onChange }: ItemQuantidadeInputProps) {
+  const [draft, setDraft] = useState(() => quantidadeToDraft(quantidade))
+
+  useEffect(() => {
+    setDraft(quantidadeToDraft(quantidade))
+  }, [quantidade])
+
+  return (
+    <input
+      type="number"
+      min={1}
+      inputMode="numeric"
+      placeholder="1"
+      value={draft}
+      onChange={(e) => {
+        const raw = e.target.value
+        setDraft(raw)
+        onChange(parseQuantidadeDraft(raw))
+      }}
+      className={styles.itemInput}
+    />
+  )
+}
+
+interface ItemProdutoLookupFieldProps {
+  descricao: string
+  produtos: Produto[]
+  getProdutoByNome: (nome: string) => Produto | undefined
+  onDescricaoChange: (descricao: string) => void
+  onApplyProduto: (produto: Produto) => void
+  onClearProduto: () => void
+}
+
+function ItemProdutoLookupField({
+  descricao,
+  produtos,
+  getProdutoByNome,
+  onDescricaoChange,
+  onApplyProduto,
+  onClearProduto,
+}: ItemProdutoLookupFieldProps) {
+  const [lookupOpen, setLookupOpen] = useState(false)
+  const lookupRef = useRef<HTMLDivElement>(null)
+  const produtosListId = useId()
+  const lastAppliedProdutoIdRef = useRef('')
+
+  const produtosAtivos = useMemo(
+    () => produtos.filter((produto) => produto.status === 'ativo'),
+    [produtos],
+  )
+
+  const produtosFiltrados = useMemo(() => {
+    const termo = descricao.trim()
+    const base =
+      termo.length >= 2
+        ? filterProdutosByBusca(produtosAtivos, termo)
+        : produtosAtivos
+
+    return [...base].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).slice(0, 8)
+  }, [descricao, produtosAtivos])
+
+  function aplicarProduto(produto: Produto) {
+    onApplyProduto(produto)
+    lastAppliedProdutoIdRef.current = produto.id
+  }
+
+  function limparProdutoCadastrado() {
+    onClearProduto()
+    lastAppliedProdutoIdRef.current = ''
+  }
+
+  function selecionarProduto(produto: Produto) {
+    aplicarProduto(produto)
+    setLookupOpen(false)
+  }
+
+  useEffect(() => {
+    const termo = descricao.trim()
+    if (termo.length < 2) {
+      if (lastAppliedProdutoIdRef.current) limparProdutoCadastrado()
+      return
+    }
+
+    const produto = getProdutoByNome(descricao)
+    if (produto) {
+      if (lastAppliedProdutoIdRef.current === produto.id) return
+      aplicarProduto(produto)
+      return
+    }
+
+    if (lastAppliedProdutoIdRef.current) limparProdutoCadastrado()
+  }, [descricao, getProdutoByNome])
+
+  useEffect(() => {
+    if (!lookupOpen) return undefined
+
+    function handleClickOutside(event: MouseEvent) {
+      if (!lookupRef.current?.contains(event.target as Node)) {
+        setLookupOpen(false)
+      }
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') setLookupOpen(false)
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [lookupOpen])
+
+  return (
+    <div ref={lookupRef} className={`${styles.clienteLookupWrap} ${styles.itemProdutoLookupWrap}`}>
+      <input
+        type="text"
+        placeholder="Digite ou selecione o produto cadastrado"
+        value={descricao}
+        role="combobox"
+        aria-controls={produtosListId}
+        aria-expanded={lookupOpen}
+        aria-autocomplete="list"
+        autoComplete="off"
+        onChange={(e) => {
+          onDescricaoChange(e.target.value)
+          setLookupOpen(true)
+        }}
+        onFocus={() => setLookupOpen(true)}
+        className={styles.itemInput}
+      />
+
+      {lookupOpen && produtosFiltrados.length > 0 ? (
+        <ul id={produtosListId} className={styles.clienteLookupResults} role="listbox">
+          {produtosFiltrados.map((produto) => (
+            <li key={produto.id} role="option">
+              <button
+                type="button"
+                className={styles.clienteLookupResult}
+                onClick={() => selecionarProduto(produto)}
+              >
+                <span className={styles.clienteLookupResultLabel}>{produto.nome}</span>
+                <span className={styles.clienteLookupResultDescription}>
+                  {formatProdutoLookupDescription(produto)}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {lookupOpen && descricao.trim().length >= 2 && produtosFiltrados.length === 0 ? (
+        <div className={styles.clienteLookupEmpty}>Nenhum produto encontrado</div>
+      ) : null}
+    </div>
+  )
+}
+
+export function PedidoDrawer({
+  open,
+  onClose,
+  onSubmit,
+  mode = 'create',
+  initialValues,
+  isSaving = false,
+}: PedidoDrawerProps) {
+  useClientesQuery()
+  useProdutosQuery()
+
   const [tab, setTab] = useState<DrawerTab>('dados')
   const [clienteNome, setClienteNome] = useState(initialValues?.clienteNome ?? '')
   const [clienteDocumento, setClienteDocumento] = useState(initialValues?.clienteDocumento ?? '')
@@ -128,6 +338,8 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
   const clienteLookupRef = useRef<HTMLDivElement>(null)
   const getClienteByNome = useClientesStore((state) => state.getClienteByNome)
   const clientesCadastrados = useClientesStore((state) => state.clientes)
+  const getProdutoByNome = useProdutosStore((state) => state.getProdutoByNome)
+  const produtosCadastrados = useProdutosStore((state) => state.produtos)
 
   const clientesFiltrados = useMemo(() => {
     const termo = clienteNome.trim()
@@ -264,7 +476,7 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
   useEffect(() => {
     if (!open) return undefined
     const fn = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape' && !isSaving) onClose()
     }
     document.addEventListener('keydown', fn)
     document.body.style.overflow = 'hidden'
@@ -272,7 +484,7 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
       document.removeEventListener('keydown', fn)
       document.body.style.overflow = ''
     }
-  }, [open, onClose])
+  }, [open, isSaving, onClose])
 
   function handleOpcaoParcela(p: number, t: number) {
     setParcelas(p)
@@ -295,47 +507,135 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
     })
   }
 
-  function handleSubmit() {
-    if (!clienteNome.trim() || itens.length === 0) return
+  function aplicarProdutoNoItem(idx: number, produto: Produto) {
+    setItens((prev) => {
+      const next = [...prev]
+      const item = {
+        ...next[idx],
+        produtoId: produto.id,
+        descricao: produto.nome,
+        valorUnitario: precoVendaProduto(produto),
+      }
+      item.subtotal = calcularSubtotalItem(
+        item.quantidade,
+        item.valorUnitario,
+        item.desconto,
+        item.tipoDesconto,
+      )
+      next[idx] = item
+      return next
+    })
+  }
 
-    if (isCnpjSaveDisabled) {
-      setDocumentoError(getCnpjSaveBlockMessage(cnpjConsulta))
-      setTab('dados')
+  function limparProdutoNoItem(idx: number) {
+    setItens((prev) => {
+      const next = [...prev]
+      next[idx] = { ...next[idx], produtoId: '' }
+      return next
+    })
+  }
+
+  const formValidation = useMemo(() => {
+    const errors = {
+      cliente: '',
+      documento: '',
+      itens: '',
+    }
+
+    if (clienteNome.trim() && !clienteId) {
+      errors.cliente = 'Selecione um cliente cadastrado para criar o pedido.'
+    }
+
+    if (documentoError) {
+      errors.documento = documentoError
+    } else if (isCnpjSaveDisabled && !clienteEncontrado) {
+      errors.documento = getCnpjSaveBlockMessage(cnpjConsulta)
+    }
+
+    const itensIncompletos = itens.some((item) => !item.produtoId)
+    const itensComConteudo = itens.some(
+      (item) => item.descricao.trim() || item.valorUnitario > 0 || Boolean(item.produtoId),
+    )
+
+    if (itensIncompletos && itensComConteudo) {
+      errors.itens = 'Selecione um produto cadastrado para cada item do pedido.'
+    }
+
+    const hasFieldErrors = Boolean(errors.cliente || errors.documento || errors.itens)
+    const hasInvalidItens =
+      itens.length === 0 ||
+      itens.some((item) => !item.produtoId) ||
+      itens.some((item) => item.quantidade <= 0) ||
+      itens.every((item) => item.subtotal === 0)
+
+    const submitDisabled =
+      isSaving ||
+      !clienteNome.trim() ||
+      !clienteId ||
+      isCnpjSaveDisabled ||
+      hasInvalidItens ||
+      hasFieldErrors
+
+    return { errors, hasFieldErrors, submitDisabled }
+  }, [
+    clienteNome,
+    clienteId,
+    clienteEncontrado,
+    cnpjConsulta,
+    documentoError,
+    isCnpjSaveDisabled,
+    isSaving,
+    itens,
+  ])
+
+  async function handleSubmit() {
+    if (formValidation.submitDisabled) {
+      if (formValidation.errors.cliente || formValidation.errors.documento) {
+        setTab('dados')
+      } else if (formValidation.errors.itens || itens.some((item) => !item.produtoId)) {
+        setTab('itens')
+      }
       return
     }
 
-    onSubmit({
-      clienteId: clienteId || `c_${clienteDocumento.replace(/\D/g, '')}`,
-      clienteNome: clienteNome.trim(),
-      clienteDocumento: clienteDocumento.trim(),
-      clienteFormaPagamentoPreferida: clienteFormaPref,
-      vendedorId: vendedorNome ? `v_${vendedorNome.replace(/\s/g, '_').toLowerCase()}` : '',
-      vendedorNome: vendedorNome.trim(),
-      formaPagamento,
-      parcelas,
-      taxaJurosMensal: taxaMensal,
-      diasVencimento,
-      dataEntregaIso: dataEntrega ? new Date(dataEntrega).toISOString() : '',
-      itens,
-      frete,
-      jurosAdicionais,
-      descontoAdicional,
-      multa,
-      observacao: observacao.trim(),
-    })
+    try {
+      await onSubmit({
+        clienteId,
+        clienteNome: clienteNome.trim(),
+        clienteDocumento: clienteDocumento.trim(),
+        clienteFormaPagamentoPreferida: clienteFormaPref,
+        vendedorId: vendedorNome ? `v_${vendedorNome.replace(/\s/g, '_').toLowerCase()}` : '',
+        vendedorNome: vendedorNome.trim(),
+        formaPagamento,
+        parcelas,
+        taxaJurosMensal: taxaMensal,
+        diasVencimento,
+        dataEntregaIso: dataEntrega ? new Date(dataEntrega).toISOString() : '',
+        itens,
+        frete,
+        jurosAdicionais,
+        descontoAdicional,
+        multa,
+        observacao: observacao.trim(),
+      })
+    } catch {
+      // Erro tratado pela página (toast).
+    }
   }
 
   if (!open) return null
 
-  const submitDisabled =
-    !clienteNome.trim() ||
-    isCnpjSaveDisabled ||
-    itens.length === 0 ||
-    itens.every((item) => item.subtotal === 0)
+  const { errors: fieldErrors, submitDisabled } = formValidation
 
   return (
     <div className={styles.drawerRoot}>
-      <button type="button" className={styles.drawerOverlay} onClick={onClose} aria-label="Fechar" />
+      <button
+        type="button"
+        className={styles.drawerOverlay}
+        onClick={isSaving ? undefined : onClose}
+        aria-label="Fechar"
+        disabled={isSaving}
+      />
       <div className={styles.drawerPanel}>
         <div className={styles.drawerHeader}>
           <div>
@@ -348,7 +648,7 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
                 : 'Atualize as informações do pedido'}
             </p>
           </div>
-          <button type="button" className={styles.drawerClose} onClick={onClose} aria-label="Fechar">
+          <button type="button" className={styles.drawerClose} onClick={onClose} aria-label="Fechar" disabled={isSaving}>
             <IconX />
           </button>
         </div>
@@ -422,6 +722,7 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
                     {clienteLookupOpen && clienteNome.trim().length >= 2 && clientesFiltrados.length === 0 ? (
                       <div className={styles.clienteLookupEmpty}>Nenhum cliente encontrado</div>
                     ) : null}
+                    {fieldErrors.cliente ? <span className={styles.fieldError}>{fieldErrors.cliente}</span> : null}
                   </div>
                   <div className={styles.formField}>
                     <label htmlFor="pedido-cliente-doc">{isCnpj ? 'CNPJ' : 'CPF / CNPJ'}</label>
@@ -434,7 +735,7 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
                       onChange={(e) => setClienteDocumento(documentoMask(e.target.value))}
                       readOnly={!!clienteEncontrado}
                     />
-                    {documentoError ? <span className={styles.fieldError}>{documentoError}</span> : null}
+                    {fieldErrors.documento ? <span className={styles.fieldError}>{fieldErrors.documento}</span> : null}
                     {isCnpj ? <CnpjConsultaStatus result={cnpjConsulta} /> : null}
                   </div>
                   <div className={styles.formField}>
@@ -508,19 +809,17 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
                 <div className={styles.itensList}>
                   {itens.map((item, idx) => (
                     <div key={idx} className={styles.itemRow}>
-                      <input
-                        type="text"
-                        placeholder="Descrição"
-                        value={item.descricao}
-                        onChange={(e) => atualizarItem(idx, 'descricao', e.target.value)}
-                        className={styles.itemInput}
+                      <ItemProdutoLookupField
+                        descricao={item.descricao}
+                        produtos={produtosCadastrados}
+                        getProdutoByNome={getProdutoByNome}
+                        onDescricaoChange={(descricao) => atualizarItem(idx, 'descricao', descricao)}
+                        onApplyProduto={(produto) => aplicarProdutoNoItem(idx, produto)}
+                        onClearProduto={() => limparProdutoNoItem(idx)}
                       />
-                      <input
-                        type="number"
-                        min={1}
-                        value={item.quantidade}
-                        onChange={(e) => atualizarItem(idx, 'quantidade', Number(e.target.value))}
-                        className={styles.itemInput}
+                      <ItemQuantidadeInput
+                        quantidade={item.quantidade}
+                        onChange={(quantidade) => atualizarItem(idx, 'quantidade', quantidade)}
                       />
                       <input
                         type="number"
@@ -559,6 +858,7 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
                     <IconPlus /> Adicionar item
                   </button>
                 </div>
+                {fieldErrors.itens ? <span className={styles.fieldError}>{fieldErrors.itens}</span> : null}
               </fieldset>
 
               <fieldset className={styles.formSection}>
@@ -705,16 +1005,20 @@ export function PedidoDrawer({ open, onClose, onSubmit, mode = 'create', initial
         </div>
 
         <div className={styles.drawerFooter}>
-          <button type="button" className={styles.btnSecondary} onClick={onClose}>
+          <button type="button" className={styles.btnSecondary} onClick={onClose} disabled={isSaving}>
             Cancelar
           </button>
           <button
             type="button"
             className={styles.btnPrimary}
-            onClick={handleSubmit}
+            onClick={() => void handleSubmit()}
             disabled={submitDisabled}
           >
-            {mode === 'create' ? 'Criar orçamento' : 'Salvar alterações'}
+            <LoadingButtonContent
+              loading={isSaving}
+              loadingLabel={mode === 'create' ? 'Criando...' : 'Salvando...'}
+              idleLabel={mode === 'create' ? 'Criar orçamento' : 'Salvar alterações'}
+            />
           </button>
         </div>
       </div>

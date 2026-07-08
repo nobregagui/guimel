@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Box, Package, Wrench, X } from 'lucide-react'
 
+import { LoadingButtonContent } from '@/components/ui/Loading'
 import {
   EMPTY_PRODUTO_FORM,
   ORIGEM_LABEL,
@@ -9,8 +10,7 @@ import {
   calcularMargem,
 } from '@/features/produtos/data/shared'
 import { useProdutosStore } from '@/features/produtos/store/useProdutosStore'
-import type { Produto, ProdutoFormValues, TipoProduto } from '@/features/produtos/types'
-import { produtoToFormValues } from '@/features/produtos/utils'
+import type { ProdutoFormValues, TipoProduto } from '@/features/produtos/types'
 import styles from '@/pages/produtos/ProdutosPage.module.css'
 
 type DrawerTab = 'geral' | 'precos' | 'fiscal' | 'estoque'
@@ -18,8 +18,10 @@ type DrawerTab = 'geral' | 'precos' | 'fiscal' | 'estoque'
 interface ProdutoDrawerProps {
   open: boolean
   onClose: () => void
+  onSubmit: (values: ProdutoFormValues) => void | Promise<void>
   mode?: 'create' | 'edit'
-  produto?: Produto | null
+  initialValues?: ProdutoFormValues
+  isSaving?: boolean
 }
 
 const DRAWER_TABS: { id: DrawerTab; label: string }[] = [
@@ -35,27 +37,90 @@ const TIPO_OPTIONS: { id: TipoProduto; label: string; icon: typeof Package }[] =
   { id: 'kit', label: 'Kit', icon: Box },
 ]
 
-function parseNumber(value: string): number {
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : 0
+type NumberFieldKey =
+  | 'precoCusto'
+  | 'precoVenda'
+  | 'precoPromocional'
+  | 'aliquotaIcms'
+  | 'aliquotaPis'
+  | 'aliquotaCofins'
+  | 'estoqueAtual'
+  | 'estoqueMinimo'
+  | 'estoqueMaximo'
+
+function numberToDraft(value: number | null | undefined): string {
+  if (value == null || value === 0) return ''
+  return String(value)
 }
 
-export function ProdutoDrawer({ open, onClose, mode = 'create', produto }: ProdutoDrawerProps) {
+function parseDraftNumber(raw: string, fallback = 0): number {
+  const trimmed = raw.trim()
+  if (!trimmed || trimmed === '-' || trimmed === '.') return fallback
+  const parsed = Number(trimmed)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function buildNumberDrafts(values: ProdutoFormValues): Record<NumberFieldKey, string> {
+  return {
+    precoCusto: numberToDraft(values.precoCusto),
+    precoVenda: numberToDraft(values.precoVenda),
+    precoPromocional: numberToDraft(values.precoPromocional),
+    aliquotaIcms: numberToDraft(values.aliquotaIcms),
+    aliquotaPis: numberToDraft(values.aliquotaPis),
+    aliquotaCofins: numberToDraft(values.aliquotaCofins),
+    estoqueAtual: numberToDraft(values.estoqueAtual),
+    estoqueMinimo: numberToDraft(values.estoqueMinimo),
+    estoqueMaximo: numberToDraft(values.estoqueMaximo),
+  }
+}
+
+interface FormNumberInputProps {
+  id: string
+  value: string
+  onChange: (raw: string) => void
+  min?: number
+  step?: number
+  placeholder?: string
+}
+
+function FormNumberInput({ id, value, onChange, min, step, placeholder }: FormNumberInputProps) {
+  return (
+    <input
+      id={id}
+      type="number"
+      min={min}
+      step={step}
+      value={value}
+      placeholder={placeholder}
+      onChange={(event) => onChange(event.target.value)}
+    />
+  )
+}
+
+export function ProdutoDrawer({
+  open,
+  onClose,
+  onSubmit,
+  mode = 'create',
+  initialValues,
+  isSaving = false,
+}: ProdutoDrawerProps) {
   const categorias = useProdutosStore((s) => s.categorias)
-  const addProduto = useProdutosStore((s) => s.addProduto)
-  const updateProduto = useProdutosStore((s) => s.updateProduto)
 
   const [tab, setTab] = useState<DrawerTab>('geral')
   const [form, setForm] = useState<ProdutoFormValues>(EMPTY_PRODUTO_FORM)
+  const [numberDrafts, setNumberDrafts] = useState<Record<NumberFieldKey, string>>(() =>
+    buildNumberDrafts(EMPTY_PRODUTO_FORM),
+  )
   const [erro, setErro] = useState('')
 
-  const isEdit = mode === 'edit' && produto
+  const isEdit = mode === 'edit'
 
   useEffect(() => {
     if (!open) return undefined
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape' && !isSaving) onClose()
     }
 
     document.addEventListener('keydown', onKeyDown)
@@ -65,14 +130,16 @@ export function ProdutoDrawer({ open, onClose, mode = 'create', produto }: Produ
       document.removeEventListener('keydown', onKeyDown)
       document.body.style.overflow = ''
     }
-  }, [open, onClose])
+  }, [open, isSaving, onClose])
 
   useEffect(() => {
     if (!open) return
     setTab('geral')
     setErro('')
-    setForm(isEdit ? produtoToFormValues(produto) : EMPTY_PRODUTO_FORM)
-  }, [open, isEdit, produto])
+    const nextForm = initialValues ?? EMPTY_PRODUTO_FORM
+    setForm(nextForm)
+    setNumberDrafts(buildNumberDrafts(nextForm))
+  }, [open, initialValues])
 
   const margem = useMemo(() => calcularMargem(form.precoCusto, form.precoVenda), [form.precoCusto, form.precoVenda])
 
@@ -80,7 +147,18 @@ export function ProdutoDrawer({ open, onClose, mode = 'create', produto }: Produ
     setForm((current) => ({ ...current, [field]: value }))
   }
 
-  function handleSubmit(event: React.FormEvent) {
+  function handleNumberField(field: NumberFieldKey, raw: string, optional = false) {
+    setNumberDrafts((current) => ({ ...current, [field]: raw }))
+
+    if (optional && raw.trim() === '') {
+      setField(field, null as ProdutoFormValues[typeof field])
+      return
+    }
+
+    setField(field, parseDraftNumber(raw) as ProdutoFormValues[typeof field])
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     if (!form.nome.trim()) {
       setErro('Informe o nome do produto.')
@@ -93,19 +171,18 @@ export function ProdutoDrawer({ open, onClose, mode = 'create', produto }: Produ
       return
     }
 
-    if (isEdit) {
-      updateProduto(produto.id, form)
-    } else {
-      addProduto(form)
+    try {
+      await onSubmit(form)
+    } catch {
+      // Erro tratado pela página (toast); mantém drawer aberto.
     }
-    onClose()
   }
 
   if (!open) return null
 
   return (
     <div className={styles.drawerRoot}>
-      <button type="button" className={styles.drawerOverlay} onClick={onClose} aria-label="Fechar formulário" />
+      <button type="button" className={styles.drawerOverlay} onClick={isSaving ? undefined : onClose} aria-label="Fechar formulário" disabled={isSaving} />
 
       <aside className={styles.drawerPanel} role="dialog" aria-modal="true" aria-labelledby="produto-drawer-title">
         <header className={styles.drawerHeader}>
@@ -119,7 +196,7 @@ export function ProdutoDrawer({ open, onClose, mode = 'create', produto }: Produ
                 : 'Cadastre um produto, serviço ou kit com dados completos.'}
             </p>
           </div>
-          <button type="button" className={styles.drawerClose} onClick={onClose} aria-label="Fechar">
+          <button type="button" className={styles.drawerClose} onClick={onClose} aria-label="Fechar" disabled={isSaving}>
             <X size={18} />
           </button>
         </header>
@@ -252,38 +329,33 @@ export function ProdutoDrawer({ open, onClose, mode = 'create', produto }: Produ
               <div className={styles.formGrid}>
                 <div className={styles.formField}>
                   <label htmlFor="prod-custo">Preço de custo (R$)</label>
-                  <input
+                  <FormNumberInput
                     id="prod-custo"
-                    type="number"
                     min={0}
                     step={0.01}
-                    value={form.precoCusto}
-                    onChange={(e) => setField('precoCusto', parseNumber(e.target.value))}
+                    value={numberDrafts.precoCusto}
+                    onChange={(raw) => handleNumberField('precoCusto', raw)}
                   />
                 </div>
                 <div className={styles.formField}>
                   <label htmlFor="prod-venda">Preço de venda (R$) *</label>
-                  <input
+                  <FormNumberInput
                     id="prod-venda"
-                    type="number"
                     min={0}
                     step={0.01}
-                    value={form.precoVenda}
-                    onChange={(e) => setField('precoVenda', parseNumber(e.target.value))}
+                    value={numberDrafts.precoVenda}
+                    onChange={(raw) => handleNumberField('precoVenda', raw)}
                   />
                 </div>
                 <div className={styles.formField}>
                   <label htmlFor="prod-promo">Preço promocional (R$)</label>
-                  <input
+                  <FormNumberInput
                     id="prod-promo"
-                    type="number"
                     min={0}
                     step={0.01}
-                    value={form.precoPromocional ?? ''}
-                    onChange={(e) =>
-                      setField('precoPromocional', e.target.value ? parseNumber(e.target.value) : null)
-                    }
+                    value={numberDrafts.precoPromocional}
                     placeholder="Opcional"
+                    onChange={(raw) => handleNumberField('precoPromocional', raw, true)}
                   />
                 </div>
               </div>
@@ -326,35 +398,32 @@ export function ProdutoDrawer({ open, onClose, mode = 'create', produto }: Produ
                 </div>
                 <div className={styles.formField}>
                   <label htmlFor="prod-icms">ICMS (%)</label>
-                  <input
+                  <FormNumberInput
                     id="prod-icms"
-                    type="number"
                     min={0}
                     step={0.01}
-                    value={form.aliquotaIcms}
-                    onChange={(e) => setField('aliquotaIcms', parseNumber(e.target.value))}
+                    value={numberDrafts.aliquotaIcms}
+                    onChange={(raw) => handleNumberField('aliquotaIcms', raw)}
                   />
                 </div>
                 <div className={styles.formField}>
                   <label htmlFor="prod-pis">PIS (%)</label>
-                  <input
+                  <FormNumberInput
                     id="prod-pis"
-                    type="number"
                     min={0}
                     step={0.01}
-                    value={form.aliquotaPis}
-                    onChange={(e) => setField('aliquotaPis', parseNumber(e.target.value))}
+                    value={numberDrafts.aliquotaPis}
+                    onChange={(raw) => handleNumberField('aliquotaPis', raw)}
                   />
                 </div>
                 <div className={styles.formField}>
                   <label htmlFor="prod-cofins">COFINS (%)</label>
-                  <input
+                  <FormNumberInput
                     id="prod-cofins"
-                    type="number"
                     min={0}
                     step={0.01}
-                    value={form.aliquotaCofins}
-                    onChange={(e) => setField('aliquotaCofins', parseNumber(e.target.value))}
+                    value={numberDrafts.aliquotaCofins}
+                    onChange={(raw) => handleNumberField('aliquotaCofins', raw)}
                   />
                 </div>
               </div>
@@ -382,35 +451,30 @@ export function ProdutoDrawer({ open, onClose, mode = 'create', produto }: Produ
                 <div className={styles.formGrid3}>
                   <div className={styles.formField}>
                     <label htmlFor="prod-estoque-atual">Estoque atual</label>
-                    <input
+                    <FormNumberInput
                       id="prod-estoque-atual"
-                      type="number"
                       min={0}
-                      value={form.estoqueAtual}
-                      onChange={(e) => setField('estoqueAtual', parseNumber(e.target.value))}
+                      value={numberDrafts.estoqueAtual}
+                      onChange={(raw) => handleNumberField('estoqueAtual', raw)}
                     />
                   </div>
                   <div className={styles.formField}>
                     <label htmlFor="prod-estoque-min">Estoque mínimo</label>
-                    <input
+                    <FormNumberInput
                       id="prod-estoque-min"
-                      type="number"
                       min={0}
-                      value={form.estoqueMinimo}
-                      onChange={(e) => setField('estoqueMinimo', parseNumber(e.target.value))}
+                      value={numberDrafts.estoqueMinimo}
+                      onChange={(raw) => handleNumberField('estoqueMinimo', raw)}
                     />
                   </div>
                   <div className={styles.formField}>
                     <label htmlFor="prod-estoque-max">Estoque máximo</label>
-                    <input
+                    <FormNumberInput
                       id="prod-estoque-max"
-                      type="number"
                       min={0}
-                      value={form.estoqueMaximo ?? ''}
-                      onChange={(e) =>
-                        setField('estoqueMaximo', e.target.value ? parseNumber(e.target.value) : null)
-                      }
+                      value={numberDrafts.estoqueMaximo}
                       placeholder="Opcional"
+                      onChange={(raw) => handleNumberField('estoqueMaximo', raw, true)}
                     />
                   </div>
                 </div>
@@ -421,11 +485,15 @@ export function ProdutoDrawer({ open, onClose, mode = 'create', produto }: Produ
           {erro ? <span className={styles.fieldError}>{erro}</span> : null}
 
           <footer className={styles.drawerFooter}>
-            <button type="button" className={styles.btnSecondary} onClick={onClose}>
+            <button type="button" className={styles.btnSecondary} onClick={onClose} disabled={isSaving}>
               Cancelar
             </button>
-            <button type="submit" className={styles.btnPrimary}>
-              {isEdit ? 'Salvar alterações' : 'Cadastrar produto'}
+            <button type="submit" className={styles.btnPrimary} disabled={isSaving}>
+              <LoadingButtonContent
+                loading={isSaving}
+                loadingLabel={isEdit ? 'Salvando...' : 'Cadastrando...'}
+                idleLabel={isEdit ? 'Salvar alterações' : 'Cadastrar produto'}
+              />
             </button>
           </footer>
         </form>

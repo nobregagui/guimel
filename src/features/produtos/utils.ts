@@ -1,3 +1,5 @@
+import axios from 'axios'
+
 import { statusEstoque } from '@/features/produtos/data/shared'
 import type { Produto, ProdutosTab, ProdutosTableFiltros } from '@/features/produtos/types'
 
@@ -8,6 +10,13 @@ function normalizeSearch(value: string): string {
 export function filterProdutosByTab(produtos: Produto[], tab: ProdutosTab): Produto[] {
   if (tab === 'todos') return produtos
   return produtos.filter((produto) => produto.status === tab)
+}
+
+export function findProdutoByNome(produtos: Produto[], nome: string): Produto | undefined {
+  const termo = normalizeSearch(nome)
+  if (termo.length < 2) return undefined
+
+  return produtos.find((produto) => normalizeSearch(produto.nome) === termo)
 }
 
 export function filterProdutosByBusca(produtos: Produto[], busca: string): Produto[] {
@@ -105,4 +114,27 @@ export function produtoIniciais(nome: string): string {
   const partes = nome.trim().split(/\s+/)
   if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase()
   return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase()
+}
+
+export function getProdutoSaveErrorMessage(error: unknown, fallback: string): string {
+  if (!axios.isAxiosError(error)) {
+    return fallback
+  }
+
+  const status = error.response?.status
+  const message = error.response?.data?.message
+
+  if (status === 409) {
+    return typeof message === 'string' ? message : 'Código ou registro já cadastrado'
+  }
+
+  if (status === 400 && Array.isArray(message)) {
+    return message.join(', ')
+  }
+
+  if (status === 400 && typeof message === 'string') {
+    return message
+  }
+
+  return fallback
 }

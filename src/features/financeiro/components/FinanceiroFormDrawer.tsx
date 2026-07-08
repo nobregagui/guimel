@@ -1,10 +1,27 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 
-import { useToast } from '@/components/ui/Toast'
 import { FORMA_PAGAMENTO_TABLE_FILTROS } from '@/features/financeiro/data/shared'
-import { useFinanceiroStore } from '@/features/financeiro/store/useFinanceiroStore'
+import {
+  mapContaPagarFormToCreatePayload,
+  mapContaPagarFormToUpdatePayload,
+  mapContaReceberFormToCreatePayload,
+  mapContaReceberFormToUpdatePayload,
+  mapExtratoFormToPayload,
+  mapLancamentoFormToCreatePagar,
+  mapLancamentoFormToCreateReceber,
+  mapTransferenciaFormToPayload,
+  useContasBancariasQuery,
+  useCreateContaPagarMutation,
+  useCreateContaReceberMutation,
+  useCreateExtratoMutation,
+  useCreateTransferenciaMutation,
+  useUpdateContaPagarMutation,
+  useUpdateContaReceberMutation,
+} from '@/features/financeiro/hooks/useFinanceiro'
 import type {
+  ContaPagar,
+  ContaReceber,
   ExtratoMovimentoTipo,
   FinanceiroAba,
   FormaPagamento,
@@ -23,6 +40,9 @@ const HOJE_ISO = new Date().toISOString().slice(0, 10)
 interface FinanceiroFormDrawerProps {
   open: boolean
   tipo: FinanceiroAba
+  mode?: 'create' | 'edit'
+  editReceber?: ContaReceber | null
+  editPagar?: ContaPagar | null
   onClose: () => void
 }
 
@@ -49,7 +69,14 @@ const DRAWER_META: Record<FinanceiroAba, { title: string; subtitle: string }> = 
   },
 }
 
-export function FinanceiroFormDrawer({ open, tipo, onClose }: FinanceiroFormDrawerProps) {
+export function FinanceiroFormDrawer({
+  open,
+  tipo,
+  mode = 'create',
+  editReceber = null,
+  editPagar = null,
+  onClose,
+}: FinanceiroFormDrawerProps) {
   useEffect(() => {
     if (!open) return undefined
 
@@ -68,7 +95,11 @@ export function FinanceiroFormDrawer({ open, tipo, onClose }: FinanceiroFormDraw
 
   if (!open) return null
 
-  const meta = DRAWER_META[tipo]
+  const meta = mode === 'edit' && tipo === 'a-receber'
+    ? { title: 'Editar conta a receber', subtitle: 'Atualize os dados do título enquanto não estiver recebido.' }
+    : mode === 'edit' && tipo === 'a-pagar'
+      ? { title: 'Editar conta a pagar', subtitle: 'Atualize os dados do título enquanto não estiver pago.' }
+      : DRAWER_META[tipo]
 
   return (
     <div className={styles.drawerRoot}>
@@ -85,18 +116,37 @@ export function FinanceiroFormDrawer({ open, tipo, onClose }: FinanceiroFormDraw
           </button>
         </header>
 
-        <FormBody key={tipo} tipo={tipo} onClose={onClose} />
+        <FormBody
+          key={`${tipo}-${mode}-${editReceber?.id ?? editPagar?.id ?? 'new'}`}
+          tipo={tipo}
+          mode={mode}
+          editReceber={editReceber}
+          editPagar={editPagar}
+          onClose={onClose}
+        />
       </aside>
     </div>
   )
 }
 
-function FormBody({ tipo, onClose }: { tipo: FinanceiroAba; onClose: () => void }) {
+function FormBody({
+  tipo,
+  mode,
+  editReceber,
+  editPagar,
+  onClose,
+}: {
+  tipo: FinanceiroAba
+  mode: 'create' | 'edit'
+  editReceber: ContaReceber | null
+  editPagar: ContaPagar | null
+  onClose: () => void
+}) {
   switch (tipo) {
     case 'a-pagar':
-      return <ContaPagarForm onClose={onClose} />
+      return <ContaPagarForm onClose={onClose} mode={mode} initial={editPagar} />
     case 'a-receber':
-      return <ContaReceberForm onClose={onClose} />
+      return <ContaReceberForm onClose={onClose} mode={mode} initial={editReceber} />
     case 'extrato':
       return <ExtratoForm onClose={onClose} />
     case 'transferencias':
@@ -132,7 +182,8 @@ function parseValor(value: string): number {
 }
 
 function LancamentoForm({ onClose }: { onClose: () => void }) {
-  const addLancamento = useFinanceiroStore((s) => s.addLancamento)
+  const createReceber = useCreateContaReceberMutation()
+  const createPagar = useCreateContaPagarMutation()
 
   const [descricao, setDescricao] = useState('')
   const [subDescricao, setSubDescricao] = useState('')
@@ -148,7 +199,7 @@ function LancamentoForm({ onClose }: { onClose: () => void }) {
     if (!descricao.trim()) return setErro('Informe a descrição do lançamento.')
     if (parseValor(valor) <= 0) return setErro('Informe um valor maior que zero.')
 
-    addLancamento({
+    const values = {
       descricao: descricao.trim(),
       subDescricao: subDescricao.trim(),
       categoria: categoria.trim(),
@@ -156,8 +207,13 @@ function LancamentoForm({ onClose }: { onClose: () => void }) {
       vencimentoIso,
       valor: parseValor(valor),
       status,
-    })
-    onClose()
+    }
+
+    if (tipo === 'receber') {
+      createReceber.mutate(mapLancamentoFormToCreateReceber(values), { onSuccess: onClose })
+    } else {
+      createPagar.mutate(mapLancamentoFormToCreatePagar(values), { onSuccess: onClose })
+    }
   }
 
   return (
@@ -211,26 +267,36 @@ function LancamentoForm({ onClose }: { onClose: () => void }) {
         {erro ? <span className={styles.fieldError}>{erro}</span> : null}
       </fieldset>
 
-      <Footer label="Salvar lançamento" onClose={onClose} />
+      <Footer label="Salvar lançamento" onClose={onClose} disabled={createReceber.isPending || createPagar.isPending} />
     </form>
   )
 }
 
-function ContaPagarForm({ onClose }: { onClose: () => void }) {
-  const addContaPagar = useFinanceiroStore((s) => s.addContaPagar)
-  const { showToast } = useToast()
+function ContaPagarForm({
+  onClose,
+  mode = 'create',
+  initial = null,
+}: {
+  onClose: () => void
+  mode?: 'create' | 'edit'
+  initial?: ContaPagar | null
+}) {
+  const createMutation = useCreateContaPagarMutation()
+  const updateMutation = useUpdateContaPagarMutation()
 
-  const [fornecedor, setFornecedor] = useState('')
-  const [documento, setDocumento] = useState('')
-  const [categoria, setCategoria] = useState('')
-  const [vencimentoIso, setVencimentoIso] = useState(HOJE_ISO)
-  const [valor, setValor] = useState('')
-  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>('boleto')
-  const [status, setStatus] = useState<LancamentoStatus>('pendente')
+  const [fornecedor, setFornecedor] = useState(initial?.fornecedor ?? '')
+  const [documento, setDocumento] = useState(initial?.documento ?? '')
+  const [categoria, setCategoria] = useState(initial?.categoria ?? '')
+  const [vencimentoIso, setVencimentoIso] = useState(initial?.vencimentoIso ?? HOJE_ISO)
+  const [valor, setValor] = useState(initial ? String(initial.valor) : '')
+  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>(initial?.formaPagamento ?? 'boleto')
+  const [status, setStatus] = useState<LancamentoStatus>(initial?.status ?? 'pendente')
   const [modoLancamento, setModoLancamento] = useState<ModoLancamentoContaPagar>('unico')
   const [tipoCusto, setTipoCusto] = useState<TipoCustoPagar>('variavel')
   const [repeticoes, setRepeticoes] = useState(OPCOES_REPETICAO_CONTA_PAGAR[3].vezes)
   const [erro, setErro] = useState('')
+
+  const isEdit = mode === 'edit' && !!initial
 
   const valorNumerico = parseValor(valor)
   const isRecorrente = modoLancamento === 'recorrente'
@@ -248,33 +314,50 @@ function ContaPagarForm({ onClose }: { onClose: () => void }) {
     if (!fornecedor.trim()) return setErro('Informe o fornecedor.')
     if (valorNumerico <= 0) return setErro('Informe um valor maior que zero.')
 
-    const quantidade = addContaPagar({
-      fornecedor: fornecedor.trim(),
-      documento: documento.trim(),
-      categoria: categoria.trim(),
-      vencimentoIso,
-      valor: valorNumerico,
-      formaPagamento,
-      status,
-      modoLancamento,
-      tipoCusto,
-      repeticoes: repeticoesEfetivas,
-    })
-
-    if (isRecorrente) {
-      showToast({
-        message: `${quantidade} títulos recorrentes gerados (${repeticoesEfetivas}× · todo mês).`,
-        variant: 'success',
-      })
+    if (isEdit && initial) {
+      updateMutation.mutate(
+        {
+          id: initial.id,
+          payload: mapContaPagarFormToUpdatePayload({
+            fornecedor: fornecedor.trim(),
+            documento: documento.trim(),
+            categoria: categoria.trim(),
+            vencimentoIso,
+            valor: valorNumerico,
+            formaPagamento,
+            status,
+          }),
+        },
+        { onSuccess: onClose },
+      )
+      return
     }
 
-    onClose()
+    createMutation.mutate(
+      mapContaPagarFormToCreatePayload({
+        fornecedor: fornecedor.trim(),
+        documento: documento.trim(),
+        categoria: categoria.trim(),
+        vencimentoIso,
+        valor: valorNumerico,
+        formaPagamento,
+        status,
+        modoLancamento,
+        tipoCusto,
+        repeticoes: repeticoesEfetivas,
+      }),
+      { onSuccess: onClose },
+    )
   }
 
   return (
     <form className={styles.drawerBody} onSubmit={handleSubmit}>
       <fieldset className={styles.formSection}>
         <legend className={styles.formLegend}>Modo do lançamento</legend>
+        {isEdit ? (
+          <p className={styles.formHint}>Edição de título existente. Recorrência não se aplica.</p>
+        ) : (
+          <>
         <div className={styles.tipoSelector}>
           <label className={`${styles.tipoOption} ${modoLancamento === 'unico' ? styles.tipoOptionActive : ''}`}>
             <input
@@ -302,9 +385,11 @@ function ContaPagarForm({ onClose }: { onClose: () => void }) {
             ? 'Gera vários títulos automaticamente, um por mês, com o mesmo valor e dia de vencimento.'
             : 'Registra apenas este título, sem repetir nos meses seguintes.'}
         </p>
+          </>
+        )}
       </fieldset>
 
-      {isRecorrente ? (
+      {!isEdit && isRecorrente ? (
         <fieldset className={styles.formSection}>
           <legend className={styles.formLegend}>Quantas vezes repetir?</legend>
           <div className={styles.repeticoesGrid}>
@@ -414,43 +499,79 @@ function ContaPagarForm({ onClose }: { onClose: () => void }) {
 
       <Footer
         label={
-          isRecorrente
-            ? `Salvar e gerar ${repeticoes} títulos`
-            : 'Salvar lançamento único'
+          isEdit
+            ? 'Salvar alterações'
+            : isRecorrente
+              ? `Salvar e gerar ${repeticoes} títulos`
+              : 'Salvar lançamento único'
         }
         onClose={onClose}
+        disabled={createMutation.isPending || updateMutation.isPending}
       />
     </form>
   )
 }
 
-function ContaReceberForm({ onClose }: { onClose: () => void }) {
-  const addContaReceber = useFinanceiroStore((s) => s.addContaReceber)
+function ContaReceberForm({
+  onClose,
+  mode = 'create',
+  initial = null,
+}: {
+  onClose: () => void
+  mode?: 'create' | 'edit'
+  initial?: ContaReceber | null
+}) {
+  const createMutation = useCreateContaReceberMutation()
+  const updateMutation = useUpdateContaReceberMutation()
 
-  const [cliente, setCliente] = useState('')
-  const [documento, setDocumento] = useState('')
-  const [categoria, setCategoria] = useState('')
-  const [vencimentoIso, setVencimentoIso] = useState(HOJE_ISO)
-  const [valor, setValor] = useState('')
-  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>('boleto')
-  const [status, setStatus] = useState<LancamentoStatus>('pendente')
+  const [cliente, setCliente] = useState(initial?.cliente ?? '')
+  const [documento, setDocumento] = useState(initial?.documento ?? '')
+  const [categoria, setCategoria] = useState(initial?.categoria ?? '')
+  const [vencimentoIso, setVencimentoIso] = useState(initial?.vencimentoIso ?? HOJE_ISO)
+  const [valor, setValor] = useState(initial ? String(initial.valor) : '')
+  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>(initial?.formaPagamento ?? 'boleto')
+  const [status, setStatus] = useState<LancamentoStatus>(initial?.status ?? 'pendente')
   const [erro, setErro] = useState('')
+
+  const isEdit = mode === 'edit' && !!initial
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     if (!cliente.trim()) return setErro('Informe o cliente.')
     if (parseValor(valor) <= 0) return setErro('Informe um valor maior que zero.')
 
-    addContaReceber({
-      cliente: cliente.trim(),
-      documento: documento.trim(),
-      categoria: categoria.trim(),
-      vencimentoIso,
-      valor: parseValor(valor),
-      formaPagamento,
-      status,
-    })
-    onClose()
+    if (isEdit && initial) {
+      updateMutation.mutate(
+        {
+          id: initial.id,
+          payload: mapContaReceberFormToUpdatePayload({
+            cliente: cliente.trim(),
+            documento: documento.trim(),
+            categoria: categoria.trim(),
+            vencimentoIso,
+            valor: parseValor(valor),
+            formaPagamento,
+            status,
+          }),
+        },
+        { onSuccess: onClose },
+      )
+      return
+    }
+
+    createMutation.mutate(
+      mapContaReceberFormToCreatePayload({
+        cliente: cliente.trim(),
+        documento: documento.trim(),
+        categoria: categoria.trim(),
+        dataEmissaoIso: HOJE_ISO,
+        vencimentoIso,
+        valor: parseValor(valor),
+        formaPagamento,
+        status,
+      }),
+      { onSuccess: onClose },
+    )
   }
 
   return (
@@ -498,16 +619,16 @@ function ContaReceberForm({ onClose }: { onClose: () => void }) {
         {erro ? <span className={styles.fieldError}>{erro}</span> : null}
       </fieldset>
 
-      <Footer label="Salvar conta a receber" onClose={onClose} />
+      <Footer label={isEdit ? 'Salvar alterações' : 'Salvar conta a receber'} onClose={onClose} disabled={createMutation.isPending || updateMutation.isPending} />
     </form>
   )
 }
 
 function ExtratoForm({ onClose }: { onClose: () => void }) {
-  const addExtratoMovimento = useFinanceiroStore((s) => s.addExtratoMovimento)
-  const contas = useFinanceiroStore((s) => s.contasBancarias)
+  const createMutation = useCreateExtratoMutation()
+  const { data: contas = [] } = useContasBancariasQuery()
 
-  const [contaId, setContaId] = useState(contas[0]?.id ?? '')
+  const [contaId, setContaId] = useState('')
   const [dataIso, setDataIso] = useState(HOJE_ISO)
   const [descricao, setDescricao] = useState('')
   const [detalhe, setDetalhe] = useState('')
@@ -516,22 +637,28 @@ function ExtratoForm({ onClose }: { onClose: () => void }) {
   const [valor, setValor] = useState('')
   const [erro, setErro] = useState('')
 
+  useEffect(() => {
+    if (!contaId && contas[0]?.id) setContaId(contas[0].id)
+  }, [contaId, contas])
+
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
     if (!contaId) return setErro('Selecione a conta bancária.')
     if (!descricao.trim()) return setErro('Informe a descrição da movimentação.')
     if (parseValor(valor) <= 0) return setErro('Informe um valor maior que zero.')
 
-    addExtratoMovimento({
-      contaId,
-      dataIso,
-      descricao: descricao.trim(),
-      detalhe: detalhe.trim(),
-      categoria: categoria.trim(),
-      tipo,
-      valor: parseValor(valor),
-    })
-    onClose()
+    createMutation.mutate(
+      mapExtratoFormToPayload({
+        contaId,
+        dataIso,
+        descricao: descricao.trim(),
+        detalhe: detalhe.trim(),
+        categoria: categoria.trim(),
+        tipo,
+        valor: parseValor(valor),
+      }),
+      { onSuccess: onClose },
+    )
   }
 
   return (
@@ -586,7 +713,7 @@ function ExtratoForm({ onClose }: { onClose: () => void }) {
         {erro ? <span className={styles.fieldError}>{erro}</span> : null}
       </fieldset>
 
-      <Footer label="Conciliar movimentação" onClose={onClose} />
+      <Footer label="Conciliar movimentação" onClose={onClose} disabled={createMutation.isPending} />
     </form>
   )
 }
@@ -597,17 +724,22 @@ const STATUS_TRANSFERENCIA_OPTIONS: { id: TransferenciaStatus; label: string }[]
 ]
 
 function TransferenciaForm({ onClose }: { onClose: () => void }) {
-  const addTransferencia = useFinanceiroStore((s) => s.addTransferencia)
-  const contas = useFinanceiroStore((s) => s.contasBancarias)
+  const createMutation = useCreateTransferenciaMutation()
+  const { data: contas = [] } = useContasBancariasQuery()
 
-  const [contaOrigemId, setContaOrigemId] = useState(contas[0]?.id ?? '')
-  const [contaDestinoId, setContaDestinoId] = useState(contas[1]?.id ?? '')
+  const [contaOrigemId, setContaOrigemId] = useState('')
+  const [contaDestinoId, setContaDestinoId] = useState('')
   const [dataIso, setDataIso] = useState(HOJE_ISO)
   const [descricao, setDescricao] = useState('')
   const [observacao, setObservacao] = useState('')
   const [valor, setValor] = useState('')
   const [status, setStatus] = useState<TransferenciaStatus>('concluida')
   const [erro, setErro] = useState('')
+
+  useEffect(() => {
+    if (!contaOrigemId && contas[0]?.id) setContaOrigemId(contas[0].id)
+    if (!contaDestinoId && contas[1]?.id) setContaDestinoId(contas[1].id)
+  }, [contaDestinoId, contaOrigemId, contas])
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -616,16 +748,18 @@ function TransferenciaForm({ onClose }: { onClose: () => void }) {
     if (!descricao.trim()) return setErro('Informe a descrição da transferência.')
     if (parseValor(valor) <= 0) return setErro('Informe um valor maior que zero.')
 
-    addTransferencia({
-      contaOrigemId,
-      contaDestinoId,
-      dataIso,
-      descricao: descricao.trim(),
-      observacao: observacao.trim(),
-      valor: parseValor(valor),
-      status,
-    })
-    onClose()
+    createMutation.mutate(
+      mapTransferenciaFormToPayload({
+        contaOrigemId,
+        contaDestinoId,
+        dataIso,
+        descricao: descricao.trim(),
+        observacao: observacao.trim(),
+        valor: parseValor(valor),
+        status,
+      }),
+      { onSuccess: onClose },
+    )
   }
 
   return (
@@ -684,7 +818,7 @@ function TransferenciaForm({ onClose }: { onClose: () => void }) {
         {erro ? <span className={styles.fieldError}>{erro}</span> : null}
       </fieldset>
 
-      <Footer label="Salvar transferência" onClose={onClose} />
+      <Footer label="Salvar transferência" onClose={onClose} disabled={createMutation.isPending} />
     </form>
   )
 }

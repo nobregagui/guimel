@@ -9,8 +9,11 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
+import axios from 'axios'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@/store'
+import { authService } from '@/services/auth.service'
+import { getApiErrorMessage } from '@/utils/apiErrors'
 import { Logo } from '@/components/ui'
 import styles from './LoginPage.module.css'
 
@@ -217,6 +220,7 @@ export function LoginPage() {
   const { login } = useAuthStore()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [authError, setAuthError] = useState<string | null>(null)
 
   const {
     register,
@@ -243,17 +247,20 @@ export function LoginPage() {
 
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true)
+    setAuthError(null)
     try {
-      // TODO: substituir pelo authService.login(data) quando o backend estiver pronto
-      await new Promise((r) => setTimeout(r, 1000)) // simula latência
-      // Adapte os argumentos conforme a assinatura real do seu useAuthStore.login()
-      // Opção A — login(user, token):
-      // login({ id: '1', name: 'Usuário', email: data.email, role: 'admin', permissions: [] }, 'mock-token-123')
-      // Opção B — login({ user, token }):
-      login({ user: { id: '1', name: 'Usuário', email: data.email, role: 'admin', permissions: [] }, token: 'mock-token-123' })
+      const session = await authService.login({
+        email: data.email,
+        password: data.password,
+      })
+      login({ user: session.user, token: session.token })
       navigate('/dashboard')
-    } catch {
-      // TODO: tratar erros da API (credenciais inválidas etc.)
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        setAuthError('E-mail ou senha inválidos')
+      } else {
+        setAuthError(getApiErrorMessage(error, 'Não foi possível entrar. Tente novamente.'))
+      }
     } finally {
       setIsLoading(false)
     }
@@ -321,6 +328,12 @@ export function LoginPage() {
           <p className={styles.formSubtitle}>Faça login para continuar</p>
 
           <form onSubmit={handleSubmit(onSubmit)} noValidate className={styles.form}>
+
+            {authError && (
+              <div className={styles.errorMsg} role="alert">
+                {authError}
+              </div>
+            )}
 
             {/* Campo e-mail */}
             <div className={styles.fieldGroup}>

@@ -1,3 +1,5 @@
+import axios from 'axios'
+
 import type {
   CidadeSummary,
   Cliente,
@@ -296,4 +298,60 @@ export function buildClienteFromForm(input: ClienteFormValues, currentCount: num
 export function getTicketMedioCliente(cliente: Cliente): number {
   if (cliente.quantidadePedidos === 0) return 0
   return cliente.totalVendas / cliente.quantidadePedidos
+}
+
+export function clienteToFormValues(cliente: Cliente): ClienteFormValues {
+  const dias =
+    cliente.formaPagamentoPreferida === 'boleto_prazo'
+      ? normalizarDiasVencimento(
+          cliente.diasVencimentoPreferidos ?? [],
+          cliente.parcelasPreferidas,
+          'boleto_prazo',
+        )
+      : cliente.diasVencimentoPreferidos ?? []
+
+  return {
+    tipo: cliente.tipo,
+    nome: cliente.nome,
+    nomeFantasia: cliente.nomeFantasia ?? '',
+    documento: cliente.documento,
+    email: cliente.email,
+    telefone: cliente.telefone,
+    segmento: cliente.segmento,
+    cep: cliente.cep,
+    logradouro: cliente.logradouro,
+    numero: cliente.numero,
+    complemento: cliente.complemento,
+    bairro: cliente.bairro,
+    cidade: cliente.cidade,
+    estado: cliente.estado,
+    observacao: cliente.observacao ?? '',
+    formaPagamentoPreferida: cliente.formaPagamentoPreferida,
+    parcelasPreferidas: cliente.parcelasPreferidas,
+    taxaJurosMensalPreferida: cliente.taxaJurosMensalPreferida,
+    diasVencimentoPreferidos: dias,
+  }
+}
+
+export function getClienteSaveErrorMessage(error: unknown, fallback: string): string {
+  if (!axios.isAxiosError(error)) {
+    return fallback
+  }
+
+  const status = error.response?.status
+  const message = error.response?.data?.message
+
+  if (status === 409) {
+    return typeof message === 'string' ? message : 'Documento já cadastrado'
+  }
+
+  if (status === 400 && Array.isArray(message)) {
+    return message.join(', ')
+  }
+
+  if (status === 400 && typeof message === 'string') {
+    return message
+  }
+
+  return fallback
 }

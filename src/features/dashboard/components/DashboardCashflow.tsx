@@ -1,7 +1,10 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 
+import { Loading } from '@/components/ui/Loading'
 import { CASHFLOW_PERIOD_OPTIONS, cashflowChartByPeriod } from '@/features/dashboard/data'
+import { useDashboardCashflowQuery } from '@/features/dashboard/hooks/useDashboard'
 import type { CashflowPeriod, CashflowSeriesKey } from '@/features/dashboard/types'
+import { normalizeCashflowSeries } from '@/features/dashboard/utils'
 import shared from '@/features/dashboard/dashboard.module.css'
 
 import styles from './DashboardCashflow.module.css'
@@ -38,7 +41,11 @@ export function DashboardCashflow() {
   const [filterOpen, setFilterOpen] = useState(false)
   const [visible, setVisible] = useState(DEFAULT_VISIBLE)
 
-  const series = cashflowChartByPeriod[period]
+  const cashflowQuery = useDashboardCashflowQuery(period)
+  const series = useMemo(() => {
+    const raw = cashflowQuery.data ?? cashflowChartByPeriod[period]
+    return normalizeCashflowSeries(raw)
+  }, [cashflowQuery.data, period])
 
   const entradasPath = useMemo(
     () => buildPath(series.entradas, w, h, pad),
@@ -153,57 +160,61 @@ export function DashboardCashflow() {
         </button>
       </div>
 
-      <div className={styles.chartWrap}>
-        <svg
-          className={styles.chart}
-          viewBox={`0 0 ${w} ${h}`}
-          preserveAspectRatio="none"
-          role="img"
-          aria-labelledby={chartId}
-        >
-          <title id={chartId}>
-            Gráfico de fluxo de caixa — {getPeriodLabel(period)} — entradas, saídas e saldo
-          </title>
-          {[0.25, 0.5, 0.75].map((ratio) => (
-            <line
-              key={ratio}
-              x1={pad}
-              y1={h - pad - ratio * (h - pad * 2)}
-              x2={w - pad}
-              y2={h - pad - ratio * (h - pad * 2)}
-              stroke="#f1f5f9"
-              strokeWidth="1"
-            />
-          ))}
-          {visible.entradas ? (
-            <path d={entradasPath} fill="none" stroke="var(--primary, #16a34a)" strokeWidth="2.5" strokeLinecap="round" />
-          ) : null}
-          {visible.saidas ? (
-            <path d={saidasPath} fill="none" stroke="var(--secondary, #f97316)" strokeWidth="2.5" strokeLinecap="round" />
-          ) : null}
-          {visible.saldo ? (
-            <path d={saldoPath} fill="none" stroke="#94a3b8" strokeWidth="2" strokeDasharray="6 4" strokeLinecap="round" />
-          ) : null}
-          {series.labels.map((label, index) => {
-            const x = pad + index * labelStep
-            const showLabel = index === 0 || index === series.labels.length - 1 || index % 2 === 0
-            if (!showLabel) return null
-            return (
-              <text
-                key={`${label}-${index}`}
-                x={x}
-                y={h - 4}
-                textAnchor="middle"
-                fontSize="9"
-                fill="#94a3b8"
-                fontFamily="inherit"
-              >
-                {label}
-              </text>
-            )
-          })}
-        </svg>
-      </div>
+      {cashflowQuery.isLoading && !cashflowQuery.data ? (
+        <Loading label="Carregando fluxo de caixa..." layout="centered" size="md" />
+      ) : (
+        <div className={styles.chartWrap}>
+          <svg
+            className={styles.chart}
+            viewBox={`0 0 ${w} ${h}`}
+            preserveAspectRatio="none"
+            role="img"
+            aria-labelledby={chartId}
+          >
+            <title id={chartId}>
+              Gráfico de fluxo de caixa — {getPeriodLabel(period)} — entradas, saídas e saldo
+            </title>
+            {[0.25, 0.5, 0.75].map((ratio) => (
+              <line
+                key={ratio}
+                x1={pad}
+                y1={h - pad - ratio * (h - pad * 2)}
+                x2={w - pad}
+                y2={h - pad - ratio * (h - pad * 2)}
+                stroke="#f1f5f9"
+                strokeWidth="1"
+              />
+            ))}
+            {visible.entradas ? (
+              <path d={entradasPath} fill="none" stroke="var(--primary, #16a34a)" strokeWidth="2.5" strokeLinecap="round" />
+            ) : null}
+            {visible.saidas ? (
+              <path d={saidasPath} fill="none" stroke="var(--secondary, #f97316)" strokeWidth="2.5" strokeLinecap="round" />
+            ) : null}
+            {visible.saldo ? (
+              <path d={saldoPath} fill="none" stroke="#94a3b8" strokeWidth="2" strokeDasharray="6 4" strokeLinecap="round" />
+            ) : null}
+            {series.labels.map((label, index) => {
+              const x = pad + index * labelStep
+              const showLabel = index === 0 || index === series.labels.length - 1 || index % 2 === 0
+              if (!showLabel) return null
+              return (
+                <text
+                  key={`${label}-${index}`}
+                  x={x}
+                  y={h - 4}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fill="#94a3b8"
+                  fontFamily="inherit"
+                >
+                  {label}
+                </text>
+              )
+            })}
+          </svg>
+        </div>
+      )}
     </section>
   )
 }

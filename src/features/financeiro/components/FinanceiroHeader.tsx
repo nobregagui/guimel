@@ -1,4 +1,4 @@
-import { Download, Plus } from 'lucide-react'
+import { Download, Plus, RefreshCw, Upload } from 'lucide-react'
 import type { RefObject } from 'react'
 
 import { FINANCEIRO_ABAS } from '@/features/financeiro/data/shared'
@@ -14,6 +14,9 @@ interface FinanceiroHeaderProps {
   primaryActionRef?: RefObject<HTMLButtonElement | null>
   highlightPrimaryAction?: boolean
   onPrimaryAction?: () => void
+  onExport?: () => void
+  onImport?: () => void
+  onRefresh?: () => void
 }
 
 export function FinanceiroHeader({
@@ -25,6 +28,9 @@ export function FinanceiroHeader({
   primaryActionRef,
   highlightPrimaryAction = false,
   onPrimaryAction,
+  onExport,
+  onImport,
+  onRefresh,
 }: FinanceiroHeaderProps) {
   return (
     <div className={styles.header}>
@@ -45,9 +51,21 @@ export function FinanceiroHeader({
             ))}
           </div>
 
-          <button type="button" className={styles.btnSecondary}>
-            <Download size={13} /> Exportar
-          </button>
+          <div className={styles.toolbarActions}>
+            {onImport ? (
+              <button type="button" className={styles.btnSecondary} onClick={onImport}>
+                <Upload size={13} /> Importar
+              </button>
+            ) : null}
+            <button type="button" className={styles.btnSecondary} onClick={onExport}>
+              <Download size={13} /> Exportar
+            </button>
+            {onRefresh ? (
+              <button type="button" className={styles.btnSecondary} onClick={onRefresh} aria-label="Atualizar">
+                <RefreshCw size={13} />
+              </button>
+            ) : null}
+          </div>
 
           <button
             ref={primaryActionRef}

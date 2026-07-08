@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { Building2, User, X } from 'lucide-react'
 
 import { EnderecoFields } from '@/components/form/EnderecoFields'
+
 import { CnpjConsultaStatus } from '@/features/clientes/components/CnpjConsultaStatus'
 import { EMPTY_CLIENTE_FORM, CLIENTE_SEGMENTOS } from '@/features/clientes/data/shared'
 import { useCnpjConsulta } from '@/features/clientes/hooks/useCnpjConsulta'
@@ -18,13 +19,15 @@ import {
 } from '@/services/opencnpj.service'
 import { cnpjMask, cpfMask, phoneMask } from '@/utils/masks'
 import styles from '@/pages/clientes/ClientesPage.module.css'
+import { LoadingButtonContent } from '@/components/ui/Loading'
 
 interface ClienteDrawerProps {
   open: boolean
   onClose: () => void
-  onSubmit: (values: ClienteFormValues) => void
+  onSubmit: (values: ClienteFormValues) => void | Promise<void>
   mode?: 'create' | 'edit'
   initialValues?: ClienteFormValues
+  isSaving?: boolean
 }
 
 export function ClienteDrawer({
@@ -33,6 +36,7 @@ export function ClienteDrawer({
   onSubmit,
   mode = 'create',
   initialValues,
+  isSaving = false,
 }: ClienteDrawerProps) {
   const {
     register,
@@ -69,6 +73,7 @@ export function ClienteDrawer({
   const shouldConsultCnpj = !isEdit && tipo === 'pj'
   const cnpjConsulta = useCnpjConsulta(documento, shouldConsultCnpj)
   const isCnpjSaveDisabled = isCnpjSaveBlocked(documento, cnpjConsulta, shouldConsultCnpj)
+  const isBusy = isSubmitting || isSaving
 
   const { onChange: onDocumentoChange, ...documentoRegister } = register('documento')
   const { onChange: onTelefoneChange, ...telefoneRegister } = register('telefone')
@@ -134,7 +139,7 @@ export function ClienteDrawer({
 
   if (!open) return null
 
-  const submit = handleSubmit((values) => {
+  const submit = handleSubmit(async (values) => {
     const parsed = clienteFormSchema.safeParse(values)
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
@@ -151,7 +156,7 @@ export function ClienteDrawer({
       return
     }
 
-    onSubmit(parsed.data)
+    await onSubmit(parsed.data)
     if (!isEdit) reset(EMPTY_CLIENTE_FORM)
     onClose()
   })
@@ -370,10 +375,14 @@ export function ClienteDrawer({
             type="submit"
             form="cliente-drawer-form"
             className={styles.btnPrimary}
-            disabled={isSubmitting || isCnpjSaveDisabled}
-            aria-disabled={isSubmitting || isCnpjSaveDisabled}
+            disabled={isBusy || isCnpjSaveDisabled}
+            aria-disabled={isBusy || isCnpjSaveDisabled}
           >
-            {isEdit ? 'Salvar alterações' : 'Salvar cliente'}
+            <LoadingButtonContent
+              loading={isBusy}
+              loadingLabel={isEdit ? 'Salvando...' : 'Cadastrando...'}
+              idleLabel={isEdit ? 'Salvar alterações' : 'Salvar cliente'}
+            />
           </button>
         </footer>
       </aside>

@@ -1,15 +1,18 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   ArrowLeftRight,
   Ban,
   CalendarClock,
   CheckCircle2,
   Landmark,
-  MoreHorizontal,
 } from 'lucide-react'
 
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { useToast } from '@/components/ui/Toast'
 import { ContaSelector } from '@/features/financeiro/components/ContaSelector'
-import { DataTable, TableFooter, TableSection, TableToolbar } from '@/features/financeiro/components/DataTable'
+import { TableFooter, TableSection } from '@/features/financeiro/components/DataTable'
+import { FinanceiroActionMenu } from '@/features/financeiro/components/FinanceiroActionMenu'
+import { FinanceiroBulkBar } from '@/features/financeiro/components/FinanceiroBulkBar'
 import { FinanceiroKpiCard, KpiGrid } from '@/features/financeiro/components/FinanceiroKpiCard'
 import { ProximasTransferencias } from '@/features/financeiro/components/ProximasTransferencias'
 import {
@@ -19,9 +22,19 @@ import {
 import { TransferenciaRota } from '@/features/financeiro/components/TransferenciaRota'
 import { TransferenciaStatusBadge } from '@/features/financeiro/components/TransferenciaStatusBadge'
 import { TransferenciasResumoContas } from '@/features/financeiro/components/TransferenciasResumoContas'
+import { SelectableDataTable, FinanceiroTableToolbar } from '@/features/financeiro/components/SelectableDataTable'
 import { EMPTY_TRANSFERENCIAS_TABLE_FILTROS } from '@/features/financeiro/data/shared'
-import { useFinanceiroStore } from '@/features/financeiro/store/useFinanceiroStore'
+import { FinanceiroQueryFeedback } from '@/features/financeiro/components/FinanceiroQueryFeedback'
+import {
+  useCancelarTransferenciaMutation,
+  useConfirmarTransferenciaMutation,
+  useContasBancariasQuery,
+  useDeleteTransferenciaMutation,
+  useDuplicateTransferenciaMutation,
+  useTransferenciasQuery,
+} from '@/features/financeiro/hooks/useFinanceiro'
 import type { ExtratoContaFiltro, Periodo, TableColumn, Transferencia, TransferenciasTableFiltros } from '@/features/financeiro/types'
+import { exportTransferenciasCsv } from '@/features/financeiro/utils/exportFinanceiro'
 import {
   countActiveTransferenciasTableFiltros,
   formatBRL,
@@ -39,13 +52,22 @@ interface TransferenciasTabProps {
   periodo: Periodo
   contaId: ExtratoContaFiltro
   onContaChange: (contaId: ExtratoContaFiltro) => void
+  onNovo?: () => void
 }
 
-export function TransferenciasTab({ periodo, contaId, onContaChange }: TransferenciasTabProps) {
-  const transferencias = useFinanceiroStore((s) => s.transferencias)
-  const contasBancarias = useFinanceiroStore((s) => s.contasBancarias)
+export function TransferenciasTab({ periodo, contaId, onContaChange, onNovo }: TransferenciasTabProps) {
+  const { showToast } = useToast()
+  const { data: transferencias = [], isLoading, isError, refetch } = useTransferenciasQuery()
+  const { data: contasBancarias = [] } = useContasBancariasQuery()
+  const confirmarMutation = useConfirmarTransferenciaMutation()
+  const cancelarMutation = useCancelarTransferenciaMutation()
+  const deleteMutation = useDeleteTransferenciaMutation()
+  const duplicateMutation = useDuplicateTransferenciaMutation()
+
   const [filtrosOpen, setFiltrosOpen] = useState(false)
   const [tableFiltros, setTableFiltros] = useState<TransferenciasTableFiltros>(EMPTY_TRANSFERENCIAS_TABLE_FILTROS)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const transferenciasBase = useMemo(
     () => getTransferenciasBaseItems(transferencias, contaId, periodo),
@@ -64,7 +86,7 @@ export function TransferenciasTab({ periodo, contaId, onContaChange }: Transfere
     [transferenciasBase],
   )
   const totalAgendado = useMemo(
-    () => sumTransferenciasPorStatus(transferenciasBase, 'agendada'),
+    () => sumTransferenciasPorStatus(transferenciasBase, 'agendada') + sumTransferenciasPorStatus(transferenciasBase, 'pendente'),
     [transferenciasBase],
   )
   const totalCancelado = useMemo(
@@ -85,6 +107,72 @@ export function TransferenciasTab({ periodo, contaId, onContaChange }: Transfere
   const contaLabel = contaId === 'todas'
     ? 'Todas as contas'
     : (contasBancarias.find((c) => c.id === contaId)?.nome ?? 'Conta selecionada')
+
+  const handleExport = useCallback(() => {
+    exportTransferenciasCsv(transferenciasFiltradas, contasBancarias)
+    showToast({ message: 'Exportação CSV iniciada.', variant: 'success' })
+  }, [contasBancarias, showToast, transferenciasFiltradas])
+
+  const buildMenuItems = useCallback(
+    (tr: Transferencia) => {
+      const podeEditar = tr.status !== 'concluida' && tr.status !== 'cancelada'
+      const podeConfirmar = tr.status === 'agendada' || tr.status === 'pendente'
+      const podeCancelar = tr.status !== 'concluida' && tr.status !== 'cancelada'
+      const podeExcluir = tr.status !== 'concluida'
+
+      return [
+        {
+          id: 'ver',
+          label: 'Visualizar',
+          onClick: () => showToast({ message: `${tr.descricao} — ${formatBRL(tr.valor)}`, variant: 'info' }),
+        },
+        {
+          id: 'editar',
+          label: 'Editar',
+          onClick: () => showToast({ message: 'Edição via drawer em breve.', variant: 'info' }),
+          disabled: !podeEditar,
+        },
+        {
+          id: 'confirmar',
+          label: 'Confirmar',
+          onClick: () => confirmarMutation.mutate(tr.id),
+          disabled: !podeConfirmar,
+        },
+        {
+          id: 'cancelar',
+          label: 'Cancelar',
+          onClick: () => cancelarMutation.mutate(tr.id),
+          disabled: !podeCancelar,
+        },
+        {
+          id: 'comprovante',
+          label: 'Gerar comprovante',
+          onClick: () => undefined,
+          future: true,
+        },
+        {
+          id: 'anexo',
+          label: 'Anexar comprovante',
+          onClick: () => undefined,
+          future: true,
+        },
+        {
+          id: 'duplicar',
+          label: 'Duplicar',
+          onClick: () => duplicateMutation.mutate(tr.id),
+        },
+        { id: 'imprimir', label: 'Imprimir', onClick: () => window.print(), future: true },
+        {
+          id: 'excluir',
+          label: 'Excluir',
+          onClick: () => setConfirmDeleteId(tr.id),
+          disabled: !podeExcluir,
+          danger: true,
+        },
+      ]
+    },
+    [cancelarMutation, confirmarMutation, duplicateMutation, showToast],
+  )
 
   const columns = useMemo<TableColumn<Transferencia>[]>(
     () => [
@@ -136,21 +224,20 @@ export function TransferenciasTab({ periodo, contaId, onContaChange }: Transfere
         key: 'actions',
         header: '',
         headerClassName: styles.thNarrow,
-        render: () => (
-          <button type="button" className={styles.rowAction} aria-label="Ações">
-            <MoreHorizontal size={16} />
-          </button>
-        ),
+        render: (row) => <FinanceiroActionMenu items={buildMenuItems(row)} />,
       },
     ],
-    [contasBancarias],
+    [buildMenuItems, contasBancarias],
   )
 
   function handleClearTableFiltros() {
     setTableFiltros(EMPTY_TRANSFERENCIAS_TABLE_FILTROS)
   }
 
+  const selectedArray = [...selectedIds]
+
   return (
+    <FinanceiroQueryFeedback isLoading={isLoading} isError={isError} onRetry={() => void refetch()}>
     <>
       <KpiGrid>
         <FinanceiroKpiCard
@@ -166,7 +253,7 @@ export function TransferenciasTab({ periodo, contaId, onContaChange }: Transfere
         <FinanceiroKpiCard
           label="Agendado"
           value={formatBRL(totalAgendado)}
-          trend={`${transferenciasBase.filter((t) => t.status === 'agendada').length} programada(s)`}
+          trend={`${transferenciasBase.filter((t) => t.status === 'agendada' || t.status === 'pendente').length} programada(s)`}
           progress={48}
           progressColor="#f97316"
           icon={<CalendarClock size={13} />}
@@ -209,33 +296,64 @@ export function TransferenciasTab({ periodo, contaId, onContaChange }: Transfere
 
       <TableSection
         toolbar={
-          <div className={styles.tableToolbarStack}>
-            <TableToolbar
-              title="Histórico de transferências"
-              subtitle={
-                hasActiveTransferenciasTableFiltros(tableFiltros)
-                  ? `${transferenciasFiltradas.length} de ${transferenciasBase.length} lançamentos — ${contaLabel} — ${getPeriodoLabel(periodo)}`
-                  : `${transferenciasFiltradas.length} lançamentos — ${contaLabel} — ${getPeriodoLabel(periodo)}`
-              }
-              actions={
-                <TransferenciasTableFiltersButton
-                  open={filtrosOpen}
-                  activeCount={activeTableFilters}
-                  onToggle={() => setFiltrosOpen((current) => !current)}
-                />
-              }
-            />
-
-            {filtrosOpen ? (
-              <TransferenciasTableFiltersPanel
-                filtros={tableFiltros}
-                activeCount={activeTableFilters}
-                onChange={setTableFiltros}
-                onClear={handleClearTableFiltros}
-                onClose={() => setFiltrosOpen(false)}
-              />
-            ) : null}
-          </div>
+          <FinanceiroTableToolbar
+            title="Histórico de transferências"
+            subtitle={
+              hasActiveTransferenciasTableFiltros(tableFiltros)
+                ? `${transferenciasFiltradas.length} de ${transferenciasBase.length} lançamentos — ${contaLabel} — ${getPeriodoLabel(periodo)}`
+                : `${transferenciasFiltradas.length} lançamentos — ${contaLabel} — ${getPeriodoLabel(periodo)}`
+            }
+            bulkBar={
+              <FinanceiroBulkBar selectedCount={selectedIds.size} onClear={() => setSelectedIds(new Set())}>
+                <button
+                  type="button"
+                  className={styles.bulkBtn}
+                  onClick={() => {
+                    selectedArray.forEach((id) => confirmarMutation.mutate(id))
+                    setSelectedIds(new Set())
+                  }}
+                >
+                  Confirmar selecionadas
+                </button>
+                <button
+                  type="button"
+                  className={styles.bulkBtn}
+                  onClick={() => {
+                    selectedArray.forEach((id) => cancelarMutation.mutate(id))
+                    setSelectedIds(new Set())
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button type="button" className={styles.bulkBtn} onClick={handleExport}>Exportar</button>
+              </FinanceiroBulkBar>
+            }
+            filters={
+              <>
+                <div className={styles.tableToolbar}>
+                  <div />
+                  <div className={styles.tableToolbarRight}>
+                    <button type="button" className={styles.btnSecondary} onClick={handleExport}>Exportar CSV</button>
+                    <button type="button" className={styles.btnPrimary} onClick={onNovo}>+ Nova transferência</button>
+                    <TransferenciasTableFiltersButton
+                      open={filtrosOpen}
+                      activeCount={activeTableFilters}
+                      onToggle={() => setFiltrosOpen((current) => !current)}
+                    />
+                  </div>
+                </div>
+                {filtrosOpen ? (
+                  <TransferenciasTableFiltersPanel
+                    filtros={tableFiltros}
+                    activeCount={activeTableFilters}
+                    onChange={setTableFiltros}
+                    onClear={handleClearTableFiltros}
+                    onClose={() => setFiltrosOpen(false)}
+                  />
+                ) : null}
+              </>
+            }
+          />
         }
         footer={
           <TableFooter
@@ -245,16 +363,34 @@ export function TransferenciasTab({ periodo, contaId, onContaChange }: Transfere
                 : `Mostrando ${transferenciasFiltradas.length} transferências`
             }
             actionLabel="Nova transferência"
+            onAction={onNovo}
           />
         }
       >
-        <DataTable
+        <SelectableDataTable
           columns={columns}
           data={transferenciasFiltradas}
           getRowKey={(row) => row.id}
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
           emptyMessage="Nenhuma transferência encontrada para os filtros selecionados."
         />
       </TableSection>
+
+      <ConfirmModal
+        open={!!confirmDeleteId}
+        title="Excluir transferência"
+        description="Somente transferências não concluídas podem ser excluídas."
+        confirmLabel="Excluir"
+        variant="danger"
+        onConfirm={() => {
+          if (confirmDeleteId) {
+            deleteMutation.mutate(confirmDeleteId, { onSettled: () => setConfirmDeleteId(null) })
+          }
+        }}
+        onClose={() => setConfirmDeleteId(null)}
+      />
     </>
+    </FinanceiroQueryFeedback>
   )
 }

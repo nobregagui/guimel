@@ -1,57 +1,79 @@
 import { useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { Loading } from '@/components/ui/Loading'
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { useToast } from '@/components/ui/Toast'
 import { ClienteDrawer } from '@/features/clientes/components/ClienteDrawer'
 import { ClienteDetalheDados } from '@/features/clientes/components/detalhe/ClienteDetalheDados'
 import { ClienteDetalheHeader } from '@/features/clientes/components/detalhe/ClienteDetalheHeader'
 import { ClienteDetalheKpis } from '@/features/clientes/components/detalhe/ClienteDetalheKpis'
 import { ClienteDetalhePedidos } from '@/features/clientes/components/detalhe/ClienteDetalhePedidos'
 import { ClienteDetalheResumo } from '@/features/clientes/components/detalhe/ClienteDetalheResumo'
-import type { ClienteFormValues } from '@/features/clientes/types'
+import {
+  useClientePedidosQuery,
+  useClienteQuery,
+  useRemoveClienteMutation,
+  useUpdateClienteMutation,
+} from '@/features/clientes/hooks/useClientes'
 import { useClientesStore } from '@/features/clientes/store/useClientesStore'
+import type { ClienteFormValues, ClientePedido } from '@/features/clientes/types'
+import { clienteToFormValues, getClienteSaveErrorMessage } from '@/features/clientes/utils'
 import styles from '@/pages/clientes/ClienteDetalhePage.module.css'
+
+const EMPTY_PEDIDOS: ClientePedido[] = []
 
 export function ClienteDetalhePage() {
   const { id } = useParams<{ id: string }>()
+  const { showToast } = useToast()
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [inativarModalOpen, setInativarModalOpen] = useState(false)
 
-  const cliente = useClientesStore((state) => state.clientes.find((item) => item.id === id))
-  const pedidosRaw = useClientesStore((state) => state.pedidos)
-  const updateCliente = useClientesStore((state) => state.updateCliente)
+  const clienteQuery = useClienteQuery(id)
+  const pedidosQuery = useClientePedidosQuery(id)
 
-  const pedidos = useMemo(
-    () =>
-      pedidosRaw
-        .filter((pedido) => pedido.clienteId === id)
-        .sort((a, b) => b.dataIso.localeCompare(a.dataIso)),
-    [pedidosRaw, id],
+  const clienteFromStore = useClientesStore((state) =>
+    id ? state.clientes.find((item) => item.id === id) : undefined,
   )
+  const pedidosFromStore = useClientesStore((state) =>
+    id ? state.pedidosByClienteId[id] : undefined,
+  )
+
+  const updateClienteMutation = useUpdateClienteMutation()
+  const removeClienteMutation = useRemoveClienteMutation()
+
+  const cliente = clienteQuery.data ?? clienteFromStore
+
+  const pedidos = useMemo(() => {
+    const raw = pedidosQuery.data ?? pedidosFromStore ?? EMPTY_PEDIDOS
+    if (raw.length <= 1) return raw
+    return [...raw].sort((a, b) => b.dataIso.localeCompare(a.dataIso))
+  }, [pedidosFromStore, pedidosQuery.data])
 
   const initialValues = useMemo<ClienteFormValues | undefined>(() => {
     if (!cliente) return undefined
-
-    return {
-      tipo: cliente.tipo,
-      nome: cliente.nome,
-      nomeFantasia: cliente.nomeFantasia ?? '',
-      documento: cliente.documento,
-      email: cliente.email,
-      telefone: cliente.telefone,
-      segmento: cliente.segmento,
-      cep: cliente.cep,
-      logradouro: cliente.logradouro,
-      numero: cliente.numero,
-      complemento: cliente.complemento,
-      bairro: cliente.bairro,
-      cidade: cliente.cidade,
-      estado: cliente.estado,
-      observacao: cliente.observacao ?? '',
-      formaPagamentoPreferida: cliente.formaPagamentoPreferida,
-      parcelasPreferidas: cliente.parcelasPreferidas,
-      taxaJurosMensalPreferida: cliente.taxaJurosMensalPreferida,
-      diasVencimentoPreferidos: cliente.diasVencimentoPreferidos,
-    }
+    return clienteToFormValues(cliente)
   }, [cliente])
+
+  if (clienteQuery.isLoading && !cliente) {
+    return (
+      <div className={styles.notFound}>
+        <Loading label="Carregando cliente..." layout="fullscreen" />
+      </div>
+    )
+  }
+
+  if (clienteQuery.isError && !cliente) {
+    return (
+      <div className={styles.notFound}>
+        <h1 className={styles.notFoundTitle}>Erro ao carregar cliente</h1>
+        <p className={styles.notFoundText}>Não foi possível buscar os dados deste cadastro.</p>
+        <button type="button" className={styles.backLinkStandalone} onClick={() => clienteQuery.refetch()}>
+          Tentar novamente
+        </button>
+      </div>
+    )
+  }
 
   if (!cliente) {
     return (
@@ -65,9 +87,25 @@ export function ClienteDetalhePage() {
 
   const pedidosPendentes = pedidos.filter((pedido) => pedido.status === 'pendente').length
 
+  async function confirmInativar() {
+    if (!cliente || cliente.status === 'inativo') return
+
+    try {
+      await removeClienteMutation.mutateAsync(cliente.id)
+      showToast({ message: 'Cliente inativado com sucesso.', variant: 'success' })
+      setInativarModalOpen(false)
+    } catch {
+      showToast({ message: 'Não foi possível inativar o cliente.', variant: 'error' })
+    }
+  }
+
   return (
     <div className={styles.root}>
-      <ClienteDetalheHeader cliente={cliente} onEditar={() => setDrawerOpen(true)} />
+      <ClienteDetalheHeader
+        cliente={cliente}
+        onEditar={() => setDrawerOpen(true)}
+        onInativar={cliente.status !== 'inativo' ? () => setInativarModalOpen(true) : undefined}
+      />
 
       <div className={styles.body}>
         <ClienteDetalheKpis cliente={cliente} />
@@ -75,7 +113,10 @@ export function ClienteDetalhePage() {
         <div className={styles.contentGrid}>
           <div className={styles.mainCol}>
             <ClienteDetalheDados cliente={cliente} />
-            <ClienteDetalhePedidos pedidos={pedidos} />
+            <ClienteDetalhePedidos
+              pedidos={pedidos}
+              isLoading={pedidosQuery.isLoading && pedidos.length === 0}
+            />
           </div>
           <ClienteDetalheResumo cliente={cliente} pedidosPendentes={pedidosPendentes} />
         </div>
@@ -84,12 +125,34 @@ export function ClienteDetalhePage() {
       <ClienteDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        onSubmit={(values) => {
-          updateCliente(cliente.id, values)
-          setDrawerOpen(false)
+        isSaving={updateClienteMutation.isPending}
+        onSubmit={async (values) => {
+          try {
+            await updateClienteMutation.mutateAsync({ id: cliente.id, values })
+            showToast({ message: 'Cliente atualizado com sucesso.', variant: 'success' })
+            setDrawerOpen(false)
+          } catch (error) {
+            showToast({
+              message: getClienteSaveErrorMessage(error, 'Erro ao atualizar cliente'),
+              variant: 'error',
+            })
+            throw error
+          }
         }}
         mode="edit"
         initialValues={initialValues}
+      />
+
+      <ConfirmModal
+        open={inativarModalOpen}
+        title="Inativar cliente"
+        description={`Tem certeza que deseja inativar "${cliente.nome}"? O cadastro permanecerá no sistema, mas ficará com status inativo.`}
+        variant="danger"
+        confirmLabel="Inativar cliente"
+        confirmingLabel="Inativando..."
+        isConfirming={removeClienteMutation.isPending}
+        onClose={() => setInativarModalOpen(false)}
+        onConfirm={confirmInativar}
       />
     </div>
   )

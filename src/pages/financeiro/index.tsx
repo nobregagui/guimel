@@ -1,6 +1,8 @@
-﻿import { useEffect, useRef, useState } from 'react'
+﻿import { useQueryClient } from '@tanstack/react-query'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { useToast } from '@/components/ui/Toast'
 import {
   ContasPagarTab,
   ContasReceberTab,
@@ -9,7 +11,10 @@ import {
   FinanceiroHeader,
   TransferenciasTab,
   VisaoGeralTab,
+  financeiroQueryKeys,
   isFinanceiroAba,
+  type ContaPagar,
+  type ContaReceber,
   type ExtratoContaFiltro,
   type FinanceiroAba,
   type Periodo,
@@ -23,7 +28,7 @@ import styles from './FinanceiroPage.module.css'
 const PRIMARY_ACTION_LABEL: Partial<Record<FinanceiroAba, string>> = {
   'a-pagar': 'Nova conta a pagar',
   'a-receber': 'Nova conta a receber',
-  extrato: 'Conciliar extrato',
+  extrato: 'Novo lançamento',
   transferencias: 'Nova transferência',
 }
 
@@ -34,7 +39,9 @@ function resolveInitialTab(tabParam: string | null): FinanceiroAba {
 export function FinanceiroPage() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { showToast } = useToast()
   const { getParam, consumeParam, searchParams } = useRouteQuery()
+  const queryClient = useQueryClient()
   const primaryActionRef = useRef<HTMLButtonElement>(null)
 
   const [periodo, setPeriodo] = useState<Periodo>('mes')
@@ -45,6 +52,9 @@ export function FinanceiroPage() {
   })
   const [highlightPrimaryAction, setHighlightPrimaryAction] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerMode, setDrawerMode] = useState<'create' | 'edit'>('create')
+  const [editReceber, setEditReceber] = useState<ContaReceber | null>(null)
+  const [editPagar, setEditPagar] = useState<ContaPagar | null>(null)
   const [contaExtrato, setContaExtrato] = useState<ExtratoContaFiltro>('todas')
   const [contaTransferencias, setContaTransferencias] = useState<ExtratoContaFiltro>('todas')
 
@@ -68,6 +78,7 @@ export function FinanceiroPage() {
     if (!isRouteIntent(intent)) return
 
     setHighlightPrimaryAction(true)
+    openCreateDrawer()
     primaryActionRef.current?.focus({ preventScroll: true })
 
     const timer = window.setTimeout(() => setHighlightPrimaryAction(false), 2400)
@@ -75,6 +86,49 @@ export function FinanceiroPage() {
   }, [consumeParam, searchParams])
 
   const primaryActionLabel = PRIMARY_ACTION_LABEL[abaAtiva] ?? 'Novo lançamento'
+
+  function openCreateDrawer() {
+    setDrawerMode('create')
+    setEditReceber(null)
+    setEditPagar(null)
+    setDrawerOpen(true)
+  }
+
+  function openEditReceber(titulo: ContaReceber) {
+    setAbaAtiva('a-receber')
+    setDrawerMode('edit')
+    setEditReceber(titulo)
+    setEditPagar(null)
+    setDrawerOpen(true)
+  }
+
+  function openEditPagar(titulo: ContaPagar) {
+    setAbaAtiva('a-pagar')
+    setDrawerMode('edit')
+    setEditPagar(titulo)
+    setEditReceber(null)
+    setDrawerOpen(true)
+  }
+
+  function closeDrawer() {
+    setDrawerOpen(false)
+    setDrawerMode('create')
+    setEditReceber(null)
+    setEditPagar(null)
+  }
+
+  function handleRefresh() {
+    void queryClient.invalidateQueries({ queryKey: financeiroQueryKeys.all })
+    showToast({ message: 'Dados atualizados.', variant: 'success' })
+  }
+
+  function handleExport() {
+    showToast({ message: 'Use Exportar CSV na tabela da aba ativa.', variant: 'info' })
+  }
+
+  function handleImport() {
+    showToast({ message: 'Importação OFX/CSV será integrada com o backend.', variant: 'info' })
+  }
 
   return (
     <div className={styles.root}>
@@ -86,7 +140,10 @@ export function FinanceiroPage() {
         primaryActionLabel={primaryActionLabel}
         primaryActionRef={primaryActionRef}
         highlightPrimaryAction={highlightPrimaryAction}
-        onPrimaryAction={() => setDrawerOpen(true)}
+        onPrimaryAction={openCreateDrawer}
+        onExport={handleExport}
+        onImport={abaAtiva === 'extrato' ? handleImport : undefined}
+        onRefresh={handleRefresh}
       />
 
       <div className={styles.body}>
@@ -95,11 +152,11 @@ export function FinanceiroPage() {
         ) : null}
 
         {abaAtiva === 'a-pagar' ? (
-          <ContasPagarTab />
+          <ContasPagarTab onNovo={openCreateDrawer} onEditar={openEditPagar} />
         ) : null}
 
         {abaAtiva === 'a-receber' ? (
-          <ContasReceberTab />
+          <ContasReceberTab onNovo={openCreateDrawer} onEditar={openEditReceber} />
         ) : null}
 
         {abaAtiva === 'extrato' ? (
@@ -107,6 +164,7 @@ export function FinanceiroPage() {
             periodo={periodo}
             contaId={contaExtrato}
             onContaChange={setContaExtrato}
+            onNovo={openCreateDrawer}
           />
         ) : null}
 
@@ -115,6 +173,7 @@ export function FinanceiroPage() {
             periodo={periodo}
             contaId={contaTransferencias}
             onContaChange={setContaTransferencias}
+            onNovo={openCreateDrawer}
           />
         ) : null}
       </div>
@@ -122,7 +181,10 @@ export function FinanceiroPage() {
       <FinanceiroFormDrawer
         open={drawerOpen}
         tipo={abaAtiva}
-        onClose={() => setDrawerOpen(false)}
+        mode={drawerMode}
+        editReceber={editReceber}
+        editPagar={editPagar}
+        onClose={closeDrawer}
       />
     </div>
   )

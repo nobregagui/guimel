@@ -1,5 +1,5 @@
 ﻿import { api } from '@/services/api'
-import type { AuthSession, LoginPayload, RegisterPayload } from '@/types'
+import type { AuthSession, LoginPayload, RegisterPayload, User } from '@/types'
 
 export const authService = {
   async login(payload: LoginPayload): Promise<AuthSession> {
@@ -10,5 +10,14 @@ export const authService = {
   async register(payload: RegisterPayload): Promise<AuthSession> {
     const { data } = await api.post<AuthSession>('/auth/register', payload)
     return data
+  },
+
+  async me(): Promise<User> {
+    const { data } = await api.get<User>('/auth/me')
+    return data
+  },
+
+  async logout(): Promise<void> {
+    await api.post('/auth/logout')
   },
 }

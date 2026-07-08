@@ -7,6 +7,17 @@
   font-family: inherit;
 }
 
+.feedbackState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 24px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
 /* ─── Header ─────────────────────────────────────────────────────────────────── */
 .header {
   background-color: #ffffff;
@@ -1432,4 +1443,235 @@
   border-color: #16a34a;
   background-color: #f0fdf4;
   color: #15803d;
+}
+
+/* ─── Action menu ───────────────────────────────────────────────────────────── */
+.actionMenuWrap {
+  position: relative;
+}
+
+.actionMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 40;
+  min-width: 200px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.actionMenuItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  color: #374151;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.actionMenuItem:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.actionMenuItem:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.actionMenuItemDanger {
+  color: #dc2626;
+}
+
+.actionMenuFuture {
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+/* ─── Bulk bar ─────────────────────────────────────────────────────────────── */
+.bulkBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(22, 163, 74, 0.15);
+  border-radius: 10px;
+  background: #f0fdf4;
+}
+
+.bulkBarInfo {
+  font-size: 12px;
+  font-weight: 600;
+  color: #15803d;
+}
+
+.bulkBarActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+}
+
+.bulkBarClear {
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.bulkBtn {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.bulkBtn:hover {
+  border-color: #16a34a;
+  color: #15803d;
+}
+
+.thCheckbox,
+.tdCheckbox {
+  width: 36px;
+  text-align: center;
+}
+
+.rowSelected {
+  background: rgba(22, 163, 74, 0.04);
+}
+
+.badgeParcial {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.badgeCancelado {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+/* ─── Modal baixa ──────────────────────────────────────────────────────────── */
+.modalRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modalOverlay {
+  position: absolute;
+  inset: 0;
+  border: none;
+  background: rgba(15, 23, 42, 0.45);
+  cursor: pointer;
+}
+
+.modalPanel {
+  position: relative;
+  z-index: 1;
+  width: min(520px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.modalTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.modalSubtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.modalBody {
+  padding: 18px 20px;
+}
+
+.modalFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid #f1f5f9;
+}
+
+/* ─── Detalhe título ─────────────────────────────────────────────────────────── */
+.detalheGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.detalheItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detalheLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detalheList {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.detalheList li + li {
+  margin-top: 6px;
+}
+
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }

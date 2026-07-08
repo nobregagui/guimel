@@ -1,11 +1,12 @@
 export { CondicaoPagamentoFields } from '@/features/vendas/components/CondicaoPagamentoFields'
 export { PedidoDrawer } from '@/features/vendas/components/PedidoDrawer'
+export { VendasQueryFeedback } from '@/features/vendas/components/VendasQueryFeedback'
 export { useVendasStore } from '@/features/vendas/store/useVendasStore'
 
 export * from '@/features/vendas/types'
+export * from '@/features/vendas/utils'
 export {
   FORMA_PAGAMENTO_LABEL,
-  PEDIDOS_MOCK,
   STATUS_PEDIDO_LABEL,
   STATUS_PEDIDO_ORDEM,
   calcularSubtotalItem,
@@ -24,3 +25,13 @@ export {
   normalizarDiasVencimento,
   normalizeFormaPagamento,
 } from '@/features/vendas/utils/pagamento'
+export {
+  usePedidosQuery,
+  usePedidoQuery,
+  useCreatePedidoMutation,
+  useUpdatePedidoMutation,
+  useRemovePedidoMutation,
+  useUpdatePedidoStatusMutation,
+  useConfirmarPedidoMutation,
+  useEmitirNfePedidoMutation,
+} from '@/features/vendas/hooks/useVendas'

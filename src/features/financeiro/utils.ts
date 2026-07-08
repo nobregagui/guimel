@@ -25,6 +25,14 @@ import { FINANCEIRO_ABAS } from '@/features/financeiro/data/shared'
 
 const REFERENCE_DATE = new Date('2026-06-15')
 
+export type FinanceiroResumo = {
+  aReceber: number
+  recebido: number
+  aPagar: number
+  pago: number
+  saldo: number
+}
+
 export function formatBRL(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
 }
@@ -360,7 +368,9 @@ export function sumByStatus<T extends ContaTituloBase>(contas: T[], status: Lanc
 }
 
 export function sumEmAberto<T extends ContaTituloBase>(contas: T[]): number {
-  return contas.filter((c) => c.status !== 'pago').reduce((acc, c) => acc + c.valor, 0)
+  return contas
+    .filter((c) => c.status !== 'pago' && c.status !== 'cancelado')
+    .reduce((acc, c) => acc + Math.max(0, c.valor - (c.valorBaixado ?? 0)), 0)
 }
 
 export function groupByCategory<T extends ContaTituloBase>(contas: T[]): { categoria: string; total: number; quantidade: number }[] {

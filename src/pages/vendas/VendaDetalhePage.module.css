@@ -178,9 +178,11 @@
 
 .timelineStep {
   display: flex;
-  align-items: center;
-  gap: 0;
   flex: 1;
+  position: relative;
+  align-items: flex-start;
+  min-height: 28px;
+  padding-bottom: 28px;
 }
 
 .timelineStep:last-child {
@@ -197,6 +199,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
   color: #9ca3af;
   transition: all 0.2s;
 }
@@ -216,6 +220,8 @@
 .timelineLabel {
   position: absolute;
   top: 34px;
+  left: 14px;
+  transform: translateX(-50%);
   font-size: 11px;
   color: #9ca3af;
   white-space: nowrap;
@@ -228,27 +234,17 @@
 }
 
 .timelineLine {
-  flex: 1;
+  position: absolute;
+  top: 13px;
+  left: 28px;
+  right: 0;
   height: 2px;
   background-color: #e5e7eb;
-  margin: 0 4px;
-  margin-bottom: 16px;
+  margin: 0;
 }
 
 .timelineLineDone {
   background-color: #16a34a;
-}
-
-.timelineStep {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  position: relative;
-  padding-bottom: 24px;
-}
-
-.timelineStep:last-child {
-  flex: 0;
 }
 
 .timelineCancelado {

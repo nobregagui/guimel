@@ -10,9 +10,14 @@ import styles from '@/pages/clientes/ClienteDetalhePage.module.css'
 interface ClienteDetalheHeaderProps {
   cliente: Cliente
   onEditar?: () => void
+  onInativar?: () => void
 }
 
-export function ClienteDetalheHeader({ cliente, onEditar }: ClienteDetalheHeaderProps) {
+export function ClienteDetalheHeader({
+  cliente,
+  onEditar,
+  onInativar,
+}: ClienteDetalheHeaderProps) {
   return (
     <header className={styles.header}>
       <div className={styles.headerTop}>
@@ -21,6 +26,11 @@ export function ClienteDetalheHeader({ cliente, onEditar }: ClienteDetalheHeader
         </Link>
 
         <div className={styles.headerActions}>
+          {onInativar ? (
+            <button type="button" className={styles.btnSecondary} onClick={onInativar}>
+              Inativar
+            </button>
+          ) : null}
           <button type="button" className={styles.btnSecondary} onClick={onEditar}>
             <Pencil size={13} /> Editar
           </button>

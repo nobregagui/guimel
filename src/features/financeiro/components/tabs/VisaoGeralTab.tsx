@@ -10,8 +10,13 @@ import {
   LancamentosTableFiltersPanel,
 } from '@/features/financeiro/components/LancamentosTableFilters'
 import { StatusBadge, TipoBadge } from '@/features/financeiro/components/StatusBadge'
+import { FinanceiroQueryFeedback } from '@/features/financeiro/components/FinanceiroQueryFeedback'
 import { EMPTY_LANCAMENTOS_TABLE_FILTROS, FLUXO_MES } from '@/features/financeiro/data/shared'
-import { useFinanceiroStore } from '@/features/financeiro/store/useFinanceiroStore'
+import {
+  useFinanceiroLancamentosQuery,
+  useFinanceiroResumoQuery,
+  useContasBancariasQuery,
+} from '@/features/financeiro/hooks/useFinanceiro'
 import type { Lancamento, LancamentosTableFiltros, Periodo, TableColumn } from '@/features/financeiro/types'
 import {
   countActiveLancamentosTableFiltros,
@@ -28,16 +33,23 @@ interface VisaoGeralTabProps {
 }
 
 export function VisaoGeralTab({ periodo }: VisaoGeralTabProps) {
-  const lancamentosBase = useFinanceiroStore((s) => s.lancamentos)
-  const contasBancarias = useFinanceiroStore((s) => s.contasBancarias)
+  const lancamentosQuery = useFinanceiroLancamentosQuery()
+  const resumoQuery = useFinanceiroResumoQuery()
+  const contasBancariasQuery = useContasBancariasQuery()
+
+  const lancamentosBase = lancamentosQuery.data ?? []
+  const resumo = resumoQuery.data ?? null
+  const contasBancarias = contasBancariasQuery.data ?? []
   const [filtrosOpen, setFiltrosOpen] = useState(false)
   const [tableFiltros, setTableFiltros] = useState<LancamentosTableFiltros>(EMPTY_LANCAMENTOS_TABLE_FILTROS)
 
-  const totalSaldo = contasBancarias.reduce((s, c) => s + c.saldo, 0)
-  const receitasMes = 48320
-  const despesasMes = 31150
+  const totalSaldo = resumo?.saldo ?? contasBancarias.reduce((s, c) => s + c.saldo, 0)
+  const receitasMes = (resumo?.recebido ?? 0) + (resumo?.aReceber ?? 0)
+  const despesasMes = (resumo?.pago ?? 0) + (resumo?.aPagar ?? 0)
   const resultado = receitasMes - despesasMes
   const periodoLabel = getPeriodoLabel(periodo)
+  const isLoading = lancamentosQuery.isLoading || resumoQuery.isLoading
+  const isError = lancamentosQuery.isError || resumoQuery.isError
 
   const lancamentos = useMemo(
     () => getRecentesTableLancamentos(lancamentosBase, tableFiltros),
@@ -123,12 +135,20 @@ export function VisaoGeralTab({ periodo }: VisaoGeralTabProps) {
   }
 
   return (
+    <FinanceiroQueryFeedback
+      isLoading={isLoading}
+      isError={isError}
+      onRetry={() => {
+        void lancamentosQuery.refetch()
+        void resumoQuery.refetch()
+      }}
+    >
     <>
       <KpiGrid>
-        <FinanceiroKpiCard label="Receitas do mês" value={formatBRL(receitasMes)} trend="↑ 12% vs mês anterior" trendPositive progress={72} progressColor="#16a34a" icon={<TrendingUp size={13} />} colorClass={styles.colorGreen} />
-        <FinanceiroKpiCard label="Despesas do mês" value={formatBRL(despesasMes)} trend="↑ 4% vs mês anterior" progress={48} progressColor="#e24b4a" icon={<TrendingDown size={13} />} colorClass={styles.colorRed} />
-        <FinanceiroKpiCard label="Resultado líquido" value={formatBRL(resultado)} trend={`Margem de ${((resultado / receitasMes) * 100).toFixed(1)}%`} trendPositive progress={35} progressColor="#f97316" icon={<TrendingUp size={13} />} colorClass={styles.colorOrange} />
-        <FinanceiroKpiCard label="A vencer em 7 dias" value={formatBRL(8400)} trend="3 títulos pendentes" progress={25} progressColor="#f97316" icon={<Clock size={13} />} colorClass={styles.colorAmber} />
+        <FinanceiroKpiCard label="Receitas" value={formatBRL(receitasMes)} trend={`${formatBRL(resumo?.recebido ?? 0)} recebidas`} trendPositive progress={receitasMes > 0 ? Math.min(((resumo?.recebido ?? 0) / receitasMes) * 100, 100) : 0} progressColor="#16a34a" icon={<TrendingUp size={13} />} colorClass={styles.colorGreen} />
+        <FinanceiroKpiCard label="Despesas" value={formatBRL(despesasMes)} trend={`${formatBRL(resumo?.pago ?? 0)} pagas`} progress={despesasMes > 0 ? Math.min(((resumo?.pago ?? 0) / despesasMes) * 100, 100) : 0} progressColor="#e24b4a" icon={<TrendingDown size={13} />} colorClass={styles.colorRed} />
+        <FinanceiroKpiCard label="Resultado líquido" value={formatBRL(resultado)} trend={receitasMes > 0 ? `Margem de ${((resultado / receitasMes) * 100).toFixed(1)}%` : 'Sem receitas no período'} trendPositive={resultado >= 0} progress={35} progressColor="#f97316" icon={<TrendingUp size={13} />} colorClass={styles.colorOrange} />
+        <FinanceiroKpiCard label="A receber" value={formatBRL(resumo?.aReceber ?? 0)} trend="Títulos em aberto" progress={receitasMes > 0 ? Math.min(((resumo?.aReceber ?? 0) / receitasMes) * 100, 100) : 0} progressColor="#f97316" icon={<Clock size={13} />} colorClass={styles.colorAmber} />
       </KpiGrid>
 
       <div className={styles.twoCol}>
@@ -152,7 +172,7 @@ export function VisaoGeralTab({ periodo }: VisaoGeralTabProps) {
           </div>
           <div className={styles.contaTotal}>
             <span className={styles.contaTotalLabel}>Saldo total disponível</span>
-            <span className={styles.contaTotalValue}>{formatBRL(totalSaldo)}</span>
+            <span className={styles.contaTotalValue}>{formatBRL(resumo?.saldo ?? totalSaldo)}</span>
           </div>
         </div>
 
@@ -217,5 +237,6 @@ export function VisaoGeralTab({ periodo }: VisaoGeralTabProps) {
         />
       </TableSection>
     </>
+    </FinanceiroQueryFeedback>
   )
 }

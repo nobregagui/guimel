@@ -1,10 +1,12 @@
 import { DataTable, TableFooter, TableSection, TableToolbar } from '@/features/clientes/components/DataTable'
 import type { ClientePedido, TableColumn } from '@/features/clientes/types'
 import { formatBRL } from '@/features/clientes/utils'
+import { Loading } from '@/components/ui/Loading'
 import styles from '@/pages/clientes/ClienteDetalhePage.module.css'
 
 interface ClienteDetalhePedidosProps {
   pedidos: ClientePedido[]
+  isLoading?: boolean
 }
 
 function PedidoStatusBadge({ status }: { status: ClientePedido['status'] }) {
@@ -17,7 +19,7 @@ function PedidoStatusBadge({ status }: { status: ClientePedido['status'] }) {
   return <span className={`${styles.pedidoBadge} ${cfg.cls}`}>{cfg.label}</span>
 }
 
-export function ClienteDetalhePedidos({ pedidos }: ClienteDetalhePedidosProps) {
+export function ClienteDetalhePedidos({ pedidos, isLoading = false }: ClienteDetalhePedidosProps) {
   const columns: TableColumn<ClientePedido>[] = [
     {
       key: 'numero',
@@ -51,22 +53,30 @@ export function ClienteDetalhePedidos({ pedidos }: ClienteDetalhePedidosProps) {
       toolbar={
         <TableToolbar
           title="Histórico de pedidos"
-          subtitle={`${pedidos.length} ${pedidos.length === 1 ? 'registro' : 'registros'}`}
+          subtitle={
+            isLoading
+              ? 'Carregando pedidos...'
+              : `${pedidos.length} ${pedidos.length === 1 ? 'registro' : 'registros'}`
+          }
         />
       }
       footer={
         <TableFooter
-          info={`Mostrando ${pedidos.length} pedidos`}
+          info={isLoading ? 'Carregando pedidos...' : `Mostrando ${pedidos.length} pedidos`}
           actionLabel="Ver todas as vendas"
         />
       }
     >
-      <DataTable
-        columns={columns}
-        data={pedidos}
-        getRowKey={(row) => row.id}
-        emptyMessage="Este cliente ainda não possui pedidos registrados."
-      />
+      {isLoading ? (
+        <Loading label="Carregando pedidos..." layout="centered" size="md" />
+      ) : (
+        <DataTable
+          columns={columns}
+          data={pedidos}
+          getRowKey={(row) => row.id}
+          emptyMessage="Este cliente ainda não possui pedidos registrados."
+        />
+      )}
     </TableSection>
   )
 }

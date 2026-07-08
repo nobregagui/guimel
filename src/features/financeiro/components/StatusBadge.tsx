@@ -1,13 +1,23 @@
-import { AlertCircle, ArrowDownRight, ArrowUpRight, CheckCircle2, Clock } from 'lucide-react'
+import { AlertCircle, ArrowDownRight, ArrowUpRight, Ban, CheckCircle2, Clock, PieChart } from 'lucide-react'
 
-import type { LancamentoStatus, LancamentoTipo } from '@/features/financeiro/types'
+import type { LancamentoStatus, LancamentoTipo, TituloModulo } from '@/features/financeiro/types'
 import styles from '@/pages/financeiro/FinanceiroPage.module.css'
 
-export function StatusBadge({ status }: { status: LancamentoStatus }) {
+interface StatusBadgeProps {
+  status: LancamentoStatus
+  modulo?: TituloModulo
+}
+
+export function StatusBadge({ status, modulo }: StatusBadgeProps) {
+  const recebidoLabel = modulo === 'receber' ? 'Recebido' : 'Pago'
+  const abertoLabel = 'Aberto'
+
   const cfg = {
-    pago: { label: 'Pago', cls: styles.badgePago, icon: <CheckCircle2 size={10} /> },
-    pendente: { label: 'Pendente', cls: styles.badgePendente, icon: <Clock size={10} /> },
-    vencido: { label: 'Vencido', cls: styles.badgeVencido, icon: <AlertCircle size={10} /> },
+    pago: { label: recebidoLabel, cls: styles.badgePago, icon: <CheckCircle2 size={10} /> },
+    pendente: { label: abertoLabel, cls: styles.badgePendente, icon: <Clock size={10} /> },
+    vencido: { label: 'Atrasado', cls: styles.badgeVencido, icon: <AlertCircle size={10} /> },
+    parcial: { label: 'Parcial', cls: styles.badgeParcial, icon: <PieChart size={10} /> },
+    cancelado: { label: 'Cancelado', cls: styles.badgeCancelado, icon: <Ban size={10} /> },
   }[status]
 
   return (

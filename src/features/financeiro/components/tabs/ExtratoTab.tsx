@@ -1,26 +1,40 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   ArrowDownLeft,
   ArrowUpRight,
   Landmark,
+  Link2,
+  Link2Off,
   List,
-  MoreHorizontal,
   Wallet,
 } from 'lucide-react'
 
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
+import { useToast } from '@/components/ui/Toast'
 import { ContaIcon } from '@/features/financeiro/components/ContaIcon'
 import { ContaSelector } from '@/features/financeiro/components/ContaSelector'
-import { DataTable, TableFooter, TableSection, TableToolbar } from '@/features/financeiro/components/DataTable'
+import { TableFooter, TableSection } from '@/features/financeiro/components/DataTable'
 import {
   ExtratoTableFiltersButton,
   ExtratoTableFiltersPanel,
 } from '@/features/financeiro/components/ExtratoTableFilters'
 import { ExtratoResumoCard } from '@/features/financeiro/components/ExtratoResumoCard'
+import { FinanceiroActionMenu } from '@/features/financeiro/components/FinanceiroActionMenu'
+import { FinanceiroBulkBar } from '@/features/financeiro/components/FinanceiroBulkBar'
 import { FinanceiroKpiCard, KpiGrid } from '@/features/financeiro/components/FinanceiroKpiCard'
+import { SelectableDataTable, FinanceiroTableToolbar } from '@/features/financeiro/components/SelectableDataTable'
 import { EXTRATO_CATEGORIAS } from '@/features/financeiro/data/extrato'
 import { EMPTY_EXTRATO_TABLE_FILTROS } from '@/features/financeiro/data/shared'
-import { useFinanceiroStore } from '@/features/financeiro/store/useFinanceiroStore'
+import { FinanceiroQueryFeedback } from '@/features/financeiro/components/FinanceiroQueryFeedback'
+import {
+  useConciliarExtratoMutation,
+  useContasBancariasQuery,
+  useDeleteExtratoMutation,
+  useDesconciliarExtratoMutation,
+  useExtratoQuery,
+} from '@/features/financeiro/hooks/useFinanceiro'
 import type { ExtratoContaFiltro, ExtratoMovimento, ExtratoTableFiltros, Periodo, TableColumn } from '@/features/financeiro/types'
+import { exportExtratoCsv } from '@/features/financeiro/utils/exportFinanceiro'
 import {
   buildExtratoResumo,
   countActiveExtratoTableFiltros,
@@ -37,6 +51,7 @@ interface ExtratoTabProps {
   periodo: Periodo
   contaId: ExtratoContaFiltro
   onContaChange: (contaId: ExtratoContaFiltro) => void
+  onNovo?: () => void
 }
 
 function ExtratoTipoBadge({ tipo }: { tipo: ExtratoMovimento['tipo'] }) {
@@ -55,11 +70,27 @@ function ExtratoTipoBadge({ tipo }: { tipo: ExtratoMovimento['tipo'] }) {
   )
 }
 
-export function ExtratoTab({ periodo, contaId, onContaChange }: ExtratoTabProps) {
-  const movimentos = useFinanceiroStore((s) => s.extratoMovimentos)
-  const contasBancarias = useFinanceiroStore((s) => s.contasBancarias)
+export function ExtratoTab({ periodo, contaId, onContaChange, onNovo }: ExtratoTabProps) {
+  const { showToast } = useToast()
+
+  const extratoParams = useMemo(
+    () => ({
+      contaId: contaId === 'todas' ? undefined : contaId,
+      periodo,
+    }),
+    [contaId, periodo],
+  )
+
+  const { data: movimentos = [], isLoading, isError, refetch } = useExtratoQuery(extratoParams)
+  const { data: contasBancarias = [] } = useContasBancariasQuery()
+  const conciliarMutation = useConciliarExtratoMutation()
+  const desconciliarMutation = useDesconciliarExtratoMutation()
+  const deleteMutation = useDeleteExtratoMutation()
+
   const [filtrosOpen, setFiltrosOpen] = useState(false)
   const [tableFiltros, setTableFiltros] = useState<ExtratoTableFiltros>(EMPTY_EXTRATO_TABLE_FILTROS)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const showContaFilter = contaId === 'todas'
 
   const contaSelecionada = useMemo(
@@ -94,6 +125,44 @@ export function ExtratoTab({ periodo, contaId, onContaChange }: ExtratoTabProps)
   const contaLabel =
     contaId === 'todas' ? 'Consolidado' : (contaSelecionada?.nome ?? 'Conta selecionada')
 
+  const handleExport = useCallback(() => {
+    exportExtratoCsv(movimentosFiltrados, contasBancarias)
+    showToast({ message: 'Exportação CSV iniciada.', variant: 'success' })
+  }, [contasBancarias, movimentosFiltrados, showToast])
+
+  const buildMenuItems = useCallback(
+    (mov: ExtratoMovimento) => [
+      {
+        id: 'ver',
+        label: 'Visualizar movimentação',
+        onClick: () => showToast({ message: `${mov.descricao} — ${formatBRL(mov.valor)}`, variant: 'info' }),
+      },
+      {
+        id: 'conciliar',
+        label: mov.conciliado ? 'Desconciliar' : 'Conciliar',
+        onClick: () => {
+          if (mov.conciliado) desconciliarMutation.mutate([mov.id])
+          else conciliarMutation.mutate([mov.id])
+        },
+      },
+      {
+        id: 'editar',
+        label: 'Editar lançamento',
+        onClick: () => showToast({ message: 'Edição disponível para lançamentos manuais.', variant: 'info' }),
+        disabled: !mov.manual,
+      },
+      {
+        id: 'excluir',
+        label: 'Excluir lançamento',
+        onClick: () => setConfirmDeleteId(mov.id),
+        disabled: !mov.manual,
+        danger: true,
+      },
+      { id: 'imprimir', label: 'Imprimir', onClick: () => window.print(), future: true },
+    ],
+    [conciliarMutation, desconciliarMutation, showToast],
+  )
+
   const columns = useMemo<TableColumn<ExtratoMovimento>[]>(() => {
     const base: TableColumn<ExtratoMovimento>[] = [
       {
@@ -106,7 +175,10 @@ export function ExtratoTab({ periodo, contaId, onContaChange }: ExtratoTabProps)
         header: 'Descrição',
         render: (row) => (
           <>
-            <p className={styles.cellDescricao}>{row.descricao}</p>
+            <p className={styles.cellDescricao}>
+              {row.descricao}
+              {row.conciliado ? <span className={`${styles.badge} ${styles.badgePago}`} style={{ marginLeft: 8 }}>Conciliado</span> : null}
+            </p>
             <p className={styles.cellSubDesc}>{row.detalhe}</p>
           </>
         ),
@@ -169,21 +241,20 @@ export function ExtratoTab({ periodo, contaId, onContaChange }: ExtratoTabProps)
       key: 'actions',
       header: '',
       headerClassName: styles.thNarrow,
-      render: () => (
-        <button type="button" className={styles.rowAction} aria-label="Ações">
-          <MoreHorizontal size={16} />
-        </button>
-      ),
+      render: (row) => <FinanceiroActionMenu items={buildMenuItems(row)} />,
     })
 
     return base
-  }, [contaId, contasBancarias])
+  }, [buildMenuItems, contaId, contasBancarias])
 
   function handleClearTableFiltros() {
     setTableFiltros(EMPTY_EXTRATO_TABLE_FILTROS)
   }
 
+  const selectedArray = [...selectedIds]
+
   return (
+    <FinanceiroQueryFeedback isLoading={isLoading} isError={isError} onRetry={() => void refetch()}>
     <>
       <KpiGrid>
         <FinanceiroKpiCard
@@ -265,36 +336,66 @@ export function ExtratoTab({ periodo, contaId, onContaChange }: ExtratoTabProps)
 
       <TableSection
         toolbar={
-          <div className={styles.tableToolbarStack}>
-            <TableToolbar
-              title="Extrato bancário"
-              subtitle={
-                hasActiveExtratoTableFiltros(tableFiltros, showContaFilter)
-                  ? `${movimentosFiltrados.length} de ${movimentosBase.length} lançamentos — ${getPeriodoLabel(periodo)}`
-                  : `${movimentosFiltrados.length} lançamentos — ${getPeriodoLabel(periodo)}`
-              }
-              actions={
-                <ExtratoTableFiltersButton
-                  open={filtrosOpen}
-                  activeCount={activeTableFilters}
-                  onToggle={() => setFiltrosOpen((current) => !current)}
-                />
-              }
-            />
-
-            {filtrosOpen ? (
-              <ExtratoTableFiltersPanel
-                filtros={tableFiltros}
-                activeCount={activeTableFilters}
-                categorias={EXTRATO_CATEGORIAS}
-                contas={contasBancarias}
-                showContaFilter={showContaFilter}
-                onChange={setTableFiltros}
-                onClear={handleClearTableFiltros}
-                onClose={() => setFiltrosOpen(false)}
-              />
-            ) : null}
-          </div>
+          <FinanceiroTableToolbar
+            title="Extrato bancário"
+            subtitle={
+              hasActiveExtratoTableFiltros(tableFiltros, showContaFilter)
+                ? `${movimentosFiltrados.length} de ${movimentosBase.length} lançamentos — ${getPeriodoLabel(periodo)}`
+                : `${movimentosFiltrados.length} lançamentos — ${getPeriodoLabel(periodo)}`
+            }
+            bulkBar={
+              <FinanceiroBulkBar selectedCount={selectedIds.size} onClear={() => setSelectedIds(new Set())}>
+                <button
+                  type="button"
+                  className={styles.bulkBtn}
+                  onClick={() => {
+                    conciliarMutation.mutate(selectedArray, { onSuccess: () => setSelectedIds(new Set()) })
+                  }}
+                >
+                  <Link2 size={14} /> Conciliar
+                </button>
+                <button
+                  type="button"
+                  className={styles.bulkBtn}
+                  onClick={() => {
+                    desconciliarMutation.mutate(selectedArray, { onSuccess: () => setSelectedIds(new Set()) })
+                  }}
+                >
+                  <Link2Off size={14} /> Desconciliar
+                </button>
+                <button type="button" className={styles.bulkBtn} onClick={handleExport}>Exportar</button>
+              </FinanceiroBulkBar>
+            }
+            filters={
+              <>
+                <div className={styles.tableToolbar}>
+                  <div />
+                  <div className={styles.tableToolbarRight}>
+                    <button type="button" className={styles.btnSecondary} onClick={handleExport}>Exportar CSV</button>
+                    <button type="button" className={styles.btnSecondary} onClick={() => showToast({ message: 'Importação OFX/CSV via backend.', variant: 'info' })}>Importar</button>
+                    <button type="button" className={styles.btnPrimary} onClick={onNovo}>+ Novo lançamento</button>
+                    <ExtratoTableFiltersButton
+                      open={filtrosOpen}
+                      activeCount={activeTableFilters}
+                      onToggle={() => setFiltrosOpen((current) => !current)}
+                    />
+                  </div>
+                </div>
+                {filtrosOpen ? (
+                  <ExtratoTableFiltersPanel
+                    filtros={tableFiltros}
+                    activeCount={activeTableFilters}
+                    categorias={EXTRATO_CATEGORIAS}
+                    contas={contasBancarias}
+                    showContaFilter={showContaFilter}
+                    onChange={setTableFiltros}
+                    onClear={handleClearTableFiltros}
+                    onClose={() => setFiltrosOpen(false)}
+                  />
+                ) : null}
+              </>
+            }
+          />
         }
         footer={
           <TableFooter
@@ -303,17 +404,41 @@ export function ExtratoTab({ periodo, contaId, onContaChange }: ExtratoTabProps)
                 ? `Mostrando ${movimentosFiltrados.length} de ${movimentosBase.length} movimentações`
                 : `Mostrando ${movimentosFiltrados.length} movimentações`
             }
-            actionLabel="Exportar extrato"
+            actionLabel="Conciliar selecionadas"
+            onAction={() => {
+              if (selectedIds.size === 0) {
+                showToast({ message: 'Selecione movimentações para conciliar.', variant: 'info' })
+                return
+              }
+              conciliarMutation.mutate(selectedArray, { onSuccess: () => setSelectedIds(new Set()) })
+            }}
           />
         }
       >
-        <DataTable
+        <SelectableDataTable
           columns={columns}
           data={movimentosFiltrados}
           getRowKey={(row) => row.id}
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
           emptyMessage="Nenhuma movimentação encontrada para os filtros selecionados."
         />
       </TableSection>
+
+      <ConfirmModal
+        open={!!confirmDeleteId}
+        title="Excluir lançamento"
+        description="Somente lançamentos manuais podem ser excluídos. O saldo da conta será recalculado."
+        confirmLabel="Excluir"
+        variant="danger"
+        onConfirm={() => {
+          if (confirmDeleteId) {
+            deleteMutation.mutate(confirmDeleteId, { onSettled: () => setConfirmDeleteId(null) })
+          }
+        }}
+        onClose={() => setConfirmDeleteId(null)}
+      />
     </>
+    </FinanceiroQueryFeedback>
   )
 }

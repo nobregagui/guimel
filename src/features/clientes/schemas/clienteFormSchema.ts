@@ -34,7 +34,7 @@ export const clienteFormSchema = z
     }),
     parcelasPreferidas: z.number().int().min(1).max(12),
     taxaJurosMensalPreferida: z.number().min(0).max(100),
-    diasVencimentoPreferidos: z.array(z.number().int().min(1).max(365)).min(1).max(12),
+    diasVencimentoPreferidos: z.array(z.number().int().min(1).max(365)).max(12),
   })
   .superRefine((data, ctx) => {
     const documentoDigits = onlyDigits(data.documento)

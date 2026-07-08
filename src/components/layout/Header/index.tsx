@@ -1,17 +1,16 @@
 import { useNavigate } from 'react-router-dom'
 
+import { logoutSession } from '@/services/authSession'
 import { useAppStore } from '@/store'
-import { useAuthStore } from '@/store'
 
 import { Button, Logo } from '@/components/ui'
 
 export function Header() {
   const navigate = useNavigate()
   const toggleSidebar = useAppStore((state) => state.toggleSidebar)
-  const logout = useAuthStore((state) => state.logout)
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logoutSession()
     navigate('/auth/login')
   }
 

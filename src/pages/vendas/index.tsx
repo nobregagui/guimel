@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useToast } from '@/components/ui/Toast'
 import { PedidoDrawer } from '@/features/vendas/components/PedidoDrawer'
+import { VendasQueryFeedback } from '@/features/vendas/components/VendasQueryFeedback'
 import {
   FORMA_PAGAMENTO_LABEL,
   STATUS_PEDIDO_LABEL,
@@ -10,8 +11,14 @@ import {
   formatarData,
   formatarMoeda,
 } from '@/features/vendas/data/shared'
+import {
+  useConfirmarPedidoMutation,
+  useCreatePedidoMutation,
+  usePedidosQuery,
+} from '@/features/vendas/hooks/useVendas'
 import { useVendasStore } from '@/features/vendas/store/useVendasStore'
 import type { PedidoFormValues, StatusPedido } from '@/features/vendas/types'
+import { getPedidoActionErrorMessage, getPedidoSaveErrorMessage } from '@/features/vendas/utils'
 import { getBuscaFromState } from '@/routes/navigationState'
 import styles from '@/pages/vendas/VendasPage.module.css'
 
@@ -107,9 +114,12 @@ export function VendasPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const { showToast } = useToast()
+
+  const pedidosQuery = usePedidosQuery()
+  const createPedidoMutation = useCreatePedidoMutation()
+  const confirmarPedidoMutation = useConfirmarPedidoMutation()
+
   const pedidos = useVendasStore((s) => s.pedidos)
-  const addPedido = useVendasStore((s) => s.addPedido)
-  const converterOrcamentoEmVenda = useVendasStore((s) => s.converterOrcamentoEmVenda)
 
   const [tab, setTab] = useState<Tab>('todos')
   const [busca, setBusca] = useState('')
@@ -170,18 +180,38 @@ export function VendasPage() {
   }
 
   function handleSubmit(values: PedidoFormValues) {
-    addPedido(values)
-    setDrawerOpen(false)
+    return createPedidoMutation
+      .mutateAsync(values)
+      .then((pedido) => {
+        showToast({
+          message: `Orçamento ${pedido.numero} criado com sucesso.`,
+          variant: 'success',
+        })
+        setDrawerOpen(false)
+        navigate(`/vendas/${pedido.id}`)
+      })
+      .catch((error) => {
+        showToast({
+          message: getPedidoSaveErrorMessage(error, 'Erro ao criar pedido'),
+          variant: 'error',
+        })
+        throw error
+      })
   }
 
-  function handleConverterOrcamento(pedidoId: string, numero: string, clienteNome: string) {
-    const pedido = converterOrcamentoEmVenda(pedidoId)
-    if (!pedido) return
-
-    showToast({
-      message: `Orçamento ${numero} convertido em venda para ${clienteNome}.`,
-      variant: 'success',
-    })
+  async function handleConverterOrcamento(pedidoId: string, numero: string, clienteNome: string) {
+    try {
+      await confirmarPedidoMutation.mutateAsync(pedidoId)
+      showToast({
+        message: `Orçamento ${numero} convertido em venda para ${clienteNome}.`,
+        variant: 'success',
+      })
+    } catch (error) {
+      showToast({
+        message: getPedidoActionErrorMessage(error, 'Não foi possível confirmar o orçamento.'),
+        variant: 'error',
+      })
+    }
   }
 
   return (
@@ -243,6 +273,11 @@ export function VendasPage() {
       </div>
 
       <div className={styles.body}>
+        <VendasQueryFeedback
+          isLoading={pedidosQuery.isLoading}
+          isError={pedidosQuery.isError}
+          onRetry={() => pedidosQuery.refetch()}
+        >
         <div className={styles.kpiGrid}>
           <div className={styles.kpiCard}>
             <p className={styles.kpiLabel}>
@@ -419,8 +454,9 @@ export function VendasPage() {
                             type="button"
                             className={styles.btnConvert}
                             title="Transformar orçamento em venda"
+                            disabled={confirmarPedidoMutation.isPending}
                             onClick={() =>
-                              handleConverterOrcamento(pedido.id, pedido.numero, pedido.clienteNome)
+                              void handleConverterOrcamento(pedido.id, pedido.numero, pedido.clienteNome)
                             }
                           >
                             <IconCheck />
@@ -449,6 +485,7 @@ export function VendasPage() {
             </span>
           </div>
         </div>
+        </VendasQueryFeedback>
       </div>
 
       {drawerOpen ? (
@@ -456,6 +493,7 @@ export function VendasPage() {
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           onSubmit={handleSubmit}
+          isSaving={createPedidoMutation.isPending}
         />
       ) : null}
     </div>

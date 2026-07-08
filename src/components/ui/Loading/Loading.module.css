@@ -1,0 +1,84 @@
+.loadingSpinner {
+  display: inline-block;
+  border-radius: 50%;
+  border-style: solid;
+  animation: loadingSpin 0.75s linear infinite;
+  flex-shrink: 0;
+}
+
+.toneLight {
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+}
+
+.toneGreen {
+  border-color: rgba(22, 163, 74, 0.2);
+  border-top-color: #16a34a;
+}
+
+.toneMuted {
+  border-color: rgba(156, 163, 175, 0.35);
+  border-top-color: #6b7280;
+}
+
+.sizeSm {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+.sizeMd {
+  width: 20px;
+  height: 20px;
+  border-width: 2.5px;
+}
+
+.sizeLg {
+  width: 32px;
+  height: 32px;
+  border-width: 3px;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #6b7280;
+}
+
+.layoutInline {
+  flex-direction: row;
+  justify-content: flex-start;
+  padding: 0;
+}
+
+.layoutCentered {
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.layoutFullscreen {
+  min-height: 240px;
+  padding: 64px 24px;
+}
+
+.label {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+@keyframes loadingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.buttonContent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}

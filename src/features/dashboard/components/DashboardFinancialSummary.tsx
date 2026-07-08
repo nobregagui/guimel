@@ -1,4 +1,6 @@
+import { Loading } from '@/components/ui/Loading'
 import { financialSummaryItems } from '@/features/dashboard/data'
+import { useDashboardFinancialSummaryQuery } from '@/features/dashboard/hooks/useDashboard'
 import shared from '@/features/dashboard/dashboard.module.css'
 import { MiniSparkline } from '@/features/dashboard/icons'
 import { formatCurrency } from '@/utils'
@@ -13,25 +15,34 @@ const miniCharts: Record<string, number[]> = {
 }
 
 export function DashboardFinancialSummary() {
+  const summaryQuery = useDashboardFinancialSummaryQuery()
+  const items = summaryQuery.data ?? financialSummaryItems
+
   return (
     <section className={[shared.card, styles.root].join(' ')} aria-label="Resumo financeiro">
       <h2 className={shared.cardTitle}>Resumo Financeiro</h2>
 
-      <div className={styles.grid}>
-        {financialSummaryItems.map((item) => (
-          <article key={item.id} className={styles.miniCard}>
-            <p className={styles.label}>{item.label}</p>
-            <p className={styles.value}>
-              {item.isPercent ? `${item.value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%` : formatCurrency(item.value)}
-            </p>
-            <MiniSparkline
-              className={styles.sparkline}
-              points={miniCharts[item.id] ?? miniCharts.entradas}
-              color={item.id === 'saidas' ? 'var(--secondary, #f97316)' : 'var(--primary, #16a34a)'}
-            />
-          </article>
-        ))}
-      </div>
+      {summaryQuery.isLoading && !summaryQuery.data ? (
+        <Loading label="Carregando resumo..." layout="centered" size="md" />
+      ) : (
+        <div className={styles.grid}>
+          {items.map((item) => (
+            <article key={item.id} className={styles.miniCard}>
+              <p className={styles.label}>{item.label}</p>
+              <p className={styles.value}>
+                {item.isPercent
+                  ? `${item.value.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+                  : formatCurrency(item.value)}
+              </p>
+              <MiniSparkline
+                className={styles.sparkline}
+                points={miniCharts[item.id] ?? miniCharts.entradas}
+                color={item.id === 'saidas' ? 'var(--secondary, #f97316)' : 'var(--primary, #16a34a)'}
+              />
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   )
 }

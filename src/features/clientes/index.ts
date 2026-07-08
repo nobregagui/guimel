@@ -1,11 +1,21 @@
 export { CidadeBreakdown } from '@/features/clientes/components/CidadeBreakdown'
 export { ClienteDrawer } from '@/features/clientes/components/ClienteDrawer'
+export { ClientesQueryFeedback } from '@/features/clientes/components/ClientesQueryFeedback'
 export { ClienteDetalheDados } from '@/features/clientes/components/detalhe/ClienteDetalheDados'
 export { ClienteDetalheHeader } from '@/features/clientes/components/detalhe/ClienteDetalheHeader'
 export { ClienteDetalheKpis } from '@/features/clientes/components/detalhe/ClienteDetalheKpis'
 export { ClienteDetalhePedidos } from '@/features/clientes/components/detalhe/ClienteDetalhePedidos'
 export { ClienteDetalheResumo } from '@/features/clientes/components/detalhe/ClienteDetalheResumo'
 export { useClientesStore } from '@/features/clientes/store/useClientesStore'
+export {
+  clientesQueryKeys,
+  useClientesQuery,
+  useClienteQuery,
+  useClientePedidosQuery,
+  useCreateClienteMutation,
+  useUpdateClienteMutation,
+  useRemoveClienteMutation,
+} from '@/features/clientes/hooks/useClientes'
 export { ClienteAvatar } from '@/features/clientes/components/ClienteAvatar'
 export { ClienteNomeCell } from '@/features/clientes/components/ClienteNomeCell'
 export { ClienteStatusBadge } from '@/features/clientes/components/ClienteStatusBadge'

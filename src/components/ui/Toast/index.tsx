@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -9,6 +10,7 @@ import {
 import { CheckCircle2, Info, X, XCircle } from 'lucide-react'
 
 import styles from '@/components/ui/Toast/Toast.module.css'
+import { registerApiErrorNotifier, unregisterApiErrorNotifier } from '@/services/apiErrorNotifier'
 
 export type ToastVariant = 'success' | 'error' | 'info'
 
@@ -90,6 +92,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   )
 
   const value = useMemo(() => ({ showToast }), [showToast])
+
+  useEffect(() => {
+    registerApiErrorNotifier(showToast)
+    return () => unregisterApiErrorNotifier()
+  }, [showToast])
 
   return (
     <ToastContext.Provider value={value}>

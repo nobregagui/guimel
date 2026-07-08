@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { Loading } from '@/components/ui/Loading'
 import { useToast } from '@/components/ui/Toast'
 import {
   FORMA_PAGAMENTO_LABEL,
@@ -9,9 +10,16 @@ import {
   formatarData,
   formatarMoeda,
 } from '@/features/vendas/data/shared'
-import { formatarDataCurta } from '@/features/vendas/utils/pagamento'
+import {
+  useConfirmarPedidoMutation,
+  useEmitirNfePedidoMutation,
+  usePedidoQuery,
+  useUpdatePedidoStatusMutation,
+} from '@/features/vendas/hooks/useVendas'
 import { useVendasStore } from '@/features/vendas/store/useVendasStore'
 import type { StatusPedido } from '@/features/vendas/types'
+import { formatarDataCurta } from '@/features/vendas/utils/pagamento'
+import { getPedidoActionErrorMessage } from '@/features/vendas/utils'
 import styles from '@/pages/vendas/VendaDetalhePage.module.css'
 
 function IconArrowLeft() {
@@ -96,11 +104,40 @@ function StatusTimeline({ current }: { current: StatusPedido }) {
 export function VendaDetalhePage() {
   const { id } = useParams<{ id: string }>()
   const { showToast } = useToast()
-  const pedido = useVendasStore((s) => s.pedidos.find((p) => p.id === id))
-  const updateStatus = useVendasStore((s) => s.updateStatus)
-  const converterOrcamentoEmVenda = useVendasStore((s) => s.converterOrcamentoEmVenda)
-  const emitirNfe = useVendasStore((s) => s.emitirNfe)
   const [confirmandoNfe, setConfirmandoNfe] = useState(false)
+
+  const pedidoQuery = usePedidoQuery(id)
+  const confirmarPedidoMutation = useConfirmarPedidoMutation()
+  const updateStatusMutation = useUpdatePedidoStatusMutation()
+  const emitirNfeMutation = useEmitirNfePedidoMutation()
+
+  const pedidoFromStore = useVendasStore((s) => (id ? s.pedidos.find((p) => p.id === id) : undefined))
+  const pedido = pedidoQuery.data ?? pedidoFromStore
+
+  const isActionPending =
+    confirmarPedidoMutation.isPending ||
+    updateStatusMutation.isPending ||
+    emitirNfeMutation.isPending
+
+  if (pedidoQuery.isLoading && !pedido) {
+    return (
+      <div className={styles.notFound}>
+        <Loading label="Carregando pedido..." layout="fullscreen" />
+      </div>
+    )
+  }
+
+  if (pedidoQuery.isError && !pedido) {
+    return (
+      <div className={styles.notFound}>
+        <h1 className={styles.notFoundTitle}>Erro ao carregar pedido</h1>
+        <p className={styles.notFoundText}>Não foi possível buscar os dados deste pedido.</p>
+        <button type="button" className={styles.backLinkStandalone} onClick={() => pedidoQuery.refetch()}>
+          Tentar novamente
+        </button>
+      </div>
+    )
+  }
 
   if (!pedido) {
     return (
@@ -121,25 +158,57 @@ export function VendaDetalhePage() {
 
   const proximo = proximoStatus()
 
-  function handleEmitirNfe() {
+  async function handleEmitirNfe() {
     if (!confirmandoNfe) {
       setConfirmandoNfe(true)
       return
     }
     if (!id) return
-    emitirNfe(id)
-    setConfirmandoNfe(false)
+
+    try {
+      await emitirNfeMutation.mutateAsync(id)
+      setConfirmandoNfe(false)
+      showToast({ message: 'Pedido faturado com sucesso.', variant: 'success' })
+    } catch (error) {
+      showToast({
+        message: getPedidoActionErrorMessage(error, 'Não foi possível faturar o pedido.'),
+        variant: 'error',
+      })
+    }
   }
 
-  function handleConverterOrcamento() {
+  async function handleConverterOrcamento() {
     if (!id) return
-    const convertido = converterOrcamentoEmVenda(id)
-    if (!convertido) return
 
-    showToast({
-      message: `Orçamento ${convertido.numero} transformado em venda confirmada.`,
-      variant: 'success',
-    })
+    try {
+      const convertido = await confirmarPedidoMutation.mutateAsync(id)
+      showToast({
+        message: `Orçamento ${convertido.numero} transformado em venda confirmada.`,
+        variant: 'success',
+      })
+    } catch (error) {
+      showToast({
+        message: getPedidoActionErrorMessage(error, 'Não foi possível confirmar o orçamento.'),
+        variant: 'error',
+      })
+    }
+  }
+
+  async function handleUpdateStatus(status: StatusPedido) {
+    if (!id) return
+
+    try {
+      await updateStatusMutation.mutateAsync({ id, status })
+      showToast({
+        message: `Status atualizado para "${STATUS_PEDIDO_LABEL[status]}".`,
+        variant: 'success',
+      })
+    } catch (error) {
+      showToast({
+        message: getPedidoActionErrorMessage(error, 'Não foi possível atualizar o status.'),
+        variant: 'error',
+      })
+    }
   }
 
   return (
@@ -151,13 +220,23 @@ export function VendaDetalhePage() {
           </Link>
           <div className={styles.headerActions}>
             {pedido.status === 'orcamento' ? (
-              <button type="button" className={styles.btnPrimary} onClick={handleConverterOrcamento}>
+              <button
+                type="button"
+                className={styles.btnPrimary}
+                onClick={() => void handleConverterOrcamento()}
+                disabled={isActionPending}
+              >
                 <IconCheck />
                 Transformar em venda
               </button>
             ) : null}
             {pedido.status === 'confirmado' && !pedido.nfeChave ? (
-              <button type="button" className={styles.btnPrimary} onClick={handleEmitirNfe}>
+              <button
+                type="button"
+                className={styles.btnPrimary}
+                onClick={() => void handleEmitirNfe()}
+                disabled={isActionPending}
+              >
                 <IconFileText />
                 {confirmandoNfe ? 'Confirmar emissão?' : 'Emitir NF-e'}
               </button>
@@ -166,7 +245,8 @@ export function VendaDetalhePage() {
               <button
                 type="button"
                 className={styles.btnSecondary}
-                onClick={() => updateStatus(pedido.id, proximo)}
+                onClick={() => void handleUpdateStatus(proximo)}
+                disabled={isActionPending}
               >
                 <IconTruck />
                 Avançar para &quot;{STATUS_PEDIDO_LABEL[proximo]}&quot;
@@ -377,14 +457,20 @@ export function VendaDetalhePage() {
                     <button
                       type="button"
                       className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-                      onClick={handleConverterOrcamento}
+                      onClick={() => void handleConverterOrcamento()}
+                      disabled={isActionPending}
                     >
                       <IconCheck />
                       Transformar em venda
                     </button>
                   ) : null}
                   {pedido.status === 'confirmado' && !pedido.nfeChave ? (
-                    <button type="button" className={styles.actionBtn} onClick={handleEmitirNfe}>
+                    <button
+                      type="button"
+                      className={styles.actionBtn}
+                      onClick={() => void handleEmitirNfe()}
+                      disabled={isActionPending}
+                    >
                       <IconFileText />
                       {confirmandoNfe ? 'Clique para confirmar a emissão' : 'Emitir NF-e'}
                     </button>
@@ -393,7 +479,8 @@ export function VendaDetalhePage() {
                     <button
                       type="button"
                       className={styles.actionBtn}
-                      onClick={() => updateStatus(pedido.id, 'entregue')}
+                      onClick={() => void handleUpdateStatus('entregue')}
+                      disabled={isActionPending}
                     >
                       <IconTruck />
                       Marcar como entregue
@@ -402,7 +489,8 @@ export function VendaDetalhePage() {
                   <button
                     type="button"
                     className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
-                    onClick={() => updateStatus(pedido.id, 'cancelado')}
+                    onClick={() => void handleUpdateStatus('cancelado')}
+                    disabled={isActionPending}
                   >
                     Cancelar pedido
                   </button>
