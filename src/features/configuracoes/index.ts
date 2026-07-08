@@ -1,0 +1,6 @@
+export { ConfiguracoesHeader } from '@/features/configuracoes/components/ConfiguracoesHeader'
+export { UsuarioDrawer } from '@/features/configuracoes/components/UsuarioDrawer'
+export { PerfilTab } from '@/features/configuracoes/components/tabs/PerfilTab'
+export { UsuariosTab } from '@/features/configuracoes/components/tabs/UsuariosTab'
+export * from '@/features/configuracoes/hooks/useUsuarios'
+export * from '@/features/configuracoes/types'

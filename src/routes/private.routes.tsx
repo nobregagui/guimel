@@ -5,7 +5,7 @@ import { MainLayout } from '@/layouts'
 import { DashboardPage } from '@/pages/dashboard'
 import { ClientesPage } from '@/pages/clientes'
 import { ClienteDetalhePage } from '@/pages/clientes/detalhe'
-import { PerfilPage } from '@/pages/configuracoes'
+import { ConfiguracoesPage } from '@/pages/configuracoes'
 import { ConciliacaoBancariaPage } from '@/pages/conciliacao-bancaria'
 import { FinanceiroPage } from '@/pages/financeiro'
 import { ModulePlaceholder } from '@/pages/ModulePlaceholder'
@@ -36,7 +36,7 @@ export const privateRoutes: RouteObject[] = [
           { path: '/notas-fiscais', element: <NotasFiscaisPage /> },
           { path: '/cobrancas', element: <ModulePlaceholder title="Cobranças" /> },
           { path: '/integracoes', element: <ModulePlaceholder title="Integrações" /> },
-          { path: '/configuracoes', element: <PerfilPage /> },
+          { path: '/configuracoes', element: <ConfiguracoesPage /> },
         ],
       },
     ],

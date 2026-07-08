@@ -49,6 +49,13 @@
   gap: 16px;
 }
 
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr;

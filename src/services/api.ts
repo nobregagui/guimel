@@ -6,7 +6,7 @@ import { isNetworkOrTimeoutError } from '@/utils/apiErrors'
 
 const AUTH_STORAGE_KEY = 'guime-auth'
 
-const PUBLIC_AUTH_PATHS = ['/auth/login', '/auth/register']
+const PUBLIC_AUTH_PATHS = ['/auth/login']
 
 function isPublicAuthRequest(url: string | undefined): boolean {
   if (!url) return false
