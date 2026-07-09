@@ -10,6 +10,7 @@ export const APP_PATHS = {
   cobrancas: '/cobrancas',
   integracoes: '/integracoes',
   configuracoes: '/configuracoes',
+  forbidden: '/403',
 } as const
 
 export type AppPath = (typeof APP_PATHS)[keyof typeof APP_PATHS]

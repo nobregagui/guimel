@@ -10,12 +10,13 @@ import {
   useUpdateUsuarioMutation,
   useUsuariosQuery,
 } from '@/features/configuracoes/hooks/useUsuarios'
-import { USER_ROLE_LABEL } from '@/services/user.service'
+import { USER_ROLE_LABEL } from '@/constants/permissions'
 import type { User } from '@/types'
 import { useAuthStore } from '@/store'
 import styles from '@/pages/configuracoes/ConfiguracoesPage.module.css'
 
 interface UsuariosTabProps {
+  readOnly?: boolean
   drawerOpen: boolean
   onCloseDrawer: () => void
 }
@@ -27,7 +28,7 @@ function getIniciais(nome: string): string {
   return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase()
 }
 
-export function UsuariosTab({ drawerOpen, onCloseDrawer }: UsuariosTabProps) {
+export function UsuariosTab({ readOnly = false, drawerOpen, onCloseDrawer }: UsuariosTabProps) {
   const currentUser = useAuthStore((state) => state.user)
   const usuariosQuery = useUsuariosQuery()
   const createUsuarioMutation = useCreateUsuarioMutation()
@@ -58,8 +59,9 @@ export function UsuariosTab({ drawerOpen, onCloseDrawer }: UsuariosTabProps) {
   return (
     <div className={styles.tabBody}>
       <div className={styles.infoBanner}>
-        O cadastro de novos usuários é feito apenas por administradores. Compartilhe a senha
-        temporária de forma segura no primeiro acesso.
+        {readOnly
+          ? 'Visualização somente leitura. Alterações de usuários exigem perfil administrador.'
+          : 'O cadastro de novos usuários é feito apenas por administradores. Compartilhe a senha temporária de forma segura no primeiro acesso.'}
       </div>
 
       {usuariosQuery.isLoading ? (
@@ -79,7 +81,9 @@ export function UsuariosTab({ drawerOpen, onCloseDrawer }: UsuariosTabProps) {
           </div>
 
           {usuarios.length === 0 ? (
-            <p className={styles.emptyState}>Nenhum usuário cadastrado. Clique em &quot;Novo usuário&quot;.</p>
+            <p className={styles.emptyState}>
+              {readOnly ? 'Nenhum usuário cadastrado.' : 'Nenhum usuário cadastrado. Clique em "Novo usuário".'}
+            </p>
           ) : (
             <div className={styles.tableWrap}>
               <table className={styles.table}>
@@ -89,15 +93,17 @@ export function UsuariosTab({ drawerOpen, onCloseDrawer }: UsuariosTabProps) {
                     <th>E-mail</th>
                     <th>Perfil</th>
                     <th>Status</th>
-                    <th>Ações</th>
+                    {readOnly ? null : <th>Ações</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {usuarios.map((usuario) => {
                     const isCurrent = usuario.id === currentUser?.id
                     const onlyAdmin = isOnlyAdmin(usuario)
-                    const canDelete = !isCurrent
+                    const canDelete = !isCurrent && !readOnly
                     const deleteDisabled = !canDelete || onlyAdmin
+                    const roleLabel =
+                      USER_ROLE_LABEL[usuario.role as keyof typeof USER_ROLE_LABEL] ?? usuario.role
 
                     return (
                       <tr key={usuario.id}>
@@ -109,39 +115,41 @@ export function UsuariosTab({ drawerOpen, onCloseDrawer }: UsuariosTabProps) {
                         </td>
                         <td>{usuario.email}</td>
                         <td>
-                          <span className={styles.roleBadge}>{USER_ROLE_LABEL[usuario.role]}</span>
+                          <span className={styles.roleBadge}>{roleLabel}</span>
                         </td>
                         <td>
                           <span className={isCurrent ? styles.statusActive : styles.statusDefault}>
                             {isCurrent ? 'Você' : 'Ativo'}
                           </span>
                         </td>
-                        <td>
-                          <div className={styles.rowActions}>
-                            <button
-                              type="button"
-                              className={styles.actionBtn}
-                              onClick={() => setEditingUsuario(usuario)}
-                            >
-                              Editar
-                            </button>
-                            {canDelete ? (
+                        {readOnly ? null : (
+                          <td>
+                            <div className={styles.rowActions}>
                               <button
                                 type="button"
-                                className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
-                                disabled={deleteDisabled}
-                                title={
-                                  onlyAdmin
-                                    ? 'Não é possível remover o último administrador do sistema'
-                                    : undefined
-                                }
-                                onClick={() => setDeleteTarget(usuario)}
+                                className={styles.actionBtn}
+                                onClick={() => setEditingUsuario(usuario)}
                               >
-                                Excluir
+                                Editar
                               </button>
-                            ) : null}
-                          </div>
-                        </td>
+                              {canDelete ? (
+                                <button
+                                  type="button"
+                                  className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
+                                  disabled={deleteDisabled}
+                                  title={
+                                    onlyAdmin
+                                      ? 'Não é possível remover o último administrador do sistema'
+                                      : undefined
+                                  }
+                                  onClick={() => setDeleteTarget(usuario)}
+                                >
+                                  Excluir
+                                </button>
+                              ) : null}
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     )
                   })}
@@ -152,65 +160,70 @@ export function UsuariosTab({ drawerOpen, onCloseDrawer }: UsuariosTabProps) {
         </section>
       )}
 
-      <UsuarioDrawer
-        open={isDrawerOpen}
-        mode={drawerMode}
-        usuario={editingUsuario ?? undefined}
-        isSaving={isSaving}
-        isOnlyAdmin={editingUsuario ? isOnlyAdmin(editingUsuario) : false}
-        onClose={handleCloseDrawer}
-        onSubmit={async (values) => {
-          if (drawerMode === 'edit' && editingUsuario) {
-            const payload: {
-              name: string
-              email: string
-              role: User['role']
-              password?: string
-            } = {
-              name: values.name.trim(),
-              email: values.email.trim(),
-              role: values.role,
+      {!readOnly ? (
+        <UsuarioDrawer
+          open={isDrawerOpen}
+          mode={drawerMode}
+          usuario={editingUsuario ?? undefined}
+          isSaving={isSaving}
+          isOnlyAdmin={editingUsuario ? isOnlyAdmin(editingUsuario) : false}
+          allowAdminRole={currentUser?.role === 'admin'}
+          onClose={handleCloseDrawer}
+          onSubmit={async (values) => {
+            if (drawerMode === 'edit' && editingUsuario) {
+              const payload: {
+                name: string
+                email: string
+                role: User['role']
+                password?: string
+              } = {
+                name: values.name.trim(),
+                email: values.email.trim(),
+                role: values.role,
+              }
+
+              if (values.password) {
+                payload.password = values.password
+              }
+
+              await updateUsuarioMutation.mutateAsync({
+                id: editingUsuario.id,
+                payload,
+              })
+            } else {
+              await createUsuarioMutation.mutateAsync({
+                name: values.name.trim(),
+                email: values.email.trim(),
+                password: values.password,
+                role: values.role,
+              })
             }
 
-            if (values.password) {
-              payload.password = values.password
-            }
+            handleCloseDrawer()
+          }}
+        />
+      ) : null}
 
-            await updateUsuarioMutation.mutateAsync({
-              id: editingUsuario.id,
-              payload,
-            })
-          } else {
-            await createUsuarioMutation.mutateAsync({
-              name: values.name.trim(),
-              email: values.email.trim(),
-              password: values.password,
-              role: values.role,
-            })
+      {!readOnly ? (
+        <ConfirmModal
+          open={deleteTarget !== null}
+          title="Excluir usuário"
+          description={
+            deleteTarget
+              ? `Tem certeza que deseja remover "${deleteTarget.name}"? O acesso será revogado imediatamente.`
+              : ''
           }
-
-          handleCloseDrawer()
-        }}
-      />
-
-      <ConfirmModal
-        open={deleteTarget !== null}
-        title="Excluir usuário"
-        description={
-          deleteTarget
-            ? `Tem certeza que deseja remover "${deleteTarget.name}"? O acesso será revogado imediatamente.`
-            : ''
-        }
-        confirmLabel="Excluir"
-        confirmingLabel="Excluindo..."
-        isConfirming={deleteUsuarioMutation.isPending}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={async () => {
-          if (!deleteTarget) return
-          await deleteUsuarioMutation.mutateAsync(deleteTarget.id)
-          setDeleteTarget(null)
-        }}
-      />
+          confirmLabel="Excluir"
+          confirmingLabel="Excluindo..."
+          isConfirming={deleteUsuarioMutation.isPending}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={async () => {
+            if (!deleteTarget) return
+            await deleteUsuarioMutation.mutateAsync(deleteTarget.id)
+            setDeleteTarget(null)
+          }}
+        />
+      ) : null}
     </div>
   )
 }

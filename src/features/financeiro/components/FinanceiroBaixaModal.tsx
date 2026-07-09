@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 
+import { usePermissions } from '@/hooks/usePermissions'
 import type { BaixaTituloFormValues, ContaTituloBase, TituloModulo } from '@/features/financeiro/types'
 import { formatBRL } from '@/features/financeiro/utils'
 import { useContasBancariasQuery } from '@/features/financeiro/hooks/useFinanceiro'
+import { canPayTitulo, canReceiveTitulo } from '@/utils/financePermissions'
 import styles from '@/pages/financeiro/FinanceiroPage.module.css'
 
 const HOJE_ISO = new Date().toISOString().slice(0, 10)
@@ -27,6 +29,7 @@ export function FinanceiroBaixaModal({
   onClose,
   onConfirm,
 }: FinanceiroBaixaModalProps) {
+  const { user, userPermissions } = usePermissions()
   const { data: contasBancarias = [] } = useContasBancariasQuery()
   const restante = useMemo(() => valorRestante(titulo), [titulo])
 
@@ -62,6 +65,13 @@ export function FinanceiroBaixaModal({
     }
   }, [open, onClose])
 
+  const approvalCheck = useMemo(() => {
+    if (modulo === 'pagar') {
+      return canPayTitulo(userPermissions, user?.role, valor)
+    }
+    return canReceiveTitulo(userPermissions)
+  }, [modulo, user?.role, userPermissions, valor])
+
   if (!open) return null
 
   const tituloLabel = 'cliente' in titulo && titulo.cliente
@@ -72,6 +82,7 @@ export function FinanceiroBaixaModal({
 
   const actionLabel = modulo === 'receber' ? 'Confirmar recebimento' : 'Confirmar pagamento'
   const title = modulo === 'receber' ? 'Registrar recebimento' : 'Registrar pagamento'
+  const confirmDisabled = !contaBancariaId || valor <= 0 || !approvalCheck.allowed
 
   return (
     <div className={styles.modalRoot}>
@@ -90,6 +101,10 @@ export function FinanceiroBaixaModal({
         </header>
 
         <div className={styles.modalBody}>
+          {!approvalCheck.allowed && approvalCheck.reason ? (
+            <p className={styles.approvalWarning}>{approvalCheck.reason}</p>
+          ) : null}
+
           <div className={styles.formGrid}>
             <div className={styles.formField}>
               <label htmlFor="baixa-valor">Valor {modulo === 'receber' ? 'recebido' : 'pago'} (R$)</label>
@@ -172,7 +187,8 @@ export function FinanceiroBaixaModal({
           <button
             type="button"
             className={styles.btnPrimary}
-            disabled={!contaBancariaId || valor <= 0}
+            disabled={confirmDisabled}
+            title={approvalCheck.reason}
             onClick={() =>
               onConfirm({
                 valor,

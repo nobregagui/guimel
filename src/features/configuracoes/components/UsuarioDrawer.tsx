@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { X } from 'lucide-react'
 
-import { USER_ROLE_LABEL } from '@/services/user.service'
+import { USER_ROLE_LABEL, USER_ROLE_VALUES } from '@/constants/permissions'
 import type { User } from '@/types'
 import {
   EMPTY_USUARIO_FORM,
@@ -13,7 +13,7 @@ import {
 } from '@/features/configuracoes/types'
 import styles from '@/pages/configuracoes/ConfiguracoesPage.module.css'
 
-const roleField = z.enum(['admin', 'manager', 'finance', 'sales'])
+const roleField = z.enum(USER_ROLE_VALUES)
 
 const createUsuarioSchema = z
   .object({
@@ -81,6 +81,7 @@ interface UsuarioDrawerProps {
   usuario?: User
   isSaving?: boolean
   isOnlyAdmin?: boolean
+  allowAdminRole?: boolean
   onClose: () => void
   onSubmit: (values: UsuarioFormValues) => Promise<void>
 }
@@ -90,6 +91,7 @@ interface UsuarioDrawerFormProps {
   usuario?: User
   isSaving: boolean
   lockAdminRole: boolean
+  allowAdminRole: boolean
   onClose: () => void
   onSubmit: (values: UsuarioFormValues) => Promise<void>
 }
@@ -99,6 +101,7 @@ function UsuarioDrawerForm({
   usuario,
   isSaving,
   lockAdminRole,
+  allowAdminRole,
   onClose,
   onSubmit,
 }: UsuarioDrawerFormProps) {
@@ -117,11 +120,11 @@ function UsuarioDrawerForm({
 
   const roleOptions = useMemo(
     () =>
-      (Object.keys(USER_ROLE_LABEL) as Array<keyof typeof USER_ROLE_LABEL>).map((role) => ({
+      USER_ROLE_VALUES.filter((role) => allowAdminRole || role !== 'admin').map((role) => ({
         value: role,
         label: USER_ROLE_LABEL[role],
       })),
-    [],
+    [allowAdminRole],
   )
 
   return (
@@ -232,6 +235,7 @@ export function UsuarioDrawer({
   usuario,
   isSaving = false,
   isOnlyAdmin = false,
+  allowAdminRole = false,
   onClose,
   onSubmit,
 }: UsuarioDrawerProps) {
@@ -264,6 +268,7 @@ export function UsuarioDrawer({
           usuario={usuario}
           isSaving={isSaving}
           lockAdminRole={lockAdminRole}
+          allowAdminRole={allowAdminRole}
           onClose={onClose}
           onSubmit={onSubmit}
         />

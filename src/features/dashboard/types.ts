@@ -27,6 +27,7 @@ export interface QuickActionItem {
   id: QuickActionId
   label: string
   to: string
+  permissions: string[]
 }
 
 export interface FinancialSummaryItem {
@@ -41,6 +42,7 @@ export interface SidebarNavItem {
   label: string
   to: string
   icon: 'dashboard' | 'financeiro' | 'vendas' | 'clientes' | 'produtos' | 'notas' | 'relatorios' | 'conciliacao' | 'cobrancas' | 'integracoes' | 'configuracoes'
+  permissions: string[]
 }
 
 export interface GlobalSearchItem {
@@ -50,6 +52,7 @@ export interface GlobalSearchItem {
   to: string
   keywords: string[]
   passBusca?: boolean
+  permissions?: string[]
 }
 
 export interface DashboardNotification {

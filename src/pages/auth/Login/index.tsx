@@ -1,4 +1,4 @@
-﻿/**
+/**
  * src/pages/auth/LoginPage.tsx
  *
  * Tela de login do GuiMe Money.
@@ -15,6 +15,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@/store'
 import { authService } from '@/services/auth.service'
 import { getApiErrorMessage } from '@/utils/apiErrors'
+import { getFirstAccessibleRoute } from '@/utils/navigation'
 import { Logo } from '@/components/ui'
 import { AuthDashboardMockup } from '@/pages/auth/shared/AuthDashboardMockup'
 import { AuthTrustBadges } from '@/pages/auth/shared/AuthTrustBadges'
@@ -72,7 +73,7 @@ export function LoginPage() {
         password: data.password,
       })
       login({ user: session.user, token: session.token })
-      navigate('/dashboard')
+      navigate(getFirstAccessibleRoute(session.user.permissions))
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         setAuthError('E-mail ou senha inválidos')

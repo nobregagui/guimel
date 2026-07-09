@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { quickActionItems } from '@/features/dashboard/data'
 import type { QuickActionId } from '@/features/dashboard/types'
+import { usePermissions } from '@/hooks/usePermissions'
 import shared from '@/features/dashboard/dashboard.module.css'
 
 import styles from './DashboardQuickActions.module.css'
@@ -40,11 +41,17 @@ function ActionIcon({ id }: { id: QuickActionId }) {
 }
 
 export function DashboardQuickActions() {
+  const { canSome } = usePermissions()
+
+  const visibleActions = quickActionItems.filter((action) => canSome(action.permissions))
+
+  if (visibleActions.length === 0) return null
+
   return (
     <section className={[shared.card, styles.root].join(' ')} aria-label="Atalhos rápidos">
       <h2 className={shared.cardTitle}>Atalhos Rápidos</h2>
       <ul className={styles.list}>
-        {quickActionItems.map((action) => (
+        {visibleActions.map((action) => (
           <li key={action.id}>
             <Link to={action.to} className={styles.action}>
               <span className={styles.iconCircle}>

@@ -11,6 +11,7 @@ import type {
   SidebarNavItem,
 } from '@/features/dashboard/types'
 import { APP_PATHS } from '@/routes/paths'
+import { ROUTE_ACCESS_PERMISSIONS } from '@/constants/permissions'
 import { ROUTE_QUERY, buildRoutePath } from '@/routes/queryState'
 
 export const dashboardKpiItems: DashboardKpiItem[] = [
@@ -47,6 +48,7 @@ export const quickActionItems: QuickActionItem[] = [
     id: 'venda',
     label: 'Nova venda',
     to: buildRoutePath(APP_PATHS.vendas, { [ROUTE_QUERY.intent]: 'nova' }),
+    permissions: ['vendas:write', 'vendas:write:own', 'vendas:write:team'],
   },
   {
     id: 'cobranca',
@@ -55,6 +57,7 @@ export const quickActionItems: QuickActionItem[] = [
       [ROUTE_QUERY.tab]: 'a-receber',
       [ROUTE_QUERY.intent]: 'nova',
     }),
+    permissions: ['contas_receber:write', 'financeiro:write', 'financeiro:*'],
   },
   {
     id: 'pagamento',
@@ -63,6 +66,7 @@ export const quickActionItems: QuickActionItem[] = [
       [ROUTE_QUERY.tab]: 'a-pagar',
       [ROUTE_QUERY.intent]: 'nova',
     }),
+    permissions: ['contas_pagar:write', 'financeiro:write', 'financeiro:*'],
   },
   {
     id: 'nf',
@@ -71,21 +75,22 @@ export const quickActionItems: QuickActionItem[] = [
       [ROUTE_QUERY.intent]: 'nova',
       [ROUTE_QUERY.tipo]: 'saida',
     }),
+    permissions: ['nfe:write', 'nfe:export'],
   },
 ]
 
 export const sidebarNavItems: SidebarNavItem[] = [
-  { id: 'dashboard', label: 'Dashboard', to: '/dashboard', icon: 'dashboard' },
-  { id: 'financeiro', label: 'Financeiro', to: '/financeiro', icon: 'financeiro' },
-  { id: 'vendas', label: 'Vendas', to: '/vendas', icon: 'vendas' },
-  { id: 'clientes', label: 'Clientes', to: '/clientes', icon: 'clientes' },
-  { id: 'produtos', label: 'Produtos', to: '/produtos', icon: 'produtos' },
-  { id: 'notas', label: 'Notas Fiscais', to: '/notas-fiscais', icon: 'notas' },
-  { id: 'relatorios', label: 'Relatórios', to: '/relatorios', icon: 'relatorios' },
-  { id: 'cobrancas', label: 'Cobranças', to: '/cobrancas', icon: 'cobrancas' },
-  { id: 'integracoes', label: 'Integrações', to: '/integracoes', icon: 'integracoes' },
-  { id: 'conciliacao', label: 'Conciliação', to: '/conciliacao-bancaria', icon: 'conciliacao' },
-  { id: 'configuracoes', label: 'Configurações', to: '/configuracoes', icon: 'configuracoes' },
+  { id: 'dashboard', label: 'Dashboard', to: APP_PATHS.dashboard, icon: 'dashboard', permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.dashboard] },
+  { id: 'financeiro', label: 'Financeiro', to: APP_PATHS.financeiro, icon: 'financeiro', permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.financeiro] },
+  { id: 'vendas', label: 'Vendas', to: APP_PATHS.vendas, icon: 'vendas', permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.vendas] },
+  { id: 'clientes', label: 'Clientes', to: APP_PATHS.clientes, icon: 'clientes', permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.clientes] },
+  { id: 'produtos', label: 'Produtos', to: APP_PATHS.produtos, icon: 'produtos', permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.produtos] },
+  { id: 'notas', label: 'Notas Fiscais', to: APP_PATHS.notasFiscais, icon: 'notas', permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.notasFiscais] },
+  { id: 'relatorios', label: 'Relatórios', to: APP_PATHS.relatorios, icon: 'relatorios', permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.relatorios] },
+  { id: 'cobrancas', label: 'Cobranças', to: APP_PATHS.cobrancas, icon: 'cobrancas', permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.cobrancas] },
+  { id: 'integracoes', label: 'Integrações', to: APP_PATHS.integracoes, icon: 'integracoes', permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.integracoes] },
+  { id: 'conciliacao', label: 'Conciliação', to: APP_PATHS.conciliacaoBancaria, icon: 'conciliacao', permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.conciliacaoBancaria] },
+  { id: 'configuracoes', label: 'Configurações', to: APP_PATHS.configuracoes, icon: 'configuracoes', permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.configuracoes] },
 ]
 
 export const globalSearchItems: GlobalSearchItem[] = [
@@ -95,6 +100,7 @@ export const globalSearchItems: GlobalSearchItem[] = [
     description: 'Resumo financeiro da empresa',
     to: APP_PATHS.dashboard,
     keywords: ['dashboard', 'inicio', 'resumo', 'home'],
+    permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.dashboard],
   },
   {
     id: 'clientes',
@@ -103,6 +109,7 @@ export const globalSearchItems: GlobalSearchItem[] = [
     to: APP_PATHS.clientes,
     keywords: ['clientes', 'cliente', 'cadastro'],
     passBusca: true,
+    permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.clientes],
   },
   {
     id: 'financeiro',
@@ -110,6 +117,7 @@ export const globalSearchItems: GlobalSearchItem[] = [
     description: 'Visão geral financeira',
     to: APP_PATHS.financeiro,
     keywords: ['financeiro', 'fluxo', 'caixa', 'extrato'],
+    permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.financeiro],
   },
   {
     id: 'financeiro-receber',
@@ -117,6 +125,7 @@ export const globalSearchItems: GlobalSearchItem[] = [
     description: 'Financeiro · títulos a receber',
     to: buildRoutePath(APP_PATHS.financeiro, { [ROUTE_QUERY.tab]: 'a-receber' }),
     keywords: ['receber', 'recebiveis', 'cobranca', 'titulos'],
+    permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.financeiro],
   },
   {
     id: 'financeiro-pagar',
@@ -124,6 +133,7 @@ export const globalSearchItems: GlobalSearchItem[] = [
     description: 'Financeiro · títulos a pagar',
     to: buildRoutePath(APP_PATHS.financeiro, { [ROUTE_QUERY.tab]: 'a-pagar' }),
     keywords: ['pagar', 'despesas', 'fornecedor'],
+    permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.financeiro],
   },
   {
     id: 'vendas',
@@ -132,6 +142,7 @@ export const globalSearchItems: GlobalSearchItem[] = [
     to: APP_PATHS.vendas,
     keywords: ['vendas', 'pedido', 'orcamento'],
     passBusca: true,
+    permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.vendas],
   },
   {
     id: 'produtos',
@@ -139,6 +150,7 @@ export const globalSearchItems: GlobalSearchItem[] = [
     description: 'Catálogo de produtos',
     to: APP_PATHS.produtos,
     keywords: ['produtos', 'produto', 'estoque', 'catalogo'],
+    permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.produtos],
   },
   {
     id: 'notas',
@@ -146,6 +158,7 @@ export const globalSearchItems: GlobalSearchItem[] = [
     description: 'Emissão e gestão de NF-e',
     to: APP_PATHS.notasFiscais,
     keywords: ['nota', 'nfe', 'fiscal', 'nf-e'],
+    permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.notasFiscais],
   },
   {
     id: 'relatorios',
@@ -153,6 +166,7 @@ export const globalSearchItems: GlobalSearchItem[] = [
     description: 'Análises e exportações',
     to: APP_PATHS.relatorios,
     keywords: ['relatorio', 'relatorios', 'exportar'],
+    permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.relatorios],
   },
   {
     id: 'configuracoes',
@@ -160,6 +174,7 @@ export const globalSearchItems: GlobalSearchItem[] = [
     description: 'Perfil e preferências',
     to: APP_PATHS.configuracoes,
     keywords: ['configuracoes', 'configuracao', 'perfil', 'conta'],
+    permissions: ROUTE_ACCESS_PERMISSIONS[APP_PATHS.configuracoes],
   },
 ]
 

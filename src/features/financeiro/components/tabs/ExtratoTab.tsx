@@ -11,6 +11,7 @@ import {
 
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useToast } from '@/components/ui/Toast'
+import { usePermissions } from '@/hooks/usePermissions'
 import { ContaIcon } from '@/features/financeiro/components/ContaIcon'
 import { ContaSelector } from '@/features/financeiro/components/ContaSelector'
 import { TableFooter, TableSection } from '@/features/financeiro/components/DataTable'
@@ -19,6 +20,7 @@ import {
   ExtratoTableFiltersPanel,
 } from '@/features/financeiro/components/ExtratoTableFilters'
 import { ExtratoResumoCard } from '@/features/financeiro/components/ExtratoResumoCard'
+import type { ActionMenuItem } from '@/features/financeiro/components/FinanceiroActionMenu'
 import { FinanceiroActionMenu } from '@/features/financeiro/components/FinanceiroActionMenu'
 import { FinanceiroBulkBar } from '@/features/financeiro/components/FinanceiroBulkBar'
 import { FinanceiroKpiCard, KpiGrid } from '@/features/financeiro/components/FinanceiroKpiCard'
@@ -45,6 +47,7 @@ import {
   hasActiveExtratoTableFiltros,
   sumExtratoPorTipo,
 } from '@/features/financeiro/utils'
+import { canReconcileConciliacao, canWriteExtrato } from '@/utils/financePermissions'
 import styles from '@/pages/financeiro/FinanceiroPage.module.css'
 
 interface ExtratoTabProps {
@@ -72,6 +75,7 @@ function ExtratoTipoBadge({ tipo }: { tipo: ExtratoMovimento['tipo'] }) {
 
 export function ExtratoTab({ periodo, contaId, onContaChange, onNovo }: ExtratoTabProps) {
   const { showToast } = useToast()
+  const { userPermissions, isReadOnly } = usePermissions()
 
   const extratoParams = useMemo(
     () => ({
@@ -131,36 +135,52 @@ export function ExtratoTab({ periodo, contaId, onContaChange, onNovo }: ExtratoT
   }, [contasBancarias, movimentosFiltrados, showToast])
 
   const buildMenuItems = useCallback(
-    (mov: ExtratoMovimento) => [
-      {
-        id: 'ver',
-        label: 'Visualizar movimentação',
-        onClick: () => showToast({ message: `${mov.descricao} — ${formatBRL(mov.valor)}`, variant: 'info' }),
-      },
-      {
-        id: 'conciliar',
-        label: mov.conciliado ? 'Desconciliar' : 'Conciliar',
-        onClick: () => {
-          if (mov.conciliado) desconciliarMutation.mutate([mov.id])
-          else conciliarMutation.mutate([mov.id])
+    (mov: ExtratoMovimento) => {
+      const canReconcile = canReconcileConciliacao(userPermissions) && !isReadOnly
+      const canWrite = canWriteExtrato(userPermissions) && !isReadOnly
+      const podeExcluir = mov.manual && !mov.conciliado
+
+      const items: ActionMenuItem[] = [
+        {
+          id: 'ver',
+          label: 'Visualizar movimentação',
+          onClick: () => showToast({ message: `${mov.descricao} — ${formatBRL(mov.valor)}`, variant: 'info' }),
         },
-      },
-      {
-        id: 'editar',
-        label: 'Editar lançamento',
-        onClick: () => showToast({ message: 'Edição disponível para lançamentos manuais.', variant: 'info' }),
-        disabled: !mov.manual,
-      },
-      {
-        id: 'excluir',
-        label: 'Excluir lançamento',
-        onClick: () => setConfirmDeleteId(mov.id),
-        disabled: !mov.manual,
-        danger: true,
-      },
-      { id: 'imprimir', label: 'Imprimir', onClick: () => window.print(), future: true },
-    ],
-    [conciliarMutation, desconciliarMutation, showToast],
+      ]
+
+      if (canReconcile) {
+        items.push({
+          id: 'conciliar',
+          label: mov.conciliado ? 'Desconciliar' : 'Conciliar',
+          onClick: () => {
+            if (mov.conciliado) desconciliarMutation.mutate([mov.id])
+            else conciliarMutation.mutate([mov.id])
+          },
+        })
+      }
+
+      if (canWrite) {
+        items.push({
+          id: 'editar',
+          label: 'Editar lançamento',
+          onClick: () => showToast({ message: 'Edição disponível para lançamentos manuais.', variant: 'info' }),
+          disabled: !mov.manual,
+        })
+        items.push({
+          id: 'excluir',
+          label: 'Excluir lançamento',
+          onClick: () => setConfirmDeleteId(mov.id),
+          disabled: !podeExcluir,
+          title: mov.conciliado ? 'Não é possível excluir lançamento já conciliado' : undefined,
+          danger: true,
+        })
+      }
+
+      items.push({ id: 'imprimir', label: 'Imprimir', onClick: () => window.print(), future: true })
+
+      return items
+    },
+    [conciliarMutation, desconciliarMutation, isReadOnly, showToast, userPermissions],
   )
 
   const columns = useMemo<TableColumn<ExtratoMovimento>[]>(() => {

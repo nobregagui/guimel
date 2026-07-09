@@ -1,8 +1,8 @@
 import axios from 'axios'
 
-import { notifyApiNetworkError } from '@/services/apiErrorNotifier'
+import { notifyApiForbiddenError, notifyApiNetworkError } from '@/services/apiErrorNotifier'
 import { useAuthStore } from '@/store/auth.store'
-import { isNetworkOrTimeoutError } from '@/utils/apiErrors'
+import { getApiErrorMessage, isNetworkOrTimeoutError } from '@/utils/apiErrors'
 
 const AUTH_STORAGE_KEY = 'guime-auth'
 
@@ -62,6 +62,8 @@ api.interceptors.response.use(
       if (!isOnAuthPage) {
         window.location.href = '/auth/login'
       }
+    } else if (status === 403 && !isPublicAuthRequest(requestUrl)) {
+      notifyApiForbiddenError(getApiErrorMessage(error, 'Acesso restrito.'))
     } else if (isNetworkOrTimeoutError(error) && !isPublicAuthRequest(requestUrl)) {
       notifyApiNetworkError()
     }

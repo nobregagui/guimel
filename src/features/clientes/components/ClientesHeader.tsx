@@ -1,5 +1,7 @@
 import { Download, Plus, Search } from 'lucide-react'
 
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { MODULE_WRITE_PERMISSIONS } from '@/constants/permissions'
 import { CLIENTES_ABAS } from '@/features/clientes/data/shared'
 import type { ClientesAba } from '@/features/clientes/types'
 import styles from '@/pages/clientes/ClientesPage.module.css'
@@ -35,9 +37,11 @@ export function ClientesHeader({ abaAtiva, busca, onAbaChange, onBuscaChange, on
             <Download size={13} /> Exportar
           </button>
 
-          <button type="button" className={styles.btnPrimary} onClick={onNovoCliente}>
-            <Plus size={13} /> Novo cliente
-          </button>
+          <PermissionGate permissions={[...MODULE_WRITE_PERMISSIONS.clientes]} requireWrite>
+            <button type="button" className={styles.btnPrimary} onClick={onNovoCliente}>
+              <Plus size={13} /> Novo cliente
+            </button>
+          </PermissionGate>
         </div>
       </div>
 

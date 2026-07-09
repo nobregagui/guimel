@@ -1628,6 +1628,17 @@
   padding: 18px 20px;
 }
 
+.approvalWarning {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .modalFooter {
   display: flex;
   justify-content: flex-end;

@@ -4,36 +4,39 @@ import { ConfiguracoesHeader } from '@/features/configuracoes/components/Configu
 import { PerfilTab } from '@/features/configuracoes/components/tabs/PerfilTab'
 import { UsuariosTab } from '@/features/configuracoes/components/tabs/UsuariosTab'
 import type { ConfiguracoesAba } from '@/features/configuracoes/types'
+import { canEditUsuarios } from '@/features/configuracoes/types'
 import { useAuthStore } from '@/store'
-import { isAdmin } from '@/utils/roles'
+import { canViewUsuariosModule } from '@/utils/roles'
 
 import styles from './ConfiguracoesPage.module.css'
 
 export function ConfiguracoesPage() {
   const currentUser = useAuthStore((state) => state.user)
-  const userIsAdmin = isAdmin(currentUser)
+  const canViewUsuarios = canViewUsuariosModule(currentUser)
+  const canManageUsuarios = canEditUsuarios(currentUser)
   const [abaAtiva, setAbaAtiva] = useState<ConfiguracoesAba>('perfil')
   const [usuarioDrawerOpen, setUsuarioDrawerOpen] = useState(false)
 
   useEffect(() => {
-    if (abaAtiva === 'usuarios' && !userIsAdmin) {
+    if (abaAtiva === 'usuarios' && !canViewUsuarios) {
       setAbaAtiva('perfil')
     }
-  }, [abaAtiva, userIsAdmin])
+  }, [abaAtiva, canViewUsuarios])
 
   return (
     <div className={styles.root}>
       <ConfiguracoesHeader
         abaAtiva={abaAtiva}
         onAbaChange={setAbaAtiva}
-        showNovoUsuario={abaAtiva === 'usuarios' && userIsAdmin}
+        showNovoUsuario={abaAtiva === 'usuarios' && canManageUsuarios}
         onNovoUsuario={() => setUsuarioDrawerOpen(true)}
       />
 
       <div className={styles.content}>
         {abaAtiva === 'perfil' ? <PerfilTab /> : null}
-        {abaAtiva === 'usuarios' && userIsAdmin ? (
+        {abaAtiva === 'usuarios' && canViewUsuarios ? (
           <UsuariosTab
+            readOnly={!canManageUsuarios}
             drawerOpen={usuarioDrawerOpen}
             onCloseDrawer={() => setUsuarioDrawerOpen(false)}
           />

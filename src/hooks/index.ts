@@ -1,6 +1,7 @@
 export * from './useAuth'
 export * from './useCepConsulta'
 export * from './useDebounce'
+export * from './useHomeRoute'
 export * from './usePagination'
 export * from './usePermissions'
 export * from './useRouteQuery'

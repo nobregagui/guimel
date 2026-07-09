@@ -1,10 +1,11 @@
-﻿import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { createBrowserRouter } from 'react-router-dom'
 
+import { HomeRedirect } from '@/components/auth/HomeRedirect'
 import { privateRoutes } from '@/routes/private.routes'
 import { publicRoutes } from '@/routes/public.routes'
 
 export const router = createBrowserRouter([
   ...publicRoutes,
   ...privateRoutes,
-  { path: '*', element: <Navigate to="/dashboard" replace /> },
+  { path: '*', element: <HomeRedirect /> },
 ])

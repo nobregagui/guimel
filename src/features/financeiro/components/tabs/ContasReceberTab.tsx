@@ -8,11 +8,13 @@ import {
 
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useToast } from '@/components/ui/Toast'
+import { usePermissions } from '@/hooks/usePermissions'
 import { CategoryBreakdown } from '@/features/financeiro/components/CategoryBreakdown'
 import {
   ContasTituloTableFiltersButton,
   ContasTituloTableFiltersPanel,
 } from '@/features/financeiro/components/ContasTituloTableFilters'
+import type { ActionMenuItem } from '@/features/financeiro/components/FinanceiroActionMenu'
 import { FinanceiroActionMenu } from '@/features/financeiro/components/FinanceiroActionMenu'
 import { FinanceiroBaixaModal } from '@/features/financeiro/components/FinanceiroBaixaModal'
 import { FinanceiroBulkBar } from '@/features/financeiro/components/FinanceiroBulkBar'
@@ -49,6 +51,11 @@ import {
   sumByStatus,
   sumEmAberto,
 } from '@/features/financeiro/utils'
+import {
+  canReceiveTitulo,
+  canReverseFinanceiro,
+  canWriteContasReceber,
+} from '@/utils/financePermissions'
 import styles from '@/pages/financeiro/FinanceiroPage.module.css'
 
 interface ContasReceberTabProps {
@@ -58,6 +65,7 @@ interface ContasReceberTabProps {
 
 export function ContasReceberTab({ onNovo, onEditar }: ContasReceberTabProps) {
   const { showToast } = useToast()
+  const { userPermissions, isReadOnly } = usePermissions()
   const { data: contas = [], isLoading, isError, refetch } = useContasReceberQuery()
   const receberMutation = useReceberContaMutation()
   const estornarMutation = useEstornarRecebimentoMutation()
@@ -117,25 +125,72 @@ export function ContasReceberTab({ onNovo, onEditar }: ContasReceberTabProps) {
   const buildMenuItems = useCallback(
     (conta: ContaReceber) => {
       const podeBaixar = conta.status !== 'pago' && conta.status !== 'cancelado'
-      const podeEditar = podeBaixar
-      const podeExcluir = conta.status !== 'pago' && conta.status !== 'parcial' && (conta.valorBaixado ?? 0) === 0
+      const podeExcluir =
+        conta.status !== 'pago' && conta.status !== 'parcial' && (conta.valorBaixado ?? 0) === 0
+      const receiveCheck = canReceiveTitulo(userPermissions)
+      const canWrite = canWriteContasReceber(userPermissions) && !isReadOnly
+      const canReverse = canReverseFinanceiro(userPermissions) && !isReadOnly
 
-      return [
+      const items: ActionMenuItem[] = [
         { id: 'ver', label: 'Visualizar', onClick: () => setDetalheTitulo(conta) },
-        { id: 'editar', label: 'Editar', onClick: () => onEditar?.(conta), disabled: !podeEditar },
-        { id: 'receber', label: 'Receber', onClick: () => setBaixaTitulo(conta), disabled: !podeBaixar },
-        { id: 'estornar', label: 'Estornar recebimento', onClick: () => estornarMutation.mutate(conta.id), disabled: conta.status !== 'pago' && conta.status !== 'parcial' },
+      ]
+
+      if (canWrite) {
+        items.push({
+          id: 'editar',
+          label: 'Editar',
+          onClick: () => onEditar?.(conta),
+          disabled: !podeBaixar,
+        })
+      }
+
+      if (!isReadOnly && podeBaixar && receiveCheck.allowed) {
+        items.push({ id: 'receber', label: 'Receber', onClick: () => setBaixaTitulo(conta) })
+      }
+
+      if (canReverse) {
+        items.push({
+          id: 'estornar',
+          label: 'Estornar recebimento',
+          onClick: () => estornarMutation.mutate(conta.id),
+          disabled: conta.status !== 'pago' && conta.status !== 'parcial',
+        })
+      }
+
+      items.push(
         { id: 'boleto', label: 'Gerar boleto', onClick: () => undefined, future: true },
         { id: 'pix', label: 'Gerar Pix', onClick: () => undefined, future: true },
-        { id: 'nfe', label: 'Emitir NF-e', onClick: () => showToast({ message: 'Vincule a uma venda para emitir NF-e.', variant: 'info' }), future: !conta.vendaId },
+        {
+          id: 'nfe',
+          label: 'Emitir NF-e',
+          onClick: () => showToast({ message: 'Vincule a uma venda para emitir NF-e.', variant: 'info' }),
+          future: !conta.vendaId,
+        },
         { id: 'anexo', label: 'Anexar documento', onClick: () => undefined, future: true },
-        { id: 'duplicar', label: 'Duplicar', onClick: () => duplicateMutation.mutate(conta.id) },
+      )
+
+      if (canWrite) {
+        items.push({ id: 'duplicar', label: 'Duplicar', onClick: () => duplicateMutation.mutate(conta.id) })
+      }
+
+      items.push(
         { id: 'enviar', label: 'Enviar cobrança', onClick: () => undefined, future: true },
         { id: 'imprimir', label: 'Imprimir', onClick: () => window.print(), future: true },
-        { id: 'excluir', label: 'Excluir', onClick: () => setConfirmDeleteId(conta.id), disabled: !podeExcluir, danger: true },
-      ]
+      )
+
+      if (canWrite) {
+        items.push({
+          id: 'excluir',
+          label: 'Excluir',
+          onClick: () => setConfirmDeleteId(conta.id),
+          disabled: !podeExcluir,
+          danger: true,
+        })
+      }
+
+      return items
     },
-    [duplicateMutation, estornarMutation, onEditar, showToast],
+    [duplicateMutation, estornarMutation, isReadOnly, onEditar, showToast, userPermissions],
   )
 
   const columns = useMemo<TableColumn<ContaReceber>[]>(

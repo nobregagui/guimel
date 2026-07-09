@@ -1,6 +1,8 @@
 import { Download, Plus, RefreshCw, Upload } from 'lucide-react'
 import type { RefObject } from 'react'
 
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { MODULE_WRITE_PERMISSIONS } from '@/constants/permissions'
 import { FINANCEIRO_ABAS } from '@/features/financeiro/data/shared'
 import type { FinanceiroAba, Periodo } from '@/features/financeiro/types'
 import styles from '@/pages/financeiro/FinanceiroPage.module.css'
@@ -53,13 +55,17 @@ export function FinanceiroHeader({
 
           <div className={styles.toolbarActions}>
             {onImport ? (
-              <button type="button" className={styles.btnSecondary} onClick={onImport}>
-                <Upload size={13} /> Importar
-              </button>
+              <PermissionGate permission="conciliacao:import" requireWrite>
+                <button type="button" className={styles.btnSecondary} onClick={onImport}>
+                  <Upload size={13} /> Importar
+                </button>
+              </PermissionGate>
             ) : null}
-            <button type="button" className={styles.btnSecondary} onClick={onExport}>
-              <Download size={13} /> Exportar
-            </button>
+            <PermissionGate permission="relatorios:export">
+              <button type="button" className={styles.btnSecondary} onClick={onExport}>
+                <Download size={13} /> Exportar
+              </button>
+            </PermissionGate>
             {onRefresh ? (
               <button type="button" className={styles.btnSecondary} onClick={onRefresh} aria-label="Atualizar">
                 <RefreshCw size={13} />
@@ -67,14 +73,16 @@ export function FinanceiroHeader({
             ) : null}
           </div>
 
-          <button
-            ref={primaryActionRef}
-            type="button"
-            className={`${styles.btnPrimary} ${highlightPrimaryAction ? styles.btnPrimaryHighlight : ''}`}
-            onClick={onPrimaryAction}
-          >
-            <Plus size={13} /> {primaryActionLabel}
-          </button>
+          <PermissionGate permissions={[...MODULE_WRITE_PERMISSIONS.financeiro]} requireWrite>
+            <button
+              ref={primaryActionRef}
+              type="button"
+              className={`${styles.btnPrimary} ${highlightPrimaryAction ? styles.btnPrimaryHighlight : ''}`}
+              onClick={onPrimaryAction}
+            >
+              <Plus size={13} /> {primaryActionLabel}
+            </button>
+          </PermissionGate>
         </div>
       </div>
 

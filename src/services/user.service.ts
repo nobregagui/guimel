@@ -1,7 +1,8 @@
 import { api } from '@/services/api'
-import type { User } from '@/types'
+import type { User, UserRole } from '@/types'
+import { USER_ROLE_LABEL } from '@/constants/permissions'
 
-export type UserRole = User['role']
+export type { UserRole }
 
 export type CreateUserPayload = {
   name: string
@@ -17,12 +18,7 @@ export type UpdateUserPayload = Partial<{
   password: string
 }>
 
-export const USER_ROLE_LABEL: Record<UserRole, string> = {
-  admin: 'Administrador',
-  manager: 'Gerente',
-  finance: 'Financeiro',
-  sales: 'Vendas',
-}
+export { USER_ROLE_LABEL }
 
 export const userService = {
   async list(): Promise<User[]> {
@@ -47,5 +43,10 @@ export const userService = {
 
   async remove(id: string): Promise<void> {
     await api.delete(`/usuarios/${id}`)
+  },
+
+  async listRoles(): Promise<Array<{ value: UserRole; label: string }>> {
+    const { data } = await api.get<Array<{ value: UserRole; label: string }>>('/usuarios/roles')
+    return data
   },
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import axios from 'axios'
+import { Link, Navigate, useParams } from 'react-router-dom'
 
 import { Loading } from '@/components/ui/Loading'
 import { useToast } from '@/components/ui/Toast'
@@ -20,6 +21,7 @@ import { useVendasStore } from '@/features/vendas/store/useVendasStore'
 import type { StatusPedido } from '@/features/vendas/types'
 import { formatarDataCurta } from '@/features/vendas/utils/pagamento'
 import { getPedidoActionErrorMessage } from '@/features/vendas/utils'
+import { APP_PATHS } from '@/routes/paths'
 import styles from '@/pages/vendas/VendaDetalhePage.module.css'
 
 function IconArrowLeft() {
@@ -128,6 +130,14 @@ export function VendaDetalhePage() {
   }
 
   if (pedidoQuery.isError && !pedido) {
+    const status = axios.isAxiosError(pedidoQuery.error)
+      ? pedidoQuery.error.response?.status
+      : undefined
+
+    if (status === 403 || status === 404) {
+      return <Navigate to={APP_PATHS.forbidden} replace />
+    }
+
     return (
       <div className={styles.notFound}>
         <h1 className={styles.notFoundTitle}>Erro ao carregar pedido</h1>

@@ -1,5 +1,7 @@
 import { Download, Filter, Plus, Search } from 'lucide-react'
 
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { MODULE_WRITE_PERMISSIONS } from '@/constants/permissions'
 import { NOTAS_FISCAIS_ABAS } from '@/features/notasFiscais/data/shared'
 import type { NotasFiscaisAba } from '@/features/notasFiscais/types'
 import styles from '@/pages/notas-fiscais/NotasFiscaisPage.module.css'
@@ -45,9 +47,11 @@ export function NotasFiscaisHeader({
             <Download size={14} /> Exportar
           </button>
 
-          <button type="button" className={styles.btnPrimary} onClick={onNovaNota}>
-            <Plus size={14} /> Nova nota fiscal
-          </button>
+          <PermissionGate permissions={[...MODULE_WRITE_PERMISSIONS.nfe]} requireWrite>
+            <button type="button" className={styles.btnPrimary} onClick={onNovaNota}>
+              <Plus size={14} /> Nova nota fiscal
+            </button>
+          </PermissionGate>
         </div>
       </div>
 

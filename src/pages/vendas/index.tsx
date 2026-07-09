@@ -1,8 +1,12 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useToast } from '@/components/ui/Toast'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { MODULE_WRITE_PERMISSIONS } from '@/constants/permissions'
 import { PedidoDrawer } from '@/features/vendas/components/PedidoDrawer'
+import { usePermissions } from '@/hooks/usePermissions'
+import { canFilterVendasByVendedor } from '@/utils/financePermissions'
 import { VendasQueryFeedback } from '@/features/vendas/components/VendasQueryFeedback'
 import {
   FORMA_PAGAMENTO_LABEL,
@@ -114,6 +118,8 @@ export function VendasPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const { showToast } = useToast()
+  const { user, userPermissions } = usePermissions()
+  const showVendedorFilter = canFilterVendasByVendedor(userPermissions, user)
 
   const pedidosQuery = usePedidosQuery()
   const createPedidoMutation = useCreatePedidoMutation()
@@ -246,10 +252,12 @@ export function VendasPage() {
               Exportar
             </button>
 
-            <button type="button" className={styles.btnPrimary} onClick={() => setDrawerOpen(true)}>
-              <IconPlus />
-              Novo pedido
-            </button>
+            <PermissionGate permissions={[...MODULE_WRITE_PERMISSIONS.vendas]} requireWrite>
+              <button type="button" className={styles.btnPrimary} onClick={() => setDrawerOpen(true)}>
+                <IconPlus />
+                Novo pedido
+              </button>
+            </PermissionGate>
           </div>
         </div>
 
@@ -344,20 +352,22 @@ export function VendasPage() {
               </div>
 
               <div className={styles.tableFiltersGrid}>
-                <div className={styles.tableFilterGroup}>
-                  <label className={styles.tableFilterLabel} htmlFor="filtro-vendedor">Vendedor</label>
-                  <select
-                    id="filtro-vendedor"
-                    className={styles.tableFilterSelect}
-                    value={filtroVendedor}
-                    onChange={(e) => setFiltroVendedor(e.target.value)}
-                  >
-                    <option value="">Todos</option>
-                    {vendedores.map((v) => (
-                      <option key={v} value={v}>{v}</option>
-                    ))}
-                  </select>
-                </div>
+                {showVendedorFilter ? (
+                  <div className={styles.tableFilterGroup}>
+                    <label className={styles.tableFilterLabel} htmlFor="filtro-vendedor">Vendedor</label>
+                    <select
+                      id="filtro-vendedor"
+                      className={styles.tableFilterSelect}
+                      value={filtroVendedor}
+                      onChange={(e) => setFiltroVendedor(e.target.value)}
+                    >
+                      <option value="">Todos</option>
+                      {vendedores.map((v) => (
+                        <option key={v} value={v}>{v}</option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
 
                 <div className={styles.tableFilterGroup}>
                   <label className={styles.tableFilterLabel} htmlFor="filtro-forma">Forma de pagamento</label>

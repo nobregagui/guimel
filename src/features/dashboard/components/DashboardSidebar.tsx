@@ -4,6 +4,8 @@ import { Logo, LOGO_CONTAINER_HEIGHT, LOGO_IMAGE_HEIGHT } from '@/components/ui'
 import { sidebarNavItems } from '@/features/dashboard/data'
 import { NavIcon } from '@/features/dashboard/icons'
 import type { SidebarNavItem } from '@/features/dashboard/types'
+import { useHomeRoute } from '@/hooks/useHomeRoute'
+import { usePermissions } from '@/hooks/usePermissions'
 
 import styles from './DashboardSidebar.module.css'
 
@@ -28,6 +30,10 @@ export function DashboardSidebar({
   onToggleCollapsed,
 }: DashboardSidebarProps) {
   const { pathname } = useLocation()
+  const { canSome } = usePermissions()
+  const homeRoute = useHomeRoute()
+
+  const visibleNavItems = sidebarNavItems.filter((item) => canSome(item.permissions))
 
   return (
     <>
@@ -51,7 +57,7 @@ export function DashboardSidebar({
           .join(' ')}
       >
         <div className={styles.top}>
-          <NavLink to="/dashboard" className={styles.logoLink} onClick={onCloseMobile}>
+          <NavLink to={homeRoute} className={styles.logoLink} onClick={onCloseMobile}>
             <Logo
               className={styles.sidebarLogo}
               imgHeight={collapsed ? LOGO_CONTAINER_HEIGHT : LOGO_IMAGE_HEIGHT}
@@ -71,7 +77,7 @@ export function DashboardSidebar({
         </div>
 
         <nav className={styles.nav}>
-          {sidebarNavItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <NavLink
               key={item.id}
               to={item.to}

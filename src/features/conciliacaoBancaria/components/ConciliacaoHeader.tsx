@@ -1,5 +1,6 @@
 import { Columns, Download, HelpCircle, Plus, RefreshCw, Upload } from 'lucide-react'
 
+import { PermissionGate } from '@/components/auth/PermissionGate'
 import { Tooltip } from '@/features/conciliacaoBancaria/components/Tooltip'
 import { CONCILIACAO_ABAS } from '@/features/conciliacaoBancaria/data/shared'
 import { useConciliacaoStore } from '@/features/conciliacaoBancaria/store/useConciliacaoStore'
@@ -78,29 +79,35 @@ export function ConciliacaoHeader({
             </Tooltip>
           ) : null}
 
-          <Tooltip content="Exportar relatório (Ctrl+E)" placement="bottom">
-            <button type="button" className={styles.btnSecondary} onClick={onExportar} aria-label="Exportar relatório">
-              <Download size={13} />
-              <span>Exportar</span>
-            </button>
-          </Tooltip>
+          <PermissionGate permission="relatorios:export">
+            <Tooltip content="Exportar relatório (Ctrl+E)" placement="bottom">
+              <button type="button" className={styles.btnSecondary} onClick={onExportar} aria-label="Exportar relatório">
+                <Download size={13} />
+                <span>Exportar</span>
+              </button>
+            </Tooltip>
+          </PermissionGate>
 
-          <Tooltip content="Importar extrato bancário (Ctrl+I)" placement="bottom">
-            <button type="button" className={styles.btnSecondary} onClick={onImportar} aria-label="Importar extrato">
-              <Upload size={13} />
-              <span>Importar</span>
-            </button>
-          </Tooltip>
+          <PermissionGate permission="conciliacao:import" requireWrite>
+            <Tooltip content="Importar extrato bancário (Ctrl+I)" placement="bottom">
+              <button type="button" className={styles.btnSecondary} onClick={onImportar} aria-label="Importar extrato">
+                <Upload size={13} />
+                <span>Importar</span>
+              </button>
+            </Tooltip>
+          </PermissionGate>
 
-          <button
-            type="button"
-            className={styles.btnPrimary}
-            onClick={() => onAbaChange('conciliacao')}
-            aria-label="Ir para conciliação"
-          >
-            <Plus size={13} />
-            <span>Conciliar</span>
-          </button>
+          <PermissionGate permissions={['conciliacao:write', 'conciliacao:reconcile', 'conciliacao:*']} requireWrite>
+            <button
+              type="button"
+              className={styles.btnPrimary}
+              onClick={() => onAbaChange('conciliacao')}
+              aria-label="Ir para conciliação"
+            >
+              <Plus size={13} />
+              <span>Conciliar</span>
+            </button>
+          </PermissionGate>
         </div>
       </div>
 

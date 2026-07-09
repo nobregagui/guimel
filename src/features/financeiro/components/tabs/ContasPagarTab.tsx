@@ -8,11 +8,13 @@ import {
 
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useToast } from '@/components/ui/Toast'
+import { usePermissions } from '@/hooks/usePermissions'
 import { CategoryBreakdown } from '@/features/financeiro/components/CategoryBreakdown'
 import {
   ContasTituloTableFiltersButton,
   ContasTituloTableFiltersPanel,
 } from '@/features/financeiro/components/ContasTituloTableFilters'
+import type { ActionMenuItem } from '@/features/financeiro/components/FinanceiroActionMenu'
 import { FinanceiroActionMenu } from '@/features/financeiro/components/FinanceiroActionMenu'
 import { FinanceiroBaixaModal } from '@/features/financeiro/components/FinanceiroBaixaModal'
 import { FinanceiroBulkBar } from '@/features/financeiro/components/FinanceiroBulkBar'
@@ -48,6 +50,11 @@ import {
   sumByStatus,
   sumEmAberto,
 } from '@/features/financeiro/utils'
+import {
+  canPayTitulo,
+  canReverseFinanceiro,
+  canWriteContasPagar,
+} from '@/utils/financePermissions'
 import styles from '@/pages/financeiro/FinanceiroPage.module.css'
 
 interface ContasPagarTabProps {
@@ -57,6 +64,7 @@ interface ContasPagarTabProps {
 
 export function ContasPagarTab({ onNovo, onEditar }: ContasPagarTabProps) {
   const { showToast } = useToast()
+  const { user, userPermissions, isReadOnly } = usePermissions()
   const { data: contas = [], isLoading, isError, refetch } = useContasPagarQuery()
   const pagarMutation = usePagarContaMutation()
   const estornarMutation = useEstornarPagamentoMutation()
@@ -117,22 +125,82 @@ export function ContasPagarTab({ onNovo, onEditar }: ContasPagarTabProps) {
 
   const buildMenuItems = useCallback(
     (conta: ContaPagar) => {
+      const saldo = Math.max(0, conta.valor - (conta.valorBaixado ?? 0))
       const podeBaixar = conta.status !== 'pago' && conta.status !== 'cancelado'
-      const podeExcluir = conta.status !== 'pago' && conta.status !== 'parcial' && (conta.valorBaixado ?? 0) === 0
+      const podeExcluir =
+        conta.status !== 'pago' && conta.status !== 'parcial' && (conta.valorBaixado ?? 0) === 0
+      const payCheck = canPayTitulo(userPermissions, user?.role, saldo)
+      const canWrite = canWriteContasPagar(userPermissions) && !isReadOnly
+      const canReverse = canReverseFinanceiro(userPermissions) && !isReadOnly
 
-      return [
+      const items: ActionMenuItem[] = [
         { id: 'ver', label: 'Visualizar', onClick: () => setDetalheTitulo(conta) },
-        { id: 'editar', label: 'Editar', onClick: () => onEditar?.(conta), disabled: !podeBaixar },
-        { id: 'pagar', label: 'Pagar', onClick: () => setBaixaTitulo(conta), disabled: !podeBaixar },
-        { id: 'estornar', label: 'Estornar pagamento', onClick: () => estornarMutation.mutate(conta.id), disabled: conta.status !== 'pago' && conta.status !== 'parcial' },
+      ]
+
+      if (canWrite) {
+        items.push({
+          id: 'editar',
+          label: 'Editar',
+          onClick: () => onEditar?.(conta),
+          disabled: !podeBaixar,
+        })
+      }
+
+      if (!isReadOnly && podeBaixar) {
+        if (payCheck.allowed) {
+          items.push({ id: 'pagar', label: 'Pagar', onClick: () => setBaixaTitulo(conta) })
+        } else if (payCheck.reason) {
+          items.push({
+            id: 'pagar',
+            label: 'Pagar',
+            onClick: () => undefined,
+            disabled: true,
+            title: payCheck.reason,
+          })
+        }
+      }
+
+      if (canReverse) {
+        items.push({
+          id: 'estornar',
+          label: 'Estornar pagamento',
+          onClick: () => estornarMutation.mutate(conta.id),
+          disabled: conta.status !== 'pago' && conta.status !== 'parcial',
+        })
+      }
+
+      items.push(
         { id: 'anexo', label: 'Anexar nota fiscal', onClick: () => undefined, future: true },
         { id: 'comprovante', label: 'Baixar comprovante', onClick: () => undefined, future: true },
-        { id: 'duplicar', label: 'Duplicar', onClick: () => duplicateMutation.mutate(conta.id) },
-        { id: 'exportar', label: 'Exportar', onClick: handleExport, future: true },
-        { id: 'excluir', label: 'Excluir', onClick: () => setConfirmDeleteId(conta.id), disabled: !podeExcluir, danger: true },
-      ]
+      )
+
+      if (canWrite) {
+        items.push({ id: 'duplicar', label: 'Duplicar', onClick: () => duplicateMutation.mutate(conta.id) })
+      }
+
+      items.push({ id: 'exportar', label: 'Exportar', onClick: handleExport, future: true })
+
+      if (canWrite) {
+        items.push({
+          id: 'excluir',
+          label: 'Excluir',
+          onClick: () => setConfirmDeleteId(conta.id),
+          disabled: !podeExcluir,
+          danger: true,
+        })
+      }
+
+      return items
     },
-    [duplicateMutation, estornarMutation, handleExport, onEditar, showToast],
+    [
+      duplicateMutation,
+      estornarMutation,
+      handleExport,
+      isReadOnly,
+      onEditar,
+      user?.role,
+      userPermissions,
+    ],
   )
 
   const columns = useMemo<TableColumn<ContaPagar>[]>(

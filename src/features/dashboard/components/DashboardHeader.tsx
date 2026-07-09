@@ -6,6 +6,7 @@ import { dashboardNotifications, globalSearchItems } from '@/features/dashboard/
 import type { DashboardNotification, GlobalSearchItem } from '@/features/dashboard/types'
 import { filterGlobalSearchItems } from '@/features/dashboard/utils/globalSearch'
 import shared from '@/features/dashboard/dashboard.module.css'
+import { usePermissions } from '@/hooks/usePermissions'
 import { APP_PATHS } from '@/routes/paths'
 import { createBuscaNavigationState } from '@/routes/navigationState'
 import { logoutSession } from '@/services/authSession'
@@ -35,6 +36,15 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   const user = useAuthStore((state) => state.user)
+  const { canSome } = usePermissions()
+
+  const searchableItems = useMemo(
+    () =>
+      globalSearchItems.filter(
+        (item) => !item.permissions || canSome(item.permissions),
+      ),
+    [canSome],
+  )
 
   const [busca, setBusca] = useState('')
   const [searchOpen, setSearchOpen] = useState(false)
@@ -47,8 +57,8 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const userInitials = getIniciais(userName)
 
   const searchResults = useMemo(
-    () => filterGlobalSearchItems(globalSearchItems, busca),
-    [busca],
+    () => filterGlobalSearchItems(searchableItems, busca),
+    [busca, searchableItems],
   )
 
   const unreadCount = notifications.filter((notification) => !notification.read).length

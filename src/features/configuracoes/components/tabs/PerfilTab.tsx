@@ -1,7 +1,9 @@
 import { useState } from 'react'
 
 import { EnderecoFields } from '@/components/form/EnderecoFields'
+import { USER_ROLE_LABEL } from '@/constants/permissions'
 import { useAuthStore } from '@/store'
+import { normalizeUserRole } from '@/utils/roles'
 import { EMPTY_ENDERECO } from '@/types/endereco'
 import styles from '@/pages/configuracoes/PerfilPage.module.css'
 
@@ -14,6 +16,9 @@ function getIniciais(nome: string): string {
 
 export function PerfilTab() {
   const user = useAuthStore((state) => state.user)
+  const roleLabel = user?.role
+    ? USER_ROLE_LABEL[normalizeUserRole(user.role) as keyof typeof USER_ROLE_LABEL] ?? user.role
+    : ''
   const [endereco, setEndereco] = useState(EMPTY_ENDERECO)
 
   function handleEnderecoChange(field: keyof typeof endereco, value: string) {
@@ -107,7 +112,7 @@ export function PerfilTab() {
 
               <div className={styles.field}>
                 <label htmlFor="cargo">Perfil de acesso</label>
-                <input id="cargo" defaultValue={user?.role ?? 'admin'} readOnly />
+                <input id="cargo" defaultValue={roleLabel} readOnly />
               </div>
             </div>
           </div>

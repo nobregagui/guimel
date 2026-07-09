@@ -7,6 +7,7 @@ export interface ActionMenuItem {
   label: string
   onClick: () => void
   disabled?: boolean
+  title?: string
   danger?: boolean
   future?: boolean
 }
@@ -70,6 +71,7 @@ export function FinanceiroActionMenu({ items, ariaLabel = 'Ações' }: Financeir
                 role="menuitem"
                 className={`${styles.actionMenuItem} ${item.danger ? styles.actionMenuItemDanger : ''}`}
                 disabled={item.disabled || item.future}
+                title={item.title}
                 onClick={() => handleSelect(item)}
               >
                 {item.label}

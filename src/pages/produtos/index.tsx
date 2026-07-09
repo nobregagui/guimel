@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   AlertTriangle,
   Download,
@@ -11,6 +11,8 @@ import {
 } from 'lucide-react'
 
 import { useToast } from '@/components/ui/Toast'
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { MODULE_WRITE_PERMISSIONS } from '@/constants/permissions'
 import {
   CategoriaChip,
   EstoqueBadge,
@@ -136,9 +138,11 @@ export function ProdutosPage() {
               <Download size={13} /> Exportar
             </button>
 
-            <button type="button" className={styles.btnPrimary} onClick={handleOpenCreate}>
-              <Plus size={13} /> Novo produto
-            </button>
+            <PermissionGate permissions={[...MODULE_WRITE_PERMISSIONS.produtos]} requireWrite>
+              <button type="button" className={styles.btnPrimary} onClick={handleOpenCreate}>
+                <Plus size={13} /> Novo produto
+              </button>
+            </PermissionGate>
           </div>
         </div>
 

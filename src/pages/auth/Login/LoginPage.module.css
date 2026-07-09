@@ -1094,12 +1094,12 @@
     }
 
     .leftContent {
-      max-width: 660px;
+      max-width: 720px;
     }
 
     .brandTop {
-      --logo-container-h: 68px;
-      --logo-img-h: 158px;
+      --logo-container-h: 80px;
+      --logo-img-h: 280px;
       margin-bottom: clamp(24px, 3.5vh, 48px);
     }
 
@@ -1131,7 +1131,7 @@
     }
 
     .mockupCardMain {
-      width: 403px;
+      width: 700px;
     }
 
     .mockupSearch {
@@ -1181,8 +1181,8 @@
     }
 
     .mockupCardGrowth {
-      right: 20px;
-      width: 195px;
+      right: -380px;
+      width: 320px; 
     }
 
     .mockupGrowthValue {
@@ -1194,7 +1194,9 @@
     }
 
     .mockupCardCash {
-      width: 195px;
+      width: 230px;
+      left: 50%;
+      bottom: -115px;
     }
 
     .mockupCashValue {
@@ -1207,7 +1209,8 @@
 
     .mockupCardHealth {
       width: 156px;
-      bottom: -61px;
+      bottom: 25px;
+      right: -365px;
     }
 
     .mockupHealthGauge {
@@ -1215,8 +1218,10 @@
     }
 
     .mockupCardAI {
-      width: 221px;
-      bottom: -150px;
+      width: 220px;
+      bottom: -100px;
+      right: -270px;
+      left: auto;
     }
 
     .mockupAITitle {
