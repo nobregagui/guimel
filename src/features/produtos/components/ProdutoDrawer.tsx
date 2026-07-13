@@ -13,6 +13,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { LoadingButtonContent } from '@/components/ui/Loading'
 import { ProdutoFileUpload } from '@/features/produtos/components/ProdutoFileUpload'
@@ -25,6 +26,8 @@ import {
   calcularMargem,
 } from '@/features/produtos/data/shared'
 import { LOOKUP_KIND_LABEL } from '@/features/produtos/data/lookups'
+import { produtoLookupsQueryKeys } from '@/features/produtos/hooks/useProdutoLookups'
+import { categoriasQueryKeys } from '@/features/produtos/hooks/useProdutos'
 import { useProdutoLookupsStore } from '@/features/produtos/store/useProdutoLookupsStore'
 import { useProdutosStore } from '@/features/produtos/store/useProdutosStore'
 import type {
@@ -193,6 +196,7 @@ export function ProdutoDrawer({
   initialValues,
   isSaving = false,
 }: ProdutoDrawerProps) {
+  const queryClient = useQueryClient()
   const categorias = useProdutosStore((s) => s.categorias)
   const setCategorias = useProdutosStore((s) => s.setCategorias)
   const marcas = useProdutoLookupsStore((s) => s.marca)
@@ -217,7 +221,9 @@ export function ProdutoDrawer({
     if (!open) return undefined
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !isSaving) onClose()
+      if (event.key !== 'Escape' || isSaving) return
+      if (document.querySelector('[data-name-prompt-modal="true"]')) return
+      onClose()
     }
 
     document.addEventListener('keydown', onKeyDown)
@@ -327,22 +333,23 @@ export function ProdutoDrawer({
   )
 
   const promptCreateLookup = useCallback(
-    async (kind: ProdutoLookupKind) => {
+    async (kind: ProdutoLookupKind, nome: string) => {
       const label = LOOKUP_KIND_LABEL[kind]
-      const nome = window.prompt(`Informe o nome d${kind === 'marca' ? 'a' : 'o'} ${label.toLowerCase()}:`)
-      if (!nome?.trim()) return
+      const trimmed = nome.trim()
+      if (!trimmed) return
 
       setLookupLoading((current) => ({ ...current, [kind]: true }))
       try {
         if (kind === 'categoria') {
-          const created = await categoriaService.create({ nome: nome.trim(), cor: '#16a34a' })
+          const created = await categoriaService.create({ nome: trimmed, cor: '#16a34a' })
           setCategorias([created, ...useProdutosStore.getState().categorias.filter((item) => item.id !== created.id)])
           setField('categoriaId', created.id)
           clearFieldError('categoriaId')
+          await queryClient.invalidateQueries({ queryKey: categoriasQueryKeys.lists() })
           return
         }
 
-        const created = await produtoLookupServices[kind].create({ nome: nome.trim() })
+        const created = await produtoLookupServices[kind].create({ nome: trimmed })
         upsertLookup(kind, created)
 
         const fieldMap: Record<Exclude<ProdutoLookupKind, 'categoria'>, keyof ProdutoFormValues> = {
@@ -356,13 +363,15 @@ export function ProdutoDrawer({
         const field = fieldMap[kind]
         setField(field, created.id as ProdutoFormValues[typeof field])
         if (field === 'marcaId') clearFieldError('marcaId')
+        await queryClient.invalidateQueries({ queryKey: produtoLookupsQueryKeys.list(kind) })
       } catch (error) {
         window.alert(getProdutoSaveErrorMessage(error, `Erro ao cadastrar ${label.toLowerCase()}`))
+        throw error
       } finally {
         setLookupLoading((current) => ({ ...current, [kind]: false }))
       }
     },
-    [clearFieldError, setCategorias, setField, upsertLookup],
+    [clearFieldError, queryClient, setCategorias, setField, upsertLookup],
   )
 
   async function handleSubmit(event: React.FormEvent) {
@@ -553,12 +562,13 @@ export function ProdutoDrawer({
                     placeholder="Buscar categoria"
                     error={fieldErrors.categoriaId}
                     disabled={isSaving}
+                    alwaysShowCreate
                     onChange={(value) => {
                       setField('categoriaId', value)
                       if (value) clearFieldError('categoriaId')
                     }}
                     onBlur={() => touchField('categoriaId')}
-                    onCreate={() => void promptCreateLookup('categoria')}
+                    onCreate={(nome) => promptCreateLookup('categoria', nome)}
                   />
                   <SearchableSelect
                     id="prod-marca"
@@ -570,12 +580,13 @@ export function ProdutoDrawer({
                     placeholder="Buscar marca"
                     error={fieldErrors.marcaId}
                     disabled={isSaving}
+                    alwaysShowCreate
                     onChange={(value) => {
                       setField('marcaId', value)
                       if (value) clearFieldError('marcaId')
                     }}
                     onBlur={() => touchField('marcaId')}
-                    onCreate={() => void promptCreateLookup('marca')}
+                    onCreate={(nome) => promptCreateLookup('marca', nome)}
                   />
                   <SearchableSelect
                     id="prod-fabricante"
@@ -585,8 +596,9 @@ export function ProdutoDrawer({
                     loading={lookupLoading.fabricante}
                     placeholder="Buscar fabricante"
                     disabled={isSaving}
+                    alwaysShowCreate
                     onChange={(value) => setField('fabricanteId', value)}
-                    onCreate={() => void promptCreateLookup('fabricante')}
+                    onCreate={(nome) => promptCreateLookup('fabricante', nome)}
                   />
                   <SearchableSelect
                     id="prod-linha"
@@ -596,8 +608,9 @@ export function ProdutoDrawer({
                     loading={lookupLoading.linha}
                     placeholder="Buscar linha"
                     disabled={isSaving}
+                    alwaysShowCreate
                     onChange={(value) => setField('linhaId', value)}
-                    onCreate={() => void promptCreateLookup('linha')}
+                    onCreate={(nome) => promptCreateLookup('linha', nome)}
                   />
                   <SearchableSelect
                     id="prod-colecao"
@@ -607,8 +620,9 @@ export function ProdutoDrawer({
                     loading={lookupLoading.colecao}
                     placeholder="Buscar coleção"
                     disabled={isSaving}
+                    alwaysShowCreate
                     onChange={(value) => setField('colecaoId', value)}
-                    onCreate={() => void promptCreateLookup('colecao')}
+                    onCreate={(nome) => promptCreateLookup('colecao', nome)}
                   />
                   <SearchableSelect
                     id="prod-modelo"
@@ -618,8 +632,9 @@ export function ProdutoDrawer({
                     loading={lookupLoading.modelo}
                     placeholder="Buscar modelo"
                     disabled={isSaving}
+                    alwaysShowCreate
                     onChange={(value) => setField('modeloId', value)}
-                    onCreate={() => void promptCreateLookup('modelo')}
+                    onCreate={(nome) => promptCreateLookup('modelo', nome)}
                   />
                   <SearchableSelect
                     id="prod-fornecedor"
@@ -629,8 +644,9 @@ export function ProdutoDrawer({
                     loading={lookupLoading.fornecedor}
                     placeholder="Buscar fornecedor"
                     disabled={isSaving}
+                    alwaysShowCreate
                     onChange={(value) => setField('fornecedorPrincipalId', value)}
-                    onCreate={() => void promptCreateLookup('fornecedor')}
+                    onCreate={(nome) => promptCreateLookup('fornecedor', nome)}
                   />
                 </div>
               </FormCard>
@@ -955,8 +971,9 @@ export function ProdutoDrawer({
                     loading={lookupLoading.fornecedor}
                     placeholder="Buscar fornecedor"
                     disabled={isSaving}
+                    alwaysShowCreate
                     onChange={(value) => setField('fornecedorPrincipalId', value)}
-                    onCreate={() => void promptCreateLookup('fornecedor')}
+                    onCreate={(nome) => promptCreateLookup('fornecedor', nome)}
                   />
                   <div className={styles.formField}>
                     <label htmlFor="prod-prazo-compra">Prazo Médio Compra</label>

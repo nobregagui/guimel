@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown, Loader2, Plus, Search, X } from 'lucide-react'
 
+import { NamePromptModal } from '@/components/ui/NamePromptModal'
 import type { ProdutoLookupOption } from '@/features/produtos/types'
 import styles from '@/pages/produtos/ProdutosPage.module.css'
 
@@ -21,8 +22,16 @@ export interface SearchableSelectProps {
   placement?: 'auto' | 'top' | 'bottom'
   onChange: (value: string) => void
   onBlur?: () => void
-  onCreate?: () => void
+  /** Chamado ao confirmar o modal de cadastro com o nome informado. */
+  onCreate?: (nome: string) => void | Promise<void>
   createLabel?: string
+  createTitle?: string
+  createDescription?: string
+  createInputLabel?: string
+  createInputPlaceholder?: string
+  createConfirmLabel?: string
+  /** Exibe o botão Cadastrar mesmo quando já existem opções. */
+  alwaysShowCreate?: boolean
 }
 
 function normalize(value: string): string {
@@ -58,6 +67,12 @@ function SearchableSelectComponent({
   onBlur,
   onCreate,
   createLabel = 'Cadastrar',
+  createTitle,
+  createDescription,
+  createInputLabel = 'Nome',
+  createInputPlaceholder,
+  createConfirmLabel = 'Salvar',
+  alwaysShowCreate = false,
 }: SearchableSelectProps) {
   const listId = useId()
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -66,6 +81,8 @@ function SearchableSelectComponent({
   const [query, setQuery] = useState('')
   const [highlight, setHighlight] = useState(0)
   const [openUpward, setOpenUpward] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
 
   const selected = useMemo(
     () => options.find((option) => option.id === value) ?? null,
@@ -116,6 +133,30 @@ function SearchableSelectComponent({
     dismiss()
     onBlur?.()
   }, [dismiss, onBlur])
+
+  const openCreateModal = useCallback(() => {
+    dismiss()
+    setCreateOpen(true)
+  }, [dismiss])
+
+  const closeCreateModal = useCallback(() => {
+    if (isCreating) return
+    setCreateOpen(false)
+  }, [isCreating])
+
+  const handleCreateConfirm = useCallback(
+    async (nome: string) => {
+      if (!onCreate) return
+      setIsCreating(true)
+      try {
+        await onCreate(nome)
+        setCreateOpen(false)
+      } finally {
+        setIsCreating(false)
+      }
+    },
+    [onCreate],
+  )
 
   useLayoutEffect(() => {
     if (!open) return
@@ -193,6 +234,11 @@ function SearchableSelectComponent({
   }
 
   const displayValue = open ? query : (selected?.nome ?? '')
+  const modalTitle = createTitle ?? `Cadastrar ${label.toLowerCase()}`
+  const modalDescription =
+    createDescription ?? `Informe o nome d${/^[aeiouáéíóúâêô]/i.test(label) ? 'a' : 'o'} ${label.toLowerCase()} para incluir na lista.`
+  const modalPlaceholder = createInputPlaceholder ?? `Nome d${/^[aeiouáéíóúâêô]/i.test(label) ? 'a' : 'o'} ${label.toLowerCase()}`
+  const showCreateButton = Boolean(onCreate) && !loading && (alwaysShowCreate || options.length === 0)
 
   return (
     <div className={`${styles.formField} ${styles.searchSelectField}`} ref={wrapRef}>
@@ -234,8 +280,8 @@ function SearchableSelectComponent({
           ) : null}
           <ChevronDown size={14} className={styles.searchSelectChevron} aria-hidden />
         </div>
-        {!loading && options.length === 0 && onCreate ? (
-          <button type="button" className={styles.searchSelectCreate} onClick={onCreate} disabled={disabled}>
+        {showCreateButton ? (
+          <button type="button" className={styles.searchSelectCreate} onClick={openCreateModal} disabled={disabled}>
             <Plus size={14} />
             {createLabel}
           </button>
@@ -270,7 +316,7 @@ function SearchableSelectComponent({
             <div className={styles.searchSelectEmpty}>
               <p>{emptyMessage}</p>
               {onCreate ? (
-                <button type="button" className={styles.searchSelectCreate} onClick={onCreate}>
+                <button type="button" className={styles.searchSelectCreate} onClick={openCreateModal}>
                   <Plus size={14} />
                   {createLabel}
                 </button>
@@ -281,6 +327,21 @@ function SearchableSelectComponent({
       ) : null}
 
       {error ? <span className={styles.fieldError}>{error}</span> : null}
+
+      {onCreate ? (
+        <NamePromptModal
+          open={createOpen}
+          title={modalTitle}
+          description={modalDescription}
+          inputLabel={createInputLabel}
+          inputPlaceholder={modalPlaceholder}
+          confirmLabel={createConfirmLabel}
+          isConfirming={isCreating}
+          initialValue={query}
+          onClose={closeCreateModal}
+          onConfirm={handleCreateConfirm}
+        />
+      ) : null}
     </div>
   )
 }
