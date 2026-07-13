@@ -464,16 +464,13 @@
 .table tbody tr {
   border-bottom: 1px solid #f9fafb;
   transition: background-color 0.1s;
+  cursor: pointer;
 }
 
 .table tbody tr:last-child { border-bottom: none; }
 
 .table tbody tr:hover {
-  background-color: #f9fafb;
-}
-
-.table tbody tr:hover .rowAction {
-  opacity: 1;
+  background-color: #fff7ed;
 }
 
 .table tbody td {

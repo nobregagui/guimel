@@ -1,7 +1,14 @@
 import axios from 'axios'
 
-import { statusEstoque } from '@/features/produtos/data/shared'
-import type { Produto, ProdutosTab, ProdutosTableFiltros } from '@/features/produtos/types'
+import { EMPTY_PRODUTO_FORM, statusEstoque } from '@/features/produtos/data/shared'
+import type {
+  Produto,
+  ProdutoArquivoMeta,
+  ProdutoFormValues,
+  ProdutosTab,
+  ProdutosTableFiltros,
+} from '@/features/produtos/types'
+import { getApiAssetUrl } from '@/utils/apiAssets'
 
 function normalizeSearch(value: string): string {
   return value.trim().toLowerCase()
@@ -29,6 +36,7 @@ export function filterProdutosByBusca(produtos: Produto[], busca: string): Produ
       produto.codigo,
       produto.codigoBarras ?? '',
       produto.categoriaNome ?? '',
+      produto.marcaNome ?? '',
       produto.ncm,
     ]
       .join(' ')
@@ -83,8 +91,26 @@ export function countEstoqueAlerta(produtos: Produto[]): number {
   }).length
 }
 
-export function produtoToFormValues(produto: Produto) {
+function urlToArquivoMeta(
+  url: string | null | undefined,
+  nome: string,
+  tipo = 'application/octet-stream',
+): ProdutoArquivoMeta | null {
+  if (!url) return null
+  const absolute = getApiAssetUrl(url) ?? url
   return {
+    id: absolute,
+    nome,
+    tamanho: 0,
+    tipo,
+    previewUrl: absolute,
+    url: absolute,
+  }
+}
+
+export function produtoToFormValues(produto: Produto): ProdutoFormValues {
+  return {
+    ...EMPTY_PRODUTO_FORM,
     codigo: produto.codigo,
     codigoBarras: produto.codigoBarras ?? '',
     nome: produto.nome,
@@ -92,21 +118,68 @@ export function produtoToFormValues(produto: Produto) {
     tipo: produto.tipo,
     status: produto.status,
     categoriaId: produto.categoriaId ?? '',
+    marcaId: produto.marcaId ?? '',
+    fabricanteId: produto.fabricanteId ?? '',
+    linhaId: produto.linhaId ?? '',
+    colecaoId: produto.colecaoId ?? '',
+    modeloId: produto.modeloId ?? '',
+    fornecedorPrincipalId: produto.fornecedorPrincipalId ?? '',
     unidadeMedida: produto.unidadeMedida,
     precoCusto: produto.precoCusto,
     precoVenda: produto.precoVenda,
     precoPromocional: produto.precoPromocional,
-    ncm: produto.ncm,
+    ncm: produto.ncm ?? '',
+    cest: produto.cest ?? '',
     cfop: produto.cfop,
     cst: produto.cst,
     origem: produto.origem,
+    codigoBeneficioFiscal: produto.codigoBeneficioFiscal ?? '',
+    codigoAnp: produto.codigoAnp ?? '',
     aliquotaIcms: produto.aliquotaIcms,
+    aliquotaIpi: produto.aliquotaIpi ?? 0,
     aliquotaPis: produto.aliquotaPis,
     aliquotaCofins: produto.aliquotaCofins,
+    aliquotaIss: produto.aliquotaIss ?? 0,
+    aliquotaFcp: produto.aliquotaFcp ?? 0,
     estoqueAtual: produto.estoqueAtual,
     estoqueMinimo: produto.estoqueMinimo,
     estoqueMaximo: produto.estoqueMaximo,
     controlaEstoque: produto.controlaEstoque,
+    pesoLiquido: produto.pesoLiquido,
+    pesoBruto: produto.pesoBruto,
+    altura: produto.altura,
+    largura: produto.largura,
+    comprimento: produto.comprimento,
+    volume: produto.volume,
+    localizacaoEstoque: produto.localizacaoEstoque ?? '',
+    codigoInterno: produto.codigoInterno ?? '',
+    prazoMedioCompra: produto.prazoMedioCompra,
+    loteEconomico: produto.loteEconomico,
+    quantidadeMinimaCompra: produto.quantidadeMinimaCompra,
+    garantia: produto.garantia ?? '',
+    comissao: produto.comissao,
+    codigoFabricante: produto.codigoFabricante ?? '',
+    codigoReferencia: produto.codigoReferencia ?? '',
+    ean: produto.ean ?? '',
+    gtinTributavel: produto.gtinTributavel ?? '',
+    skuMarketplace: produto.skuMarketplace ?? '',
+    tituloMarketplace: produto.tituloMarketplace ?? '',
+    categoriaMarketplace: produto.categoriaMarketplace ?? '',
+    marcaMarketplace: produto.marcaMarketplace ?? '',
+    observacoesInternas: produto.observacoesInternas ?? '',
+    observacoesNotaFiscal: produto.observacoesNotaFiscal ?? '',
+    imagemPrincipal: urlToArquivoMeta(produto.imagemUrl, 'Imagem principal', 'image/*'),
+    imagensSecundarias: (produto.imagensSecundariasUrls ?? []).map((url, index) => ({
+      id: `${url}-${index}`,
+      nome: `Imagem ${index + 1}`,
+      tamanho: 0,
+      tipo: 'image/*',
+      previewUrl: getApiAssetUrl(url) ?? url,
+      url: getApiAssetUrl(url) ?? url,
+    })),
+    fichaTecnica: urlToArquivoMeta(produto.fichaTecnicaUrl, 'Ficha técnica', 'application/pdf'),
+    manual: urlToArquivoMeta(produto.manualUrl, 'Manual'),
+    catalogo: urlToArquivoMeta(produto.catalogoUrl, 'Catálogo'),
   }
 }
 
@@ -134,6 +207,10 @@ export function getProdutoSaveErrorMessage(error: unknown, fallback: string): st
 
   if (status === 400 && typeof message === 'string') {
     return message
+  }
+
+  if (status === 404) {
+    return typeof message === 'string' ? message : 'Registro não encontrado'
   }
 
   return fallback

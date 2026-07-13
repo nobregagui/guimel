@@ -1,5 +1,7 @@
 export { ProdutoDrawer } from '@/features/produtos/components/ProdutoDrawer'
 export { ProdutosQueryFeedback } from '@/features/produtos/components/ProdutosQueryFeedback'
+export { SearchableSelect } from '@/features/produtos/components/SearchableSelect'
+export { ProdutoFileUpload } from '@/features/produtos/components/ProdutoFileUpload'
 export {
   CategoriaChip,
   EstoqueBadge,
@@ -9,6 +11,12 @@ export {
 
 export * from '@/features/produtos/types'
 export * from '@/features/produtos/utils'
+export {
+  calcProdutoProgresso,
+  isProdutoFormValid,
+  validateProdutoField,
+  validateProdutoForm,
+} from '@/features/produtos/utils/produtoFormValidation'
 export {
   EMPTY_PRODUTO_FORM,
   EMPTY_PRODUTOS_TABLE_FILTROS,
@@ -22,6 +30,7 @@ export {
   statusEstoque,
 } from '@/features/produtos/data/shared'
 export { useProdutosStore } from '@/features/produtos/store/useProdutosStore'
+export { useProdutoLookupsStore } from '@/features/produtos/store/useProdutoLookupsStore'
 export {
   useProdutosQuery,
   useCategoriasQuery,
@@ -29,4 +38,15 @@ export {
   useCreateProdutoMutation,
   useUpdateProdutoMutation,
   useRemoveProdutoMutation,
+  useCreateCategoriaMutation,
 } from '@/features/produtos/hooks/useProdutos'
+export {
+  useProdutoLookupsQueries,
+  useMarcasQuery,
+  useFabricantesQuery,
+  useLinhasQuery,
+  useColecoesQuery,
+  useModelosQuery,
+  useFornecedoresQuery,
+  useCreateLookupMutation,
+} from '@/features/produtos/hooks/useProdutoLookups'

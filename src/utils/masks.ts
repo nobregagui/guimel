@@ -47,6 +47,22 @@ export function cepMask(value: string): string {
   return `${digits.slice(0, 5)}-${digits.slice(5)}`
 }
 
+/** NCM: 0000.00.00 (8 dígitos) */
+export function ncmMask(value: string): string {
+  const digits = onlyDigits(value).slice(0, 8)
+  return digits
+    .replace(/^(\d{4})(\d)/, '$1.$2')
+    .replace(/^(\d{4})\.(\d{2})(\d)/, '$1.$2.$3')
+}
+
+/** CEST: 00.000.00 (7 dígitos) */
+export function cestMask(value: string): string {
+  const digits = onlyDigits(value).slice(0, 7)
+  return digits
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+}
+
 export function isCepComplete(value: string): boolean {
   return onlyDigits(value).length === 8
 }

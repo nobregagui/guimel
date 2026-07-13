@@ -74,13 +74,30 @@ export function useProdutoQuery(id: string | undefined) {
   return query
 }
 
+export function useCreateCategoriaMutation() {
+  const queryClient = useQueryClient()
+  const setCategorias = useProdutosStore((state) => state.setCategorias)
+
+  return useMutation({
+    mutationFn: (payload: { nome: string; cor?: string }) => categoriaService.create(payload),
+    onSuccess: (categoria) => {
+      const current = useProdutosStore.getState().categorias
+      setCategorias([categoria, ...current.filter((item) => item.id !== categoria.id)])
+      queryClient.invalidateQueries({ queryKey: categoriasQueryKeys.lists() })
+    },
+  })
+}
+
 export function useCreateProdutoMutation() {
   const queryClient = useQueryClient()
   const upsertProduto = useProdutosStore((state) => state.upsertProduto)
 
   return useMutation({
-    mutationFn: (values: ProdutoFormValues) =>
-      produtoService.create(mapProdutoFormToPayload(values)),
+    mutationFn: async (values: ProdutoFormValues) => {
+      const created = await produtoService.create(mapProdutoFormToPayload(values))
+      await produtoService.uploadPendingArquivos(created.id, values)
+      return produtoService.getById(created.id)
+    },
     onSuccess: (produto) => {
       upsertProduto(produto)
       queryClient.invalidateQueries({ queryKey: produtosQueryKeys.lists() })
@@ -93,8 +110,11 @@ export function useUpdateProdutoMutation() {
   const upsertProduto = useProdutosStore((state) => state.upsertProduto)
 
   return useMutation({
-    mutationFn: ({ id, values }: { id: string; values: ProdutoFormValues }) =>
-      produtoService.update(id, mapProdutoFormToPayload(values)),
+    mutationFn: async ({ id, values }: { id: string; values: ProdutoFormValues }) => {
+      await produtoService.update(id, mapProdutoFormToPayload(values))
+      await produtoService.uploadPendingArquivos(id, values)
+      return produtoService.getById(id)
+    },
     onSuccess: (produto) => {
       upsertProduto(produto)
       queryClient.invalidateQueries({ queryKey: produtosQueryKeys.lists() })

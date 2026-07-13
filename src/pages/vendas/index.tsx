@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useToast } from '@/components/ui/Toast'
@@ -62,14 +62,6 @@ function IconCheck() {
   return (
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
       <polyline points="20 6 9 17 4 12" />
-    </svg>
-  )
-}
-
-function IconChevronRight() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <polyline points="9 18 15 12 9 6" />
     </svg>
   )
 }
@@ -423,7 +415,17 @@ export function VendasPage() {
               </thead>
               <tbody>
                 {pedidosFiltrados.map((pedido) => (
-                  <tr key={pedido.id}>
+                  <tr
+                    key={pedido.id}
+                    tabIndex={0}
+                    onClick={() => navigate(`/vendas/${pedido.id}`)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        navigate(`/vendas/${pedido.id}`)
+                      }
+                    }}
+                  >
                     <td>
                       <div className={styles.clienteCell}>
                         <div className={styles.clienteAvatar}>
@@ -465,22 +467,15 @@ export function VendasPage() {
                             className={styles.btnConvert}
                             title="Transformar orçamento em venda"
                             disabled={confirmarPedidoMutation.isPending}
-                            onClick={() =>
+                            onClick={(event) => {
+                              event.stopPropagation()
                               void handleConverterOrcamento(pedido.id, pedido.numero, pedido.clienteNome)
-                            }
+                            }}
                           >
                             <IconCheck />
                             Confirmar venda
                           </button>
                         ) : null}
-                        <button
-                          type="button"
-                          className={styles.rowAction}
-                          onClick={() => navigate(`/vendas/${pedido.id}`)}
-                          title="Ver detalhes"
-                        >
-                          <IconChevronRight />
-                        </button>
                       </div>
                     </td>
                   </tr>

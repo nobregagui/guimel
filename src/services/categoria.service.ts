@@ -17,7 +17,7 @@ function mapCategoria(item: CategoriaApi): Categoria {
 
 export type CreateCategoriaPayload = {
   nome: string
-  cor: string
+  cor?: string
 }
 
 export const categoriaService = {

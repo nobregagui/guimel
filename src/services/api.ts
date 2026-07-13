@@ -37,6 +37,12 @@ export const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    if (config.headers) {
+      delete config.headers['Content-Type']
+    }
+  }
+
   if (isPublicAuthRequest(config.url)) {
     return config
   }

@@ -42,6 +42,8 @@ import {
   useProdutosQuery,
   useUpdateProdutoMutation,
 } from '@/features/produtos/hooks/useProdutos'
+import { useProdutoLookupsQueries } from '@/features/produtos/hooks/useProdutoLookups'
+import { getApiAssetUrl } from '@/utils/apiAssets'
 import styles from '@/pages/produtos/ProdutosPage.module.css'
 
 export function ProdutosPage() {
@@ -49,6 +51,7 @@ export function ProdutosPage() {
 
   const produtosQuery = useProdutosQuery()
   const categoriasQuery = useCategoriasQuery()
+  const lookupsQuery = useProdutoLookupsQueries()
   const createProdutoMutation = useCreateProdutoMutation()
   const updateProdutoMutation = useUpdateProdutoMutation()
 
@@ -62,8 +65,8 @@ export function ProdutosPage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [produtoEditando, setProdutoEditando] = useState<Produto | null>(null)
 
-  const isLoading = produtosQuery.isLoading || categoriasQuery.isLoading
-  const isError = produtosQuery.isError || categoriasQuery.isError
+  const isLoading = produtosQuery.isLoading || categoriasQuery.isLoading || lookupsQuery.isLoading
+  const isError = produtosQuery.isError || categoriasQuery.isError || lookupsQuery.isError
   const isSaving = createProdutoMutation.isPending || updateProdutoMutation.isPending
 
   const produtosBase = useMemo(
@@ -113,6 +116,7 @@ export function ProdutosPage() {
   function handleRetry() {
     void produtosQuery.refetch()
     void categoriasQuery.refetch()
+    lookupsQuery.refetchAll()
   }
 
   return (
@@ -318,20 +322,35 @@ export function ProdutosPage() {
                 <tbody>
                   {produtosFiltrados.map((produto) => {
                     const categoria = categorias.find((c) => c.id === produto.categoriaId)
+                    const categoriaNome = categoria?.nome ?? produto.categoriaNome
+                    const categoriaCor = categoria?.cor ?? '#6B7280'
                     return (
                       <tr key={produto.id}>
                         <td>
                           <div className={styles.produtoCell}>
-                            <div className={styles.produtoThumb}>{produtoIniciais(produto.nome)}</div>
+                            <div className={styles.produtoThumb}>
+                              {produto.imagemUrl ? (
+                                <img
+                                  src={getApiAssetUrl(produto.imagemUrl) ?? produto.imagemUrl}
+                                  alt=""
+                                  className={styles.produtoThumbImg}
+                                />
+                              ) : (
+                                produtoIniciais(produto.nome)
+                              )}
+                            </div>
                             <div>
                               <p className={styles.cellNome}>{produto.nome}</p>
-                              <p className={styles.cellSub}>{produto.codigo}</p>
+                              <p className={styles.cellSub}>
+                                {produto.codigo}
+                                {produto.marcaNome ? ` · ${produto.marcaNome}` : ''}
+                              </p>
                             </div>
                           </div>
                         </td>
                         <td>
-                          {categoria ? (
-                            <CategoriaChip nome={categoria.nome} cor={categoria.cor} />
+                          {categoriaNome ? (
+                            <CategoriaChip nome={categoriaNome} cor={categoriaCor} />
                           ) : (
                             <span className={styles.cellMuted}>—</span>
                           )}
