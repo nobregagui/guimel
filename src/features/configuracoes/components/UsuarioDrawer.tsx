@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import { X } from 'lucide-react'
 
-import { USER_ROLE_LABEL, USER_ROLE_VALUES } from '@/constants/permissions'
+import { USER_ROLE_DESCRIPTION, USER_ROLE_LABEL, USER_ROLE_VALUES } from '@/constants/permissions'
 import type { User } from '@/types'
 import {
   EMPTY_USUARIO_FORM,
@@ -111,12 +111,16 @@ function UsuarioDrawerForm({
   const {
     register,
     handleSubmit,
+    control,
     reset,
     formState: { errors },
   } = useForm<UsuarioFormValues>({
     defaultValues: isEdit && usuario ? usuarioToFormValues(usuario) : EMPTY_USUARIO_FORM,
     resolver: buildResolver(mode),
   })
+
+  const selectedRole = useWatch({ control, name: 'role' })
+  const roleDescription = selectedRole ? USER_ROLE_DESCRIPTION[selectedRole] : undefined
 
   const roleOptions = useMemo(
     () =>
@@ -176,6 +180,7 @@ function UsuarioDrawerForm({
                 </option>
               ))}
             </select>
+            {roleDescription ? <span className={styles.fieldHint}>{roleDescription}</span> : null}
           </div>
 
           <div className={styles.field}>

@@ -75,7 +75,7 @@ function ExtratoTipoBadge({ tipo }: { tipo: ExtratoMovimento['tipo'] }) {
 
 export function ExtratoTab({ periodo, contaId, onContaChange, onNovo }: ExtratoTabProps) {
   const { showToast } = useToast()
-  const { userPermissions, isReadOnly } = usePermissions()
+  const { user, userPermissions, isReadOnly } = usePermissions()
 
   const extratoParams = useMemo(
     () => ({
@@ -137,7 +137,7 @@ export function ExtratoTab({ periodo, contaId, onContaChange, onNovo }: ExtratoT
   const buildMenuItems = useCallback(
     (mov: ExtratoMovimento) => {
       const canReconcile = canReconcileConciliacao(userPermissions) && !isReadOnly
-      const canWrite = canWriteExtrato(userPermissions) && !isReadOnly
+      const canWrite = canWriteExtrato(userPermissions, user?.role) && !isReadOnly
       const podeExcluir = mov.manual && !mov.conciliado
 
       const items: ActionMenuItem[] = [
@@ -180,7 +180,14 @@ export function ExtratoTab({ periodo, contaId, onContaChange, onNovo }: ExtratoT
 
       return items
     },
-    [conciliarMutation, desconciliarMutation, isReadOnly, showToast, userPermissions],
+    [
+      conciliarMutation,
+      desconciliarMutation,
+      isReadOnly,
+      showToast,
+      user?.role,
+      userPermissions,
+    ],
   )
 
   const columns = useMemo<TableColumn<ExtratoMovimento>[]>(() => {

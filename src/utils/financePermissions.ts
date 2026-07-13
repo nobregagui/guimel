@@ -7,6 +7,7 @@ import {
 } from '@/constants/permissions'
 import type { User, UserRole } from '@/types'
 import { hasAnyPermission } from '@/utils/permissions'
+import { isFinanceViewOnlyRole } from '@/utils/roles'
 
 export type FinanceActionCheck = {
   allowed: boolean
@@ -29,6 +30,13 @@ export function canPayTitulo(
   role: UserRole | undefined,
   valor: number,
 ): FinanceActionCheck {
+  if (isFinanceViewOnlyRole(role)) {
+    return {
+      allowed: false,
+      reason: 'Perfil Administrativo possui apenas visualização no Financeiro.',
+    }
+  }
+
   if (!hasAnyPermission(permissions, [...FINANCE_PAY_PERMISSIONS])) {
     return { allowed: false }
   }
@@ -46,18 +54,30 @@ export function canPayTitulo(
   return { allowed: true }
 }
 
-export function canReceiveTitulo(permissions: string[]): FinanceActionCheck {
+export function canReceiveTitulo(
+  permissions: string[],
+  role?: UserRole,
+): FinanceActionCheck {
+  if (isFinanceViewOnlyRole(role)) {
+    return {
+      allowed: false,
+      reason: 'Perfil Administrativo possui apenas visualização no Financeiro.',
+    }
+  }
+
   if (!hasAnyPermission(permissions, [...FINANCE_RECEIVE_PERMISSIONS])) {
     return { allowed: false }
   }
   return { allowed: true }
 }
 
-export function canReverseFinanceiro(permissions: string[]): boolean {
+export function canReverseFinanceiro(permissions: string[], role?: UserRole): boolean {
+  if (isFinanceViewOnlyRole(role)) return false
   return hasAnyPermission(permissions, [...FINANCE_REVERSE_PERMISSIONS])
 }
 
-export function canWriteContasPagar(permissions: string[]): boolean {
+export function canWriteContasPagar(permissions: string[], role?: UserRole): boolean {
+  if (isFinanceViewOnlyRole(role)) return false
   return hasAnyPermission(permissions, [
     'contas_pagar:write',
     'contas_pagar:*',
@@ -66,7 +86,8 @@ export function canWriteContasPagar(permissions: string[]): boolean {
   ])
 }
 
-export function canWriteContasReceber(permissions: string[]): boolean {
+export function canWriteContasReceber(permissions: string[], role?: UserRole): boolean {
+  if (isFinanceViewOnlyRole(role)) return false
   return hasAnyPermission(permissions, [
     'contas_receber:write',
     'contas_receber:*',
@@ -87,7 +108,8 @@ export function canReconcileConciliacao(permissions: string[]): boolean {
   ])
 }
 
-export function canWriteExtrato(permissions: string[]): boolean {
+export function canWriteExtrato(permissions: string[], role?: UserRole): boolean {
+  if (isFinanceViewOnlyRole(role)) return false
   return hasAnyPermission(permissions, ['extrato:write', 'financeiro:write', 'financeiro:*'])
 }
 

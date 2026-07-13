@@ -6,6 +6,7 @@ export const FINANCE_APPROVAL_LIMIT = 5_000
 export const USER_ROLE_VALUES = [
   'admin',
   'owner',
+  'administrative',
   'finance_manager',
   'finance_analyst',
   'sales',
@@ -24,6 +25,7 @@ export type AssignableUserRole = (typeof USER_ROLE_VALUES)[number]
 export const USER_ROLE_LABEL: Record<AssignableUserRole | 'manager' | 'finance', string> = {
   admin: 'Administrador',
   owner: 'Diretor / Proprietário',
+  administrative: 'Administrativo',
   finance_manager: 'Gerente Financeiro',
   finance_analyst: 'Analista Financeiro',
   sales: 'Vendedor',
@@ -37,6 +39,41 @@ export const USER_ROLE_LABEL: Record<AssignableUserRole | 'manager' | 'finance',
   hr: 'RH',
   manager: 'Gerente (legado)',
   finance: 'Financeiro (legado)',
+}
+
+/**
+ * Descrição operacional dos perfis (UX no drawer de usuário).
+ * Alinhado a ROLE_PERMISSIONS do backend (erp-guime-api).
+ */
+export const USER_ROLE_DESCRIPTION: Record<AssignableUserRole, string> = {
+  admin:
+    'Acesso total ao sistema, incluindo gestão de usuários e todas as ações em qualquer módulo.',
+  owner:
+    'Visão ampla da operação: dashboard, financeiro (leitura e aprovação), vendas, compras, clientes, produtos, estoque, relatórios e dados da empresa. Sem gestão de usuários.',
+  administrative:
+    'Acesso operacional a vendas, clientes, produtos, NF-e, conciliação, relatórios e configurações. No Financeiro, apenas visualização — sem criar, editar, baixar ou estornar. Não gerencia usuários.',
+  finance_manager:
+    'Controle completo do Financeiro: contas a pagar/receber, extrato, fluxo de caixa, transferências, conciliação e relatórios financeiros.',
+  finance_analyst:
+    'Opera o Financeiro no dia a dia (contas, extrato, transferências e conciliação). Pagamentos acima do limite exigem aprovação do gerente financeiro.',
+  sales:
+    'Acesso às próprias vendas e aos próprios clientes, além de consultar produtos e o dashboard.',
+  sales_supervisor:
+    'Gerencia vendas e clientes da equipe: consultar, editar, aprovar, cancelar e definir metas.',
+  buyer:
+    'Cuida de compras: fornecedores, produtos e pedidos de compra (incluindo recebimento).',
+  stockkeeper:
+    'Foco em estoque: consultar produtos, movimentar, ajustar e fazer inventário.',
+  support:
+    'Atendimento: consulta e edição de clientes, visualização de vendas/pedidos e gestão de tickets de suporte.',
+  accountant:
+    'Acesso contábil/fiscal em leitura: financeiro, relatórios, NF-e e dados fiscais (com exportação). Sem ações de baixa ou escrita financeira.',
+  auditor:
+    'Somente leitura em todos os módulos. Não realiza criações, edições nem exclusões.',
+  cashier:
+    'Opera o caixa: abertura/fechamento e recebimentos vinculados a vendas.',
+  hr:
+    'Módulo de RH: folha, benefícios e férias (leitura e escrita).',
 }
 
 /** Permissão mínima por rota — aceita qualquer item do array */

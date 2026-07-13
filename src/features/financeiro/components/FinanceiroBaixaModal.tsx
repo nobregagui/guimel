@@ -69,7 +69,7 @@ export function FinanceiroBaixaModal({
     if (modulo === 'pagar') {
       return canPayTitulo(userPermissions, user?.role, valor)
     }
-    return canReceiveTitulo(userPermissions)
+    return canReceiveTitulo(userPermissions, user?.role)
   }, [modulo, user?.role, userPermissions, valor])
 
   if (!open) return null

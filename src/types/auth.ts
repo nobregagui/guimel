@@ -2,6 +2,7 @@
 export type UserRole =
   | 'admin'
   | 'owner'
+  | 'administrative'
   | 'finance_manager'
   | 'finance_analyst'
   | 'sales'

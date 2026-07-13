@@ -130,8 +130,8 @@ export function ContasPagarTab({ onNovo, onEditar }: ContasPagarTabProps) {
       const podeExcluir =
         conta.status !== 'pago' && conta.status !== 'parcial' && (conta.valorBaixado ?? 0) === 0
       const payCheck = canPayTitulo(userPermissions, user?.role, saldo)
-      const canWrite = canWriteContasPagar(userPermissions) && !isReadOnly
-      const canReverse = canReverseFinanceiro(userPermissions) && !isReadOnly
+      const canWrite = canWriteContasPagar(userPermissions, user?.role) && !isReadOnly
+      const canReverse = canReverseFinanceiro(userPermissions, user?.role) && !isReadOnly
 
       const items: ActionMenuItem[] = [
         { id: 'ver', label: 'Visualizar', onClick: () => setDetalheTitulo(conta) },

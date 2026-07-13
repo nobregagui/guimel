@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { quickActionItems } from '@/features/dashboard/data'
 import type { QuickActionId } from '@/features/dashboard/types'
 import { usePermissions } from '@/hooks/usePermissions'
+import { isFinanceViewOnlyRole } from '@/utils/roles'
 import shared from '@/features/dashboard/dashboard.module.css'
 
 import styles from './DashboardQuickActions.module.css'
@@ -40,10 +41,16 @@ function ActionIcon({ id }: { id: QuickActionId }) {
   return icons[id]
 }
 
-export function DashboardQuickActions() {
-  const { canSome } = usePermissions()
+const FINANCE_WRITE_QUICK_ACTIONS = new Set<QuickActionId>(['cobranca', 'pagamento'])
 
-  const visibleActions = quickActionItems.filter((action) => canSome(action.permissions))
+export function DashboardQuickActions() {
+  const { canSome, user } = usePermissions()
+  const financeViewOnly = isFinanceViewOnlyRole(user?.role)
+
+  const visibleActions = quickActionItems.filter((action) => {
+    if (financeViewOnly && FINANCE_WRITE_QUICK_ACTIONS.has(action.id)) return false
+    return canSome(action.permissions)
+  })
 
   if (visibleActions.length === 0) return null
 

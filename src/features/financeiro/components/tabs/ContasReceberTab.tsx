@@ -65,7 +65,7 @@ interface ContasReceberTabProps {
 
 export function ContasReceberTab({ onNovo, onEditar }: ContasReceberTabProps) {
   const { showToast } = useToast()
-  const { userPermissions, isReadOnly } = usePermissions()
+  const { user, userPermissions, isReadOnly } = usePermissions()
   const { data: contas = [], isLoading, isError, refetch } = useContasReceberQuery()
   const receberMutation = useReceberContaMutation()
   const estornarMutation = useEstornarRecebimentoMutation()
@@ -127,9 +127,9 @@ export function ContasReceberTab({ onNovo, onEditar }: ContasReceberTabProps) {
       const podeBaixar = conta.status !== 'pago' && conta.status !== 'cancelado'
       const podeExcluir =
         conta.status !== 'pago' && conta.status !== 'parcial' && (conta.valorBaixado ?? 0) === 0
-      const receiveCheck = canReceiveTitulo(userPermissions)
-      const canWrite = canWriteContasReceber(userPermissions) && !isReadOnly
-      const canReverse = canReverseFinanceiro(userPermissions) && !isReadOnly
+      const receiveCheck = canReceiveTitulo(userPermissions, user?.role)
+      const canWrite = canWriteContasReceber(userPermissions, user?.role) && !isReadOnly
+      const canReverse = canReverseFinanceiro(userPermissions, user?.role) && !isReadOnly
 
       const items: ActionMenuItem[] = [
         { id: 'ver', label: 'Visualizar', onClick: () => setDetalheTitulo(conta) },
@@ -190,7 +190,15 @@ export function ContasReceberTab({ onNovo, onEditar }: ContasReceberTabProps) {
 
       return items
     },
-    [duplicateMutation, estornarMutation, isReadOnly, onEditar, showToast, userPermissions],
+    [
+      duplicateMutation,
+      estornarMutation,
+      isReadOnly,
+      onEditar,
+      showToast,
+      user?.role,
+      userPermissions,
+    ],
   )
 
   const columns = useMemo<TableColumn<ContaReceber>[]>(
