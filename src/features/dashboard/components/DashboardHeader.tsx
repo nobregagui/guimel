@@ -7,10 +7,12 @@ import type { DashboardNotification, GlobalSearchItem } from '@/features/dashboa
 import { filterGlobalSearchItems } from '@/features/dashboard/utils/globalSearch'
 import shared from '@/features/dashboard/dashboard.module.css'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useEmpresaQuery } from '@/features/configuracoes/hooks/useEmpresa'
 import { APP_PATHS } from '@/routes/paths'
 import { createBuscaNavigationState } from '@/routes/navigationState'
 import { logoutSession } from '@/services/authSession'
 import { useAuthStore } from '@/store'
+import { getApiAssetUrl } from '@/utils/apiAssets'
 
 import styles from './DashboardHeader.module.css'
 
@@ -37,6 +39,7 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
 
   const user = useAuthStore((state) => state.user)
   const { canSome } = usePermissions()
+  const empresaQuery = useEmpresaQuery(Boolean(user))
 
   const searchableItems = useMemo(
     () =>
@@ -55,6 +58,11 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
   const userName = user?.name ?? 'Alexandre Martins'
   const userEmail = user?.email ?? 'alexandre@email.com'
   const userInitials = getIniciais(userName)
+  const empresaNome = empresaQuery.data?.nomeFantasia?.trim() || 'Empresa'
+  const empresaPlano = empresaQuery.data?.planoNome?.trim() || 'Plano Pro'
+  const empresaLogoUrl = empresaQuery.data?.logoUrl
+    ? getApiAssetUrl(empresaQuery.data.logoUrl) ?? empresaQuery.data.logoUrl
+    : null
 
   const searchResults = useMemo(
     () => filterGlobalSearchItems(searchableItems, busca),
@@ -248,8 +256,8 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
         </Link>
 
         <div className={styles.company}>
-          <span className={styles.companyName}>Empresa</span>
-          <span className={styles.companyPlan}>Plano Pro</span>
+          <span className={styles.companyName}>{empresaNome}</span>
+          <span className={styles.companyPlan}>{empresaPlano}</span>
         </div>
 
         <div className={styles.actionWrap} ref={userMenuRef}>
@@ -261,7 +269,15 @@ export function DashboardHeader({ onMenuClick }: DashboardHeaderProps) {
             aria-controls={userMenuId}
             onClick={toggleUserMenu}
           >
-            <span className={styles.avatar}>{userInitials}</span>
+            {empresaLogoUrl ? (
+              <img
+                src={empresaLogoUrl}
+                alt=""
+                className={styles.avatarImage}
+              />
+            ) : (
+              <span className={styles.avatar}>{userInitials}</span>
+            )}
           </button>
 
           {userMenuOpen ? (

@@ -112,6 +112,7 @@ export const MODULE_WRITE_PERMISSIONS = {
   ],
   conciliacao: ['conciliacao:write', 'conciliacao:reconcile', 'conciliacao:*'],
   nfe: ['nfe:write', 'nfe:export'],
+  empresa: ['empresa:write', 'configuracoes:write'],
 } as const
 
 export const FINANCE_PAY_PERMISSIONS = [
