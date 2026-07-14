@@ -1,4 +1,4 @@
-﻿import { api } from '@/services/api'
+import { api } from '@/services/api'
 import type { Cliente, ClienteFormValues, ClientePedido } from '@/features/clientes/types'
 
 export type CreateClientePayload = {
@@ -23,7 +23,9 @@ export type CreateClientePayload = {
   diasVencimentoPreferidos?: number[]
 }
 
-export type UpdateClientePayload = Partial<CreateClientePayload>
+export type UpdateClientePayload = Partial<CreateClientePayload> & {
+  status?: Cliente['status']
+}
 
 function trimOptional(value: string | undefined): string | undefined {
   const trimmed = value?.trim()
@@ -75,9 +77,13 @@ export const clienteService = {
     return data
   },
 
-  async remove(id: string): Promise<Cliente> {
-    const { data } = await api.delete<Cliente>(`/clientes/${id}`)
+  async updateStatus(id: string, status: Cliente['status']): Promise<Cliente> {
+    const { data } = await api.patch<Cliente>(`/clientes/${id}`, { status })
     return data
+  },
+
+  async remove(id: string): Promise<void> {
+    await api.delete(`/clientes/${id}`)
   },
 
   async getPedidos(id: string): Promise<ClientePedido[]> {

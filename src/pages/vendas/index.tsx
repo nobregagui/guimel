@@ -1,10 +1,13 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useToast } from '@/components/ui/Toast'
 import { PermissionGate } from '@/components/auth/PermissionGate'
 import { MODULE_WRITE_PERMISSIONS } from '@/constants/permissions'
 import { PedidoDrawer } from '@/features/vendas/components/PedidoDrawer'
+import { PedidoActionMenu } from '@/features/vendas/components/PedidoActionMenu'
+import { VendaDocumentosControl } from '@/features/vendas/documents'
 import { usePermissions } from '@/hooks/usePermissions'
 import { canFilterVendasByVendedor } from '@/utils/financePermissions'
 import { VendasQueryFeedback } from '@/features/vendas/components/VendasQueryFeedback'
@@ -19,10 +22,16 @@ import {
   useConfirmarPedidoMutation,
   useCreatePedidoMutation,
   usePedidosQuery,
+  useRemovePedidoMutation,
+  useUpdatePedidoMutation,
 } from '@/features/vendas/hooks/useVendas'
 import { useVendasStore } from '@/features/vendas/store/useVendasStore'
-import type { PedidoFormValues, StatusPedido } from '@/features/vendas/types'
-import { getPedidoActionErrorMessage, getPedidoSaveErrorMessage } from '@/features/vendas/utils'
+import type { Pedido, PedidoFormValues, StatusPedido } from '@/features/vendas/types'
+import {
+  getPedidoActionErrorMessage,
+  getPedidoSaveErrorMessage,
+  mapPedidoToFormValues,
+} from '@/features/vendas/utils'
 import { getBuscaFromState } from '@/routes/navigationState'
 import styles from '@/pages/vendas/VendasPage.module.css'
 
@@ -110,11 +119,14 @@ export function VendasPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const { showToast } = useToast()
-  const { user, userPermissions } = usePermissions()
+  const { user, userPermissions, canWriteModule, isReadOnly } = usePermissions()
   const showVendedorFilter = canFilterVendasByVendedor(userPermissions, user)
+  const canWrite = canWriteModule([...MODULE_WRITE_PERMISSIONS.vendas]) && !isReadOnly
 
   const pedidosQuery = usePedidosQuery()
   const createPedidoMutation = useCreatePedidoMutation()
+  const updatePedidoMutation = useUpdatePedidoMutation()
+  const removePedidoMutation = useRemovePedidoMutation()
   const confirmarPedidoMutation = useConfirmarPedidoMutation()
 
   const pedidos = useVendasStore((s) => s.pedidos)
@@ -125,6 +137,8 @@ export function VendasPage() {
   const [filtroVendedor, setFiltroVendedor] = useState('')
   const [filtroForma, setFiltroForma] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [pedidoEditando, setPedidoEditando] = useState<Pedido | null>(null)
+  const [pedidoParaExcluir, setPedidoParaExcluir] = useState<Pedido | null>(null)
 
   useEffect(() => {
     const buscaFromState = getBuscaFromState(location.state)
@@ -178,6 +192,25 @@ export function VendasPage() {
   }
 
   function handleSubmit(values: PedidoFormValues) {
+    if (pedidoEditando) {
+      return updatePedidoMutation
+        .mutateAsync({ id: pedidoEditando.id, values })
+        .then((pedido) => {
+          showToast({
+            message: `Pedido ${pedido.numero} atualizado com sucesso.`,
+            variant: 'success',
+          })
+          setPedidoEditando(null)
+        })
+        .catch((error) => {
+          showToast({
+            message: getPedidoSaveErrorMessage(error, 'Erro ao atualizar pedido'),
+            variant: 'error',
+          })
+          throw error
+        })
+    }
+
     return createPedidoMutation
       .mutateAsync(values)
       .then((pedido) => {
@@ -207,6 +240,24 @@ export function VendasPage() {
     } catch (error) {
       showToast({
         message: getPedidoActionErrorMessage(error, 'Não foi possível confirmar o orçamento.'),
+        variant: 'error',
+      })
+    }
+  }
+
+  async function handleConfirmExcluir() {
+    if (!pedidoParaExcluir) return
+
+    try {
+      await removePedidoMutation.mutateAsync(pedidoParaExcluir.id)
+      showToast({
+        message: `Pedido ${pedidoParaExcluir.numero} excluído.`,
+        variant: 'success',
+      })
+      setPedidoParaExcluir(null)
+    } catch (error) {
+      showToast({
+        message: getPedidoActionErrorMessage(error, 'Não foi possível excluir o pedido.'),
         variant: 'error',
       })
     }
@@ -476,6 +527,27 @@ export function VendasPage() {
                             Confirmar venda
                           </button>
                         ) : null}
+
+                        <VendaDocumentosControl pedido={pedido} variant="ghost" />
+
+                        {canWrite ? (
+                          <PedidoActionMenu
+                            ariaLabel={`Ações de ${pedido.numero}`}
+                            items={[
+                              {
+                                id: 'editar',
+                                label: 'Editar',
+                                onClick: () => setPedidoEditando(pedido),
+                              },
+                              {
+                                id: 'excluir',
+                                label: 'Excluir',
+                                danger: true,
+                                onClick: () => setPedidoParaExcluir(pedido),
+                              },
+                            ]}
+                          />
+                        ) : null}
                       </div>
                     </td>
                   </tr>
@@ -501,6 +573,36 @@ export function VendasPage() {
           isSaving={createPedidoMutation.isPending}
         />
       ) : null}
+
+      {pedidoEditando ? (
+        <PedidoDrawer
+          key={pedidoEditando.id}
+          open={Boolean(pedidoEditando)}
+          mode="edit"
+          initialValues={mapPedidoToFormValues(pedidoEditando)}
+          onClose={() => setPedidoEditando(null)}
+          onSubmit={handleSubmit}
+          isSaving={updatePedidoMutation.isPending}
+        />
+      ) : null}
+
+      <ConfirmModal
+        open={Boolean(pedidoParaExcluir)}
+        title="Excluir pedido"
+        description={
+          pedidoParaExcluir
+            ? `Tem certeza que deseja excluir o pedido “${pedidoParaExcluir.numero}” de ${pedidoParaExcluir.clienteNome}? Esta ação não pode ser desfeita.`
+            : ''
+        }
+        variant="danger"
+        confirmLabel="Excluir"
+        confirmingLabel="Excluindo..."
+        isConfirming={removePedidoMutation.isPending}
+        onClose={() => {
+          if (!removePedidoMutation.isPending) setPedidoParaExcluir(null)
+        }}
+        onConfirm={() => void handleConfirmExcluir()}
+      />
     </div>
   )
 }

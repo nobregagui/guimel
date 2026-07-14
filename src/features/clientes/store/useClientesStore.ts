@@ -8,6 +8,7 @@ interface ClientesState {
   pedidosByClienteId: Record<string, ClientePedido[]>
   setClientes: (clientes: Cliente[]) => void
   upsertCliente: (cliente: Cliente) => void
+  removeClienteFromCache: (id: string) => void
   setPedidosForCliente: (clienteId: string, pedidos: ClientePedido[]) => void
   getClienteById: (id: string) => Cliente | undefined
   getClienteByDocumento: (documento: string) => Cliente | undefined
@@ -37,6 +38,17 @@ export const useClientesStore = create<ClientesState>((set, get) => ({
 
       return {
         clientes: state.clientes.map((item) => (item.id === cliente.id ? cliente : item)),
+      }
+    })
+  },
+
+  removeClienteFromCache: (id) => {
+    set((state) => {
+      const nextPedidos = { ...state.pedidosByClienteId }
+      delete nextPedidos[id]
+      return {
+        clientes: state.clientes.filter((item) => item.id !== id),
+        pedidosByClienteId: nextPedidos,
       }
     })
   },

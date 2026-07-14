@@ -16,6 +16,7 @@ import {
   groupBySegmento,
   sumTotalVendas,
 } from '@/features/clientes/utils'
+import { APP_PATHS } from '@/routes/paths'
 import styles from '@/pages/clientes/ClientesPage.module.css'
 
 interface AnaliseTabProps {
@@ -92,7 +93,7 @@ export function AnaliseTab({ busca }: AnaliseTabProps) {
           clientes={topClientes}
           title="Maiores compradores"
           hint="Ranking por faturamento"
-          onClienteClick={(cliente) => navigate(`/clientes/${cliente.id}`)}
+          onClienteClick={(cliente) => navigate(`${APP_PATHS.clientes}/${cliente.id}`)}
         />
 
         <div className={styles.card}>

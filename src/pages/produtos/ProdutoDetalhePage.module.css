@@ -1,0 +1,294 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background-color: #f9fafb;
+}
+
+.header {
+  background-color: #ffffff;
+  border-bottom: 1px solid #f3f4f6;
+  padding: 20px 28px;
+}
+
+.headerTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.backLink,
+.backLinkStandalone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #6b7280;
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.backLink:hover,
+.backLinkStandalone:hover {
+  color: #16a34a;
+}
+
+.btnSecondary,
+.btnDanger,
+.btnPrimary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btnSecondary {
+  border: 1px solid #e5e7eb;
+  background-color: #ffffff;
+  color: #4b5563;
+}
+
+.btnSecondary:hover {
+  background-color: #f9fafb;
+}
+
+.btnPrimary {
+  border: none;
+  background-color: #16a34a;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btnDanger {
+  border: 1px solid #fecaca;
+  background-color: #ffffff;
+  color: #dc2626;
+}
+
+.btnDanger:hover {
+  background-color: #fef2f2;
+}
+
+.profileRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.produtoThumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #16a34a, #f97316);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 600;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.produtoThumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profileInfo {
+  min-width: 0;
+}
+
+.profileTitleRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.profileSubtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.profileMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.body {
+  padding: 20px 28px 32px;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(280px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.mainCol,
+.sideCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  background: #ffffff;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.cardHeader {
+  padding: 14px 18px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dadosGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 18px;
+}
+
+.dadosStack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 18px;
+}
+
+.dadoItem dt {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dadoItem dd {
+  margin: 0;
+  font-size: 14px;
+  color: #111827;
+  word-break: break-word;
+}
+
+.longText {
+  white-space: pre-wrap;
+  line-height: 1.45;
+}
+
+.muted {
+  color: #9ca3af;
+}
+
+.priceHighlight {
+  font-size: 18px;
+  font-weight: 600;
+  color: #15803d;
+}
+
+.fileLink {
+  color: #16a34a;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.fileLink:hover {
+  text-decoration: underline;
+}
+
+.secondaryList {
+  margin: 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notFound {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 48px 28px;
+}
+
+.notFoundTitle {
+  margin: 0;
+  font-size: 20px;
+  color: #111827;
+}
+
+.notFoundText {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+@media (max-width: 960px) {
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .dadosGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .header {
+    padding: 16px 18px;
+  }
+
+  .body {
+    padding: 16px 18px 28px;
+  }
+}

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Building2, MoreHorizontal, UserPlus, Users, Wallet } from 'lucide-react'
+import { Building2, UserPlus, Users, Wallet } from 'lucide-react'
 
+import { ClienteActionMenu } from '@/features/clientes/components/ClienteActionMenu'
 import { ClienteNomeCell } from '@/features/clientes/components/ClienteNomeCell'
 import { ClienteStatusBadge } from '@/features/clientes/components/ClienteStatusBadge'
 import { ClientesKpiCard, KpiGrid } from '@/features/clientes/components/ClientesKpiCard'
@@ -13,6 +14,7 @@ import {
 import { SegmentoBreakdown } from '@/features/clientes/components/SegmentoBreakdown'
 import { TopClientesCard } from '@/features/clientes/components/TopClientesCard'
 import { EMPTY_RECENTES_TABLE_FILTROS } from '@/features/clientes/data/shared'
+import { useClienteTableActions } from '@/features/clientes/hooks/useClienteTableActions'
 import { useClientesStore } from '@/features/clientes/store/useClientesStore'
 import type { Cliente, RecentesTableFiltros, TableColumn } from '@/features/clientes/types'
 import {
@@ -29,6 +31,7 @@ import {
   hasActiveRecentesTableFiltros,
   sumTotalVendas,
 } from '@/features/clientes/utils'
+import { APP_PATHS } from '@/routes/paths'
 import styles from '@/pages/clientes/ClientesPage.module.css'
 
 interface VisaoGeralTabProps {
@@ -39,6 +42,7 @@ interface VisaoGeralTabProps {
 export function VisaoGeralTab({ busca, onVerTodosClientes }: VisaoGeralTabProps) {
   const navigate = useNavigate()
   const clientes = useClientesStore((state) => state.clientes)
+  const { getMenuItems, actionsUi } = useClienteTableActions()
   const [filtrosOpen, setFiltrosOpen] = useState(false)
   const [tableFiltros, setTableFiltros] = useState<RecentesTableFiltros>(EMPTY_RECENTES_TABLE_FILTROS)
 
@@ -60,9 +64,7 @@ export function VisaoGeralTab({ busca, onVerTodosClientes }: VisaoGeralTabProps)
       {
         key: 'cliente',
         header: 'Cliente',
-        render: (row) => (
-          <ClienteNomeCell cliente={row} onClick={() => navigate(`/clientes/${row.id}`)} />
-        ),
+        render: (row) => <ClienteNomeCell cliente={row} />,
       },
       {
         key: 'segmento',
@@ -87,14 +89,15 @@ export function VisaoGeralTab({ busca, onVerTodosClientes }: VisaoGeralTabProps)
         key: 'actions',
         header: '',
         headerClassName: styles.thNarrow,
-        render: () => (
-          <button type="button" className={styles.rowAction} aria-label="Ações">
-            <MoreHorizontal size={16} />
-          </button>
+        render: (row) => (
+          <ClienteActionMenu
+            ariaLabel={`Ações de ${row.nome}`}
+            items={getMenuItems(row)}
+          />
         ),
       },
     ],
-    [navigate],
+    [getMenuItems],
   )
 
   function handleClearTableFiltros() {
@@ -150,7 +153,7 @@ export function VisaoGeralTab({ busca, onVerTodosClientes }: VisaoGeralTabProps)
         <SegmentoBreakdown items={segmentos} />
         <TopClientesCard
           clientes={topClientes}
-          onClienteClick={(cliente) => navigate(`/clientes/${cliente.id}`)}
+          onClienteClick={(cliente) => navigate(`${APP_PATHS.clientes}/${cliente.id}`)}
         />
       </div>
 
@@ -201,8 +204,11 @@ export function VisaoGeralTab({ busca, onVerTodosClientes }: VisaoGeralTabProps)
           data={recentes}
           getRowKey={(row) => row.id}
           emptyMessage="Nenhum cliente encontrado para os filtros selecionados."
+          onRowClick={(row) => navigate(`${APP_PATHS.clientes}/${row.id}`)}
         />
       </TableSection>
+
+      {actionsUi}
     </>
   )
 }

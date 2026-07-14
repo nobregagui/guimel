@@ -44,9 +44,16 @@ interface DataTableProps<T> {
   data: T[]
   getRowKey: (row: T) => string
   emptyMessage?: string
+  onRowClick?: (row: T) => void
 }
 
-export function DataTable<T>({ columns, data, getRowKey, emptyMessage = 'Nenhum registro encontrado.' }: DataTableProps<T>) {
+export function DataTable<T>({
+  columns,
+  data,
+  getRowKey,
+  emptyMessage = 'Nenhum registro encontrado.',
+  onRowClick,
+}: DataTableProps<T>) {
   if (data.length === 0) {
     return <p className={styles.emptyState}>{emptyMessage}</p>
   }
@@ -73,7 +80,22 @@ export function DataTable<T>({ columns, data, getRowKey, emptyMessage = 'Nenhum 
       </thead>
       <tbody>
         {data.map((row) => (
-          <tr key={getRowKey(row)}>
+          <tr
+            key={getRowKey(row)}
+            tabIndex={onRowClick ? 0 : undefined}
+            className={onRowClick ? styles.tableRowClickable : undefined}
+            onClick={onRowClick ? () => onRowClick(row) : undefined}
+            onKeyDown={
+              onRowClick
+                ? (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      onRowClick(row)
+                    }
+                  }
+                : undefined
+            }
+          >
             {columns.map((column) => (
               <td key={column.key} className={column.cellClassName}>
                 {column.render(row)}

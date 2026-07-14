@@ -472,8 +472,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 12px;
+    margin-bottom: 16px;
     line-height: 0;
+    --logo-container-h: 72px;
+    --logo-img-h: 168px;
   }
   
   .formBrandName {
@@ -690,7 +692,7 @@
     letter-spacing: -0.01em;
     transition: background 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
     font-family: inherit;
-    margin-top: 40px;
+    margin-top: 90px;
   }
   
   .submitBtn:hover:not(:disabled) {
@@ -875,7 +877,9 @@
     }
 
     .formBrand {
-      margin-bottom: 16px;
+      margin-bottom: 18px;
+      --logo-container-h: 80px;
+      --logo-img-h: 188px;
     }
 
     .formTitle {
@@ -1101,6 +1105,12 @@
       --logo-container-h: 80px;
       --logo-img-h: 280px;
       margin-bottom: clamp(24px, 3.5vh, 48px);
+    }
+
+    .formBrand {
+      --logo-container-h: 96px;
+      --logo-img-h: 220px;
+      margin-bottom: 20px;
     }
 
     .headline {

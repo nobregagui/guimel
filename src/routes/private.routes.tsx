@@ -12,6 +12,7 @@ import { ForbiddenPage } from '@/pages/Forbidden'
 import { ModulePlaceholder } from '@/pages/ModulePlaceholder'
 import { NotasFiscaisPage } from '@/pages/notas-fiscais'
 import { ProdutosPage } from '@/pages/produtos'
+import { ProdutoDetalhePage } from '@/pages/produtos/detalhe'
 import { RelatoriosPage } from '@/pages/relatorios'
 import { VendasPage } from '@/pages/vendas'
 import { VendaDetalhePage } from '@/pages/vendas/detalhe'
@@ -34,6 +35,7 @@ export const privateRoutes: RouteObject[] = [
               { path: APP_PATHS.clientes, element: <ClientesPage /> },
               { path: `${APP_PATHS.clientes}/:id`, element: <ClienteDetalhePage /> },
               { path: APP_PATHS.produtos, element: <ProdutosPage /> },
+              { path: `${APP_PATHS.produtos}/:id`, element: <ProdutoDetalhePage /> },
               { path: APP_PATHS.financeiro, element: <FinanceiroPage /> },
               { path: APP_PATHS.conciliacaoBancaria, element: <ConciliacaoBancariaPage /> },
               { path: APP_PATHS.vendas, element: <VendasPage /> },

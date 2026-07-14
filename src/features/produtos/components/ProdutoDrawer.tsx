@@ -426,7 +426,7 @@ export function ProdutoDrawer({
             <strong>{progresso}%</strong>
           </div>
           <p className={styles.progressRequiredHint}>
-            Campos obrigatórios: Nome, Categoria, Marca, NCM e Preço de venda
+            Campos obrigatórios: Nome, Categoria, NCM e Preço de venda
           </p>
           <div className={styles.progressTrack}>
             <div className={styles.progressFill} style={{ width: `${progresso}%` }} />
@@ -573,7 +573,6 @@ export function ProdutoDrawer({
                   <SearchableSelect
                     id="prod-marca"
                     label="Marca"
-                    required
                     value={form.marcaId}
                     options={marcas}
                     loading={lookupLoading.marca}

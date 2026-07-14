@@ -1,42 +1,77 @@
-import { ArrowLeft, Mail, MapPin, Pencil, Phone, ShoppingBag } from 'lucide-react'
+import { ArrowLeft, Mail, MapPin, Pencil, Phone, RefreshCw, ShoppingBag, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
+import { PermissionGate } from '@/components/auth/PermissionGate'
+import { MODULE_WRITE_PERMISSIONS } from '@/constants/permissions'
 import { ClienteAvatar } from '@/features/clientes/components/ClienteAvatar'
 import { ClienteStatusBadge } from '@/features/clientes/components/ClienteStatusBadge'
 import { ClienteTipoBadge } from '@/features/clientes/components/ClienteTipoBadge'
 import type { Cliente } from '@/features/clientes/types'
+import { APP_PATHS } from '@/routes/paths'
 import styles from '@/pages/clientes/ClienteDetalhePage.module.css'
 
 interface ClienteDetalheHeaderProps {
   cliente: Cliente
   onEditar?: () => void
   onInativar?: () => void
+  onExcluir?: () => void
+  onReativar?: () => void
+  isReativando?: boolean
 }
 
 export function ClienteDetalheHeader({
   cliente,
   onEditar,
   onInativar,
+  onExcluir,
+  onReativar,
+  isReativando = false,
 }: ClienteDetalheHeaderProps) {
+  const isInativo = cliente.status === 'inativo'
+
   return (
     <header className={styles.header}>
       <div className={styles.headerTop}>
-        <Link to="/clientes" className={styles.backLink}>
+        <Link to={APP_PATHS.clientes} className={styles.backLink}>
           <ArrowLeft size={16} /> Voltar para clientes
         </Link>
 
         <div className={styles.headerActions}>
-          {onInativar ? (
-            <button type="button" className={styles.btnSecondary} onClick={onInativar}>
-              Inativar
+          <PermissionGate permissions={[...MODULE_WRITE_PERMISSIONS.clientes]} requireWrite>
+            {isInativo ? (
+              <button
+                type="button"
+                className={styles.btnPrimary}
+                onClick={onReativar}
+                disabled={isReativando || !onReativar}
+              >
+                <RefreshCw size={13} /> Reativar
+              </button>
+            ) : (
+              <>
+                {onInativar ? (
+                  <button type="button" className={styles.btnSecondary} onClick={onInativar}>
+                    Inativar
+                  </button>
+                ) : null}
+                {onExcluir ? (
+                  <button type="button" className={styles.btnDanger} onClick={onExcluir}>
+                    <Trash2 size={13} /> Excluir
+                  </button>
+                ) : null}
+                {onEditar ? (
+                  <button type="button" className={styles.btnSecondary} onClick={onEditar}>
+                    <Pencil size={13} /> Editar
+                  </button>
+                ) : null}
+              </>
+            )}
+          </PermissionGate>
+          {!isInativo ? (
+            <button type="button" className={styles.btnPrimary}>
+              <ShoppingBag size={13} /> Nova venda
             </button>
           ) : null}
-          <button type="button" className={styles.btnSecondary} onClick={onEditar}>
-            <Pencil size={13} /> Editar
-          </button>
-          <button type="button" className={styles.btnPrimary}>
-            <ShoppingBag size={13} /> Nova venda
-          </button>
         </div>
       </div>
 

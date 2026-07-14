@@ -3,7 +3,6 @@ import type { ProdutoFieldErrors, ProdutoFormValues } from '@/features/produtos/
 export const PRODUTO_REQUIRED_FIELDS = [
   'nome',
   'categoriaId',
-  'marcaId',
   'ncm',
   'precoVenda',
 ] as const satisfies ReadonlyArray<keyof ProdutoFormValues>
@@ -16,8 +15,6 @@ function isRequiredFilled(form: ProdutoFormValues, field: ProdutoRequiredField):
       return form.nome.trim().length > 0
     case 'categoriaId':
       return form.categoriaId.trim().length > 0
-    case 'marcaId':
-      return form.marcaId.trim().length > 0
     case 'ncm':
       return form.ncm.trim().length > 0
     case 'precoVenda':
@@ -41,8 +38,6 @@ export function validateProdutoField(
       return form.nome.trim() ? undefined : 'Campo obrigatório'
     case 'categoriaId':
       return form.categoriaId ? undefined : 'Campo obrigatório'
-    case 'marcaId':
-      return form.marcaId ? undefined : 'Campo obrigatório'
     case 'ncm':
       return form.ncm.trim() ? undefined : 'Campo obrigatório'
     case 'precoVenda':
@@ -95,7 +90,7 @@ export function isProdutoFormValid(form: ProdutoFormValues): boolean {
 }
 
 export function firstInvalidTab(errors: ProdutoFieldErrors): 'geral' | 'precos' | 'fiscal' | 'estoque' | 'complementos' {
-  if (errors.nome || errors.categoriaId || errors.marcaId) return 'geral'
+  if (errors.nome || errors.categoriaId) return 'geral'
   if (errors.precoVenda) return 'precos'
   if (errors.ncm) return 'fiscal'
   return 'geral'

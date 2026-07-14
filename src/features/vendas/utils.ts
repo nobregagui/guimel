@@ -1,5 +1,7 @@
 import axios from 'axios'
 
+export { mapPedidoToFormValues } from '@/features/vendas/utils/mapPedidoToFormValues'
+
 export function getPedidoSaveErrorMessage(error: unknown, fallback: string): string {
   if (!axios.isAxiosError(error)) {
     return fallback

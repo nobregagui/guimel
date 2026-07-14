@@ -137,4 +137,19 @@ export function useRemoveProdutoMutation() {
   })
 }
 
+export function useUpdateProdutoStatusMutation() {
+  const queryClient = useQueryClient()
+  const upsertProduto = useProdutosStore((state) => state.upsertProduto)
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: ProdutoFormValues['status'] }) =>
+      produtoService.updateStatus(id, status),
+    onSuccess: (produto) => {
+      upsertProduto(produto)
+      queryClient.invalidateQueries({ queryKey: produtosQueryKeys.lists() })
+      queryClient.invalidateQueries({ queryKey: produtosQueryKeys.detail(produto.id) })
+    },
+  })
+}
+
 export type { CreateProdutoPayload, UpdateProdutoPayload }

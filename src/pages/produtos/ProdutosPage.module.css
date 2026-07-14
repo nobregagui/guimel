@@ -417,11 +417,11 @@
 .table tbody tr {
   border-bottom: 1px solid #f9fafb;
   transition: background-color 0.1s;
+  cursor: pointer;
 }
 
 .table tbody tr:last-child { border-bottom: none; }
-.table tbody tr:hover { background-color: #f9fafb; }
-.table tbody tr:hover .rowAction { opacity: 1; }
+.table tbody tr:hover { background-color: #fff7ed; }
 
 .table tbody td { padding: 14px 20px; }
 
@@ -470,18 +470,75 @@
 .cellStatusCenter { text-align: center; }
 
 .rowAction {
-  opacity: 0;
-  transition: opacity 0.15s;
+  opacity: 1;
+  transition: color 0.15s;
   background: none;
   border: none;
   cursor: pointer;
   color: #9ca3af;
   display: flex;
   align-items: center;
-  padding: 0;
+  padding: 4px;
+  border-radius: 6px;
 }
 
-.rowAction:hover { color: #4b5563; }
+.rowActionVisible {
+  opacity: 1;
+}
+
+.rowAction:hover {
+  color: #4b5563;
+  background-color: #f3f4f6;
+}
+
+.actionMenuWrap {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.actionMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 40;
+  min-width: 160px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+}
+
+.actionMenuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+  text-align: left;
+}
+
+.actionMenuItem:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.actionMenuItem:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.actionMenuItemDanger {
+  color: #dc2626;
+}
 
 /* ─── Produto thumb ──────────────────────────────────────────────────────────── */
 .produtoThumb {

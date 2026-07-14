@@ -1,5 +1,31 @@
 import { api } from '@/services/api'
+import type { VendaDocumentoTipo } from '@/features/vendas/documents/types'
 import type { ItemPedido, Pedido, PedidoFormValues, StatusPedido } from '@/features/vendas/types'
+
+/** Tipos com endpoint PDF no backend (sem query string). */
+const DOCUMENTO_URL: Record<
+  'pedido' | 'romaneio' | 'orcamento' | 'comprovante',
+  (id: string) => string
+> = {
+  pedido: (id) => `/vendas/${id}/pdf`,
+  orcamento: (id) => `/vendas/${id}/orcamento`,
+  comprovante: (id) => `/vendas/${id}/comprovante`,
+  romaneio: (id) => `/vendas/${id}/romaneio`,
+}
+
+function resolveDocumentoUrl(id: string, tipo: VendaDocumentoTipo): string {
+  if (tipo === 'danfe') {
+    const error = new Error('DANFE ainda não disponível.') as Error & {
+      response?: { status: number }
+    }
+    error.response = { status: 404 }
+    throw error
+  }
+
+  // "exportar" é alias do Pedido de Venda (mesmo PDF / mesmo path)
+  const endpointTipo = tipo === 'exportar' ? 'pedido' : tipo
+  return DOCUMENTO_URL[endpointTipo](id)
+}
 
 export type CreatePedidoItemPayload = {
   produtoId?: string
@@ -101,6 +127,35 @@ export const pedidoService = {
 
   async emitirNfe(id: string): Promise<Pedido> {
     const { data } = await api.patch<Pedido>(`/pedidos/${id}/status`, { status: 'faturado' })
+    return data
+  },
+
+  async getDocumentoPdf(id: string, tipo: VendaDocumentoTipo): Promise<Blob> {
+    const url = resolveDocumentoUrl(id, tipo)
+
+    const { data, status, headers } = await api.get<Blob>(url, {
+      responseType: 'blob',
+      headers: {
+        Accept: 'application/pdf',
+      },
+    })
+
+    const contentType = String(headers['content-type'] ?? data.type ?? '')
+    if (contentType.includes('application/json') || contentType.includes('text/')) {
+      let message = 'Documento ainda não disponível.'
+      try {
+        const text = await data.text()
+        const parsed = JSON.parse(text) as { message?: string }
+        if (typeof parsed.message === 'string') message = parsed.message
+      } catch {
+        // keep default message
+      }
+
+      const error = new Error(message) as Error & { response?: { status: number } }
+      error.response = { status: status === 200 ? 404 : status }
+      throw error
+    }
+
     return data
   },
 }

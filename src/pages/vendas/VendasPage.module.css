@@ -515,23 +515,84 @@
 
 .rowAction {
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 0.15s, background-color 0.15s, color 0.15s;
   background: none;
   border: none;
   cursor: pointer;
   color: #9ca3af;
   display: flex;
   align-items: center;
-  padding: 0;
+  padding: 4px;
+  border-radius: 6px;
 }
 
-.rowAction:hover { color: #4b5563; }
+.rowAction:hover {
+  color: #4b5563;
+  background-color: #f3f4f6;
+}
+
+.table tbody tr:hover .rowAction {
+  opacity: 1;
+}
 
 .cellActions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.rowActionVisible {
+  opacity: 1;
+}
+
+.actionMenuWrap {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.actionMenu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 40;
+  min-width: 160px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+}
+
+.actionMenuItem {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 13px;
+  color: #374151;
+  cursor: pointer;
+  text-align: left;
+}
+
+.actionMenuItem:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.actionMenuItem:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.actionMenuItemDanger {
+  color: #dc2626;
 }
 
 .btnConvert {

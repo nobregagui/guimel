@@ -1,4 +1,5 @@
 export { ProdutoDrawer } from '@/features/produtos/components/ProdutoDrawer'
+export { ProdutoActionMenu } from '@/features/produtos/components/ProdutoActionMenu'
 export { ProdutosQueryFeedback } from '@/features/produtos/components/ProdutosQueryFeedback'
 export { SearchableSelect } from '@/features/produtos/components/SearchableSelect'
 export { ProdutoFileUpload } from '@/features/produtos/components/ProdutoFileUpload'
@@ -38,6 +39,7 @@ export {
   useCreateProdutoMutation,
   useUpdateProdutoMutation,
   useRemoveProdutoMutation,
+  useUpdateProdutoStatusMutation,
   useCreateCategoriaMutation,
 } from '@/features/produtos/hooks/useProdutos'
 export {

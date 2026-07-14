@@ -1,15 +1,16 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   AlertTriangle,
   Download,
   Filter,
-  MoreHorizontal,
   Package,
   Plus,
   Search,
   X,
 } from 'lucide-react'
 
+import { ConfirmModal } from '@/components/ui/ConfirmModal'
 import { useToast } from '@/components/ui/Toast'
 import { PermissionGate } from '@/components/auth/PermissionGate'
 import { MODULE_WRITE_PERMISSIONS } from '@/constants/permissions'
@@ -36,24 +37,34 @@ import {
   type ProdutosTab,
   type ProdutosTableFiltros,
 } from '@/features/produtos'
+import { ProdutoActionMenu } from '@/features/produtos/components/ProdutoActionMenu'
 import {
   useCategoriasQuery,
   useCreateProdutoMutation,
   useProdutosQuery,
+  useRemoveProdutoMutation,
   useUpdateProdutoMutation,
+  useUpdateProdutoStatusMutation,
 } from '@/features/produtos/hooks/useProdutos'
 import { useProdutoLookupsQueries } from '@/features/produtos/hooks/useProdutoLookups'
+import { usePermissions } from '@/hooks/usePermissions'
+import { APP_PATHS } from '@/routes/paths'
 import { getApiAssetUrl } from '@/utils/apiAssets'
 import styles from '@/pages/produtos/ProdutosPage.module.css'
 
 export function ProdutosPage() {
+  const navigate = useNavigate()
   const { showToast } = useToast()
+  const { canWriteModule, isReadOnly } = usePermissions()
+  const canWrite = canWriteModule([...MODULE_WRITE_PERMISSIONS.produtos]) && !isReadOnly
 
   const produtosQuery = useProdutosQuery()
   const categoriasQuery = useCategoriasQuery()
   const lookupsQuery = useProdutoLookupsQueries()
   const createProdutoMutation = useCreateProdutoMutation()
   const updateProdutoMutation = useUpdateProdutoMutation()
+  const updateStatusMutation = useUpdateProdutoStatusMutation()
+  const removeProdutoMutation = useRemoveProdutoMutation()
 
   const produtos = useProdutosStore((s) => s.produtos)
   const categorias = useProdutosStore((s) => s.categorias)
@@ -64,6 +75,8 @@ export function ProdutosPage() {
   const [tableFiltros, setTableFiltros] = useState<ProdutosTableFiltros>(EMPTY_PRODUTOS_TABLE_FILTROS)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [produtoEditando, setProdutoEditando] = useState<Produto | null>(null)
+  const [produtoParaInativar, setProdutoParaInativar] = useState<Produto | null>(null)
+  const [produtoParaExcluir, setProdutoParaExcluir] = useState<Produto | null>(null)
 
   const isLoading = produtosQuery.isLoading || categoriasQuery.isLoading || lookupsQuery.isLoading
   const isError = produtosQuery.isError || categoriasQuery.isError || lookupsQuery.isError
@@ -117,6 +130,50 @@ export function ProdutosPage() {
     void produtosQuery.refetch()
     void categoriasQuery.refetch()
     lookupsQuery.refetchAll()
+  }
+
+  function handleOpenDetalhe(produtoId: string) {
+    navigate(`${APP_PATHS.produtos}/${produtoId}`)
+  }
+
+  async function handleConfirmInativar() {
+    if (!produtoParaInativar) return
+    try {
+      await updateStatusMutation.mutateAsync({ id: produtoParaInativar.id, status: 'inativo' })
+      showToast({ message: 'Produto inativado com sucesso.', variant: 'success' })
+      setProdutoParaInativar(null)
+    } catch (error) {
+      showToast({
+        message: getProdutoSaveErrorMessage(error, 'Não foi possível inativar o produto.'),
+        variant: 'error',
+      })
+    }
+  }
+
+  async function handleConfirmExcluir() {
+    if (!produtoParaExcluir) return
+    try {
+      await removeProdutoMutation.mutateAsync(produtoParaExcluir.id)
+      showToast({ message: 'Produto excluído com sucesso.', variant: 'success' })
+      setProdutoParaExcluir(null)
+    } catch (error) {
+      showToast({
+        message: getProdutoSaveErrorMessage(error, 'Não foi possível excluir o produto.'),
+        variant: 'error',
+      })
+    }
+  }
+
+  async function handleReativar(produto: Produto) {
+    try {
+      await updateStatusMutation.mutateAsync({ id: produto.id, status: 'ativo' })
+      showToast({ message: 'Produto reativado com sucesso.', variant: 'success' })
+    } catch (error) {
+      showToast({
+        message: getProdutoSaveErrorMessage(error, 'Não foi possível reativar o produto.'),
+        variant: 'error',
+      })
+    }
   }
 
   return (
@@ -324,8 +381,48 @@ export function ProdutosPage() {
                     const categoria = categorias.find((c) => c.id === produto.categoriaId)
                     const categoriaNome = categoria?.nome ?? produto.categoriaNome
                     const categoriaCor = categoria?.cor ?? '#6B7280'
+                    const menuItems =
+                      canWrite && produto.status === 'inativo'
+                        ? [
+                            {
+                              id: 'reativar',
+                              label: 'Reativar',
+                              onClick: () => void handleReativar(produto),
+                            },
+                          ]
+                        : canWrite
+                          ? [
+                              {
+                                id: 'editar',
+                                label: 'Editar',
+                                onClick: () => handleOpenEdit(produto),
+                              },
+                              {
+                                id: 'inativar',
+                                label: 'Inativar',
+                                onClick: () => setProdutoParaInativar(produto),
+                              },
+                              {
+                                id: 'excluir',
+                                label: 'Excluir',
+                                danger: true,
+                                onClick: () => setProdutoParaExcluir(produto),
+                              },
+                            ]
+                          : []
+
                     return (
-                      <tr key={produto.id}>
+                      <tr
+                        key={produto.id}
+                        tabIndex={0}
+                        onClick={() => handleOpenDetalhe(produto.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault()
+                            handleOpenDetalhe(produto.id)
+                          }
+                        }}
+                      >
                         <td>
                           <div className={styles.produtoCell}>
                             <div className={styles.produtoThumb}>
@@ -371,14 +468,12 @@ export function ProdutosPage() {
                           <StatusProdutoBadge status={produto.status} />
                         </td>
                         <td>
-                          <button
-                            type="button"
-                            className={styles.rowAction}
-                            aria-label={`Editar ${produto.nome}`}
-                            onClick={() => handleOpenEdit(produto)}
-                          >
-                            <MoreHorizontal size={16} />
-                          </button>
+                          {menuItems.length > 0 ? (
+                            <ProdutoActionMenu
+                              ariaLabel={`Ações de ${produto.nome}`}
+                              items={menuItems}
+                            />
+                          ) : null}
                         </td>
                       </tr>
                     )
@@ -431,6 +526,42 @@ export function ProdutosPage() {
             throw error
           }
         }}
+      />
+
+      <ConfirmModal
+        open={Boolean(produtoParaInativar)}
+        title="Inativar produto"
+        description={
+          produtoParaInativar
+            ? `Tem certeza que deseja inativar “${produtoParaInativar.nome}”? Você poderá reativá-lo depois.`
+            : ''
+        }
+        variant="warning"
+        confirmLabel="Inativar"
+        confirmingLabel="Inativando..."
+        isConfirming={updateStatusMutation.isPending}
+        onClose={() => {
+          if (!updateStatusMutation.isPending) setProdutoParaInativar(null)
+        }}
+        onConfirm={() => void handleConfirmInativar()}
+      />
+
+      <ConfirmModal
+        open={Boolean(produtoParaExcluir)}
+        title="Excluir produto"
+        description={
+          produtoParaExcluir
+            ? `Tem certeza que deseja excluir permanentemente “${produtoParaExcluir.nome}”? Esta ação não pode ser desfeita.`
+            : ''
+        }
+        variant="danger"
+        confirmLabel="Excluir"
+        confirmingLabel="Excluindo..."
+        isConfirming={removeProdutoMutation.isPending}
+        onClose={() => {
+          if (!removeProdutoMutation.isPending) setProdutoParaExcluir(null)
+        }}
+        onConfirm={() => void handleConfirmExcluir()}
       />
     </div>
   )

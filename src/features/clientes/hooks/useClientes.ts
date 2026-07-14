@@ -8,7 +8,7 @@ import {
   type UpdateClientePayload,
 } from '@/services/cliente.service'
 import { useClientesStore } from '@/features/clientes/store/useClientesStore'
-import type { ClienteFormValues } from '@/features/clientes/types'
+import type { ClienteFormValues, ClienteStatus } from '@/features/clientes/types'
 
 export const clientesQueryKeys = {
   all: ['clientes'] as const,
@@ -101,10 +101,26 @@ export function useUpdateClienteMutation() {
 
 export function useRemoveClienteMutation() {
   const queryClient = useQueryClient()
-  const upsertCliente = useClientesStore((state) => state.upsertCliente)
+  const removeClienteFromCache = useClientesStore((state) => state.removeClienteFromCache)
 
   return useMutation({
     mutationFn: (id: string) => clienteService.remove(id),
+    onSuccess: (_result, id) => {
+      removeClienteFromCache(id)
+      queryClient.invalidateQueries({ queryKey: clientesQueryKeys.lists() })
+      queryClient.removeQueries({ queryKey: clientesQueryKeys.detail(id) })
+      queryClient.removeQueries({ queryKey: clientesQueryKeys.pedidos(id) })
+    },
+  })
+}
+
+export function useUpdateClienteStatusMutation() {
+  const queryClient = useQueryClient()
+  const upsertCliente = useClientesStore((state) => state.upsertCliente)
+
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: ClienteStatus }) =>
+      clienteService.updateStatus(id, status),
     onSuccess: (cliente) => {
       upsertCliente(cliente)
       queryClient.invalidateQueries({ queryKey: clientesQueryKeys.lists() })

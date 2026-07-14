@@ -1,7 +1,14 @@
 export { CondicaoPagamentoFields } from '@/features/vendas/components/CondicaoPagamentoFields'
+export { PedidoActionMenu } from '@/features/vendas/components/PedidoActionMenu'
 export { PedidoDrawer } from '@/features/vendas/components/PedidoDrawer'
 export { VendasQueryFeedback } from '@/features/vendas/components/VendasQueryFeedback'
 export { useVendasStore } from '@/features/vendas/store/useVendasStore'
+export {
+  DocumentButton,
+  DocumentDropdown,
+  VendaDocumentosControl,
+  VendaDocumentoPreview,
+} from '@/features/vendas/documents'
 
 export * from '@/features/vendas/types'
 export * from '@/features/vendas/utils'

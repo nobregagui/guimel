@@ -1,3 +1,4 @@
+import { USER_ROLE_LABEL } from '@/constants/permissions'
 import type { User, UserRole } from '@/types'
 
 export function isAdmin(user: User | null | undefined): boolean {
@@ -34,4 +35,11 @@ export function normalizeUserRole(role: UserRole): UserRole {
   if (role === 'manager') return 'owner'
   if (role === 'finance') return 'finance_manager'
   return role
+}
+
+/** Label amigável do perfil (ex.: administrative → Administrativo) */
+export function getUserRoleLabel(role: UserRole | string | null | undefined): string {
+  if (!role) return ''
+  const normalized = normalizeUserRole(role as UserRole)
+  return USER_ROLE_LABEL[normalized as keyof typeof USER_ROLE_LABEL] ?? String(role)
 }

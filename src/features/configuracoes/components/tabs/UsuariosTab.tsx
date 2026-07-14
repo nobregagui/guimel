@@ -10,7 +10,7 @@ import {
   useUpdateUsuarioMutation,
   useUsuariosQuery,
 } from '@/features/configuracoes/hooks/useUsuarios'
-import { USER_ROLE_LABEL } from '@/constants/permissions'
+import { getUserRoleLabel } from '@/utils/roles'
 import type { User } from '@/types'
 import { useAuthStore } from '@/store'
 import styles from '@/pages/configuracoes/ConfiguracoesPage.module.css'
@@ -102,8 +102,7 @@ export function UsuariosTab({ readOnly = false, drawerOpen, onCloseDrawer }: Usu
                     const onlyAdmin = isOnlyAdmin(usuario)
                     const canDelete = !isCurrent && !readOnly
                     const deleteDisabled = !canDelete || onlyAdmin
-                    const roleLabel =
-                      USER_ROLE_LABEL[usuario.role as keyof typeof USER_ROLE_LABEL] ?? usuario.role
+                    const roleLabel = getUserRoleLabel(usuario.role)
 
                     return (
                       <tr key={usuario.id}>

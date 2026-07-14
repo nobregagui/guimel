@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import { Loading } from '@/components/ui/Loading'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
@@ -15,19 +15,23 @@ import {
   useClienteQuery,
   useRemoveClienteMutation,
   useUpdateClienteMutation,
+  useUpdateClienteStatusMutation,
 } from '@/features/clientes/hooks/useClientes'
 import { useClientesStore } from '@/features/clientes/store/useClientesStore'
 import type { ClienteFormValues, ClientePedido } from '@/features/clientes/types'
 import { clienteToFormValues, getClienteSaveErrorMessage } from '@/features/clientes/utils'
+import { APP_PATHS } from '@/routes/paths'
 import styles from '@/pages/clientes/ClienteDetalhePage.module.css'
 
 const EMPTY_PEDIDOS: ClientePedido[] = []
 
 export function ClienteDetalhePage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const { showToast } = useToast()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [inativarModalOpen, setInativarModalOpen] = useState(false)
+  const [excluirModalOpen, setExcluirModalOpen] = useState(false)
 
   const clienteQuery = useClienteQuery(id)
   const pedidosQuery = useClientePedidosQuery(id)
@@ -40,6 +44,7 @@ export function ClienteDetalhePage() {
   )
 
   const updateClienteMutation = useUpdateClienteMutation()
+  const updateStatusMutation = useUpdateClienteStatusMutation()
   const removeClienteMutation = useRemoveClienteMutation()
 
   const cliente = clienteQuery.data ?? clienteFromStore
@@ -80,22 +85,51 @@ export function ClienteDetalhePage() {
       <div className={styles.notFound}>
         <h1 className={styles.notFoundTitle}>Cliente não encontrado</h1>
         <p className={styles.notFoundText}>O cadastro solicitado não existe ou foi removido.</p>
-        <Link to="/clientes" className={styles.backLinkStandalone}>Voltar para clientes</Link>
+        <Link to={APP_PATHS.clientes} className={styles.backLinkStandalone}>
+          Voltar para clientes
+        </Link>
       </div>
     )
   }
 
   const pedidosPendentes = pedidos.filter((pedido) => pedido.status === 'pendente').length
+  const isInativo = cliente.status === 'inativo'
 
   async function confirmInativar() {
-    if (!cliente || cliente.status === 'inativo') return
-
     try {
-      await removeClienteMutation.mutateAsync(cliente.id)
+      await updateStatusMutation.mutateAsync({ id: cliente.id, status: 'inativo' })
       showToast({ message: 'Cliente inativado com sucesso.', variant: 'success' })
       setInativarModalOpen(false)
-    } catch {
-      showToast({ message: 'Não foi possível inativar o cliente.', variant: 'error' })
+    } catch (error) {
+      showToast({
+        message: getClienteSaveErrorMessage(error, 'Não foi possível inativar o cliente.'),
+        variant: 'error',
+      })
+    }
+  }
+
+  async function confirmExcluir() {
+    try {
+      await removeClienteMutation.mutateAsync(cliente.id)
+      showToast({ message: 'Cliente excluído com sucesso.', variant: 'success' })
+      navigate(APP_PATHS.clientes)
+    } catch (error) {
+      showToast({
+        message: getClienteSaveErrorMessage(error, 'Não foi possível excluir o cliente.'),
+        variant: 'error',
+      })
+    }
+  }
+
+  async function handleReativar() {
+    try {
+      await updateStatusMutation.mutateAsync({ id: cliente.id, status: 'ativo' })
+      showToast({ message: 'Cliente reativado com sucesso.', variant: 'success' })
+    } catch (error) {
+      showToast({
+        message: getClienteSaveErrorMessage(error, 'Não foi possível reativar o cliente.'),
+        variant: 'error',
+      })
     }
   }
 
@@ -103,8 +137,11 @@ export function ClienteDetalhePage() {
     <div className={styles.root}>
       <ClienteDetalheHeader
         cliente={cliente}
-        onEditar={() => setDrawerOpen(true)}
-        onInativar={cliente.status !== 'inativo' ? () => setInativarModalOpen(true) : undefined}
+        onEditar={isInativo ? undefined : () => setDrawerOpen(true)}
+        onInativar={isInativo ? undefined : () => setInativarModalOpen(true)}
+        onExcluir={isInativo ? undefined : () => setExcluirModalOpen(true)}
+        onReativar={isInativo ? () => void handleReativar() : undefined}
+        isReativando={updateStatusMutation.isPending}
       />
 
       <div className={styles.body}>
@@ -146,13 +183,29 @@ export function ClienteDetalhePage() {
       <ConfirmModal
         open={inativarModalOpen}
         title="Inativar cliente"
-        description={`Tem certeza que deseja inativar "${cliente.nome}"? O cadastro permanecerá no sistema, mas ficará com status inativo.`}
-        variant="danger"
-        confirmLabel="Inativar cliente"
+        description={`Tem certeza que deseja inativar “${cliente.nome}”? Você poderá reativá-lo depois.`}
+        variant="warning"
+        confirmLabel="Inativar"
         confirmingLabel="Inativando..."
+        isConfirming={updateStatusMutation.isPending}
+        onClose={() => {
+          if (!updateStatusMutation.isPending) setInativarModalOpen(false)
+        }}
+        onConfirm={() => void confirmInativar()}
+      />
+
+      <ConfirmModal
+        open={excluirModalOpen}
+        title="Excluir cliente"
+        description={`Tem certeza que deseja excluir permanentemente “${cliente.nome}”? Esta ação não pode ser desfeita.`}
+        variant="danger"
+        confirmLabel="Excluir"
+        confirmingLabel="Excluindo..."
         isConfirming={removeClienteMutation.isPending}
-        onClose={() => setInativarModalOpen(false)}
-        onConfirm={confirmInativar}
+        onClose={() => {
+          if (!removeClienteMutation.isPending) setExcluirModalOpen(false)
+        }}
+        onConfirm={() => void confirmExcluir()}
       />
     </div>
   )

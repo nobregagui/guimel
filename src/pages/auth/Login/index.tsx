@@ -134,9 +134,6 @@ export function LoginPage() {
             <Logo />
           </div>
 
-          <h2 className={styles.formTitle}>Bem-vindo de volta! 👋</h2>
-          <p className={styles.formSubtitle}>Faça login para continuar</p>
-
           <form onSubmit={handleSubmit(onSubmit)} noValidate className={styles.form}>
             {authError ? (
               <div className={styles.errorMsg} role="alert">

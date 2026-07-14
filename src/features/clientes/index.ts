@@ -15,7 +15,9 @@ export {
   useCreateClienteMutation,
   useUpdateClienteMutation,
   useRemoveClienteMutation,
+  useUpdateClienteStatusMutation,
 } from '@/features/clientes/hooks/useClientes'
+export { ClienteActionMenu } from '@/features/clientes/components/ClienteActionMenu'
 export { ClienteAvatar } from '@/features/clientes/components/ClienteAvatar'
 export { ClienteNomeCell } from '@/features/clientes/components/ClienteNomeCell'
 export { ClienteStatusBadge } from '@/features/clientes/components/ClienteStatusBadge'

@@ -39,7 +39,8 @@
 }
 
 .btnSecondary,
-.btnPrimary {
+.btnPrimary,
+.btnDanger {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -55,11 +56,34 @@
   color: #4b5563;
 }
 
+.btnSecondary:hover {
+  background-color: #f9fafb;
+}
+
 .btnPrimary {
   border: none;
   background-color: #16a34a;
   color: #ffffff;
   font-weight: 500;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background-color: #15803d;
+}
+
+.btnPrimary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btnDanger {
+  border: 1px solid #fecaca;
+  background-color: #ffffff;
+  color: #dc2626;
+}
+
+.btnDanger:hover {
+  background-color: #fef2f2;
 }
 
 .profileRow {

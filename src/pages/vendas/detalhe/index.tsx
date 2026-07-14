@@ -11,6 +11,7 @@ import {
   formatarData,
   formatarMoeda,
 } from '@/features/vendas/data/shared'
+import { VendaDocumentosControl } from '@/features/vendas/documents'
 import {
   useConfirmarPedidoMutation,
   useEmitirNfePedidoMutation,
@@ -229,6 +230,7 @@ export function VendaDetalhePage() {
             <IconArrowLeft /> Voltar para vendas
           </Link>
           <div className={styles.headerActions}>
+            <VendaDocumentosControl pedido={pedido} />
             {pedido.status === 'orcamento' ? (
               <button
                 type="button"

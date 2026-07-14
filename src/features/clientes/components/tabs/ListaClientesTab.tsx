@@ -1,16 +1,19 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, MoreHorizontal, SlidersHorizontal, UserCheck, UserX, Users } from 'lucide-react'
+import { AlertCircle, SlidersHorizontal, UserCheck, UserX, Users } from 'lucide-react'
 
+import { ClienteActionMenu } from '@/features/clientes/components/ClienteActionMenu'
 import { ClienteNomeCell } from '@/features/clientes/components/ClienteNomeCell'
 import { ClienteStatusBadge } from '@/features/clientes/components/ClienteStatusBadge'
 import { ClienteTipoBadge } from '@/features/clientes/components/ClienteTipoBadge'
 import { ClientesKpiCard, FilterPills, KpiGrid } from '@/features/clientes/components/ClientesKpiCard'
 import { DataTable, TableFooter, TableSection, TableToolbar } from '@/features/clientes/components/DataTable'
 import { CLIENTES_FILTROS, FORMA_PAGAMENTO_LABEL } from '@/features/clientes/data/shared'
+import { useClienteTableActions } from '@/features/clientes/hooks/useClienteTableActions'
 import { useClientesStore } from '@/features/clientes/store/useClientesStore'
 import type { Cliente, ClienteFiltro, TableColumn } from '@/features/clientes/types'
 import { countByStatus, filterClientes, formatBRL } from '@/features/clientes/utils'
+import { APP_PATHS } from '@/routes/paths'
 import styles from '@/pages/clientes/ClientesPage.module.css'
 
 interface ListaClientesTabProps {
@@ -22,6 +25,7 @@ interface ListaClientesTabProps {
 export function ListaClientesTab({ filtro, busca, onFiltroChange }: ListaClientesTabProps) {
   const navigate = useNavigate()
   const clientes = useClientesStore((state) => state.clientes)
+  const { getMenuItems, actionsUi } = useClienteTableActions()
   const clientesBase = useMemo(() => filterClientes(clientes, 'todos', busca), [clientes, busca])
   const clientesFiltrados = useMemo(() => filterClientes(clientes, filtro, busca), [clientes, filtro, busca])
 
@@ -30,9 +34,7 @@ export function ListaClientesTab({ filtro, busca, onFiltroChange }: ListaCliente
       {
         key: 'cliente',
         header: 'Cliente',
-        render: (row) => (
-          <ClienteNomeCell cliente={row} onClick={() => navigate(`/clientes/${row.id}`)} />
-        ),
+        render: (row) => <ClienteNomeCell cliente={row} />,
       },
       {
         key: 'tipo',
@@ -97,14 +99,15 @@ export function ListaClientesTab({ filtro, busca, onFiltroChange }: ListaCliente
         key: 'actions',
         header: '',
         headerClassName: styles.thNarrow,
-        render: () => (
-          <button type="button" className={styles.rowAction} aria-label="Ações">
-            <MoreHorizontal size={16} />
-          </button>
+        render: (row) => (
+          <ClienteActionMenu
+            ariaLabel={`Ações de ${row.nome}`}
+            items={getMenuItems(row)}
+          />
         ),
       },
     ],
-    [navigate],
+    [getMenuItems],
   )
 
   return (
@@ -177,8 +180,11 @@ export function ListaClientesTab({ filtro, busca, onFiltroChange }: ListaCliente
           data={clientesFiltrados}
           getRowKey={(row) => row.id}
           emptyMessage="Nenhum cliente encontrado para os filtros selecionados."
+          onRowClick={(row) => navigate(`${APP_PATHS.clientes}/${row.id}`)}
         />
       </TableSection>
+
+      {actionsUi}
     </>
   )
 }
