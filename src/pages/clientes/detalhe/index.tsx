@@ -94,10 +94,11 @@ export function ClienteDetalhePage() {
 
   const pedidosPendentes = pedidos.filter((pedido) => pedido.status === 'pendente').length
   const isInativo = cliente.status === 'inativo'
+  const clienteId = cliente.id
 
   async function confirmInativar() {
     try {
-      await updateStatusMutation.mutateAsync({ id: cliente.id, status: 'inativo' })
+      await updateStatusMutation.mutateAsync({ id: clienteId, status: 'inativo' })
       showToast({ message: 'Cliente inativado com sucesso.', variant: 'success' })
       setInativarModalOpen(false)
     } catch (error) {
@@ -110,7 +111,7 @@ export function ClienteDetalhePage() {
 
   async function confirmExcluir() {
     try {
-      await removeClienteMutation.mutateAsync(cliente.id)
+      await removeClienteMutation.mutateAsync(clienteId)
       showToast({ message: 'Cliente excluído com sucesso.', variant: 'success' })
       navigate(APP_PATHS.clientes)
     } catch (error) {
@@ -123,7 +124,7 @@ export function ClienteDetalhePage() {
 
   async function handleReativar() {
     try {
-      await updateStatusMutation.mutateAsync({ id: cliente.id, status: 'ativo' })
+      await updateStatusMutation.mutateAsync({ id: clienteId, status: 'ativo' })
       showToast({ message: 'Cliente reativado com sucesso.', variant: 'success' })
     } catch (error) {
       showToast({

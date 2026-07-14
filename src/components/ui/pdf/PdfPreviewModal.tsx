@@ -88,7 +88,6 @@ function useSidebarContentInset(enabled: boolean) {
 export function PdfPreviewModal({
   open,
   title,
-  subtitle,
   objectUrl,
   isLoading = false,
   errorMessage = null,

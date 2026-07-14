@@ -143,9 +143,11 @@ export function ProdutoDetalhePage() {
     )
   }
 
+  const produtoId = produto.id
+
   async function handleConfirmInativar() {
     try {
-      await updateStatusMutation.mutateAsync({ id: produto.id, status: 'inativo' })
+      await updateStatusMutation.mutateAsync({ id: produtoId, status: 'inativo' })
       showToast({ message: 'Produto inativado com sucesso.', variant: 'success' })
       setInativarOpen(false)
     } catch (error) {
@@ -158,7 +160,7 @@ export function ProdutoDetalhePage() {
 
   async function handleConfirmExcluir() {
     try {
-      await removeProdutoMutation.mutateAsync(produto.id)
+      await removeProdutoMutation.mutateAsync(produtoId)
       showToast({ message: 'Produto excluído com sucesso.', variant: 'success' })
       navigate(APP_PATHS.produtos)
     } catch (error) {
@@ -171,7 +173,7 @@ export function ProdutoDetalhePage() {
 
   async function handleReativar() {
     try {
-      await updateStatusMutation.mutateAsync({ id: produto.id, status: 'ativo' })
+      await updateStatusMutation.mutateAsync({ id: produtoId, status: 'ativo' })
       showToast({ message: 'Produto reativado com sucesso.', variant: 'success' })
     } catch (error) {
       showToast({

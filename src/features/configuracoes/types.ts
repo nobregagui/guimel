@@ -1,5 +1,6 @@
+import type { AssignableUserRole } from '@/constants/permissions'
 import type { User } from '@/types'
-import { canViewUsuariosModule, canManageUsuarios } from '@/utils/roles'
+import { canManageUsuarios, canViewUsuariosModule, normalizeUserRole } from '@/utils/roles'
 
 export type ConfiguracoesAba = 'perfil' | 'usuarios'
 
@@ -26,7 +27,7 @@ export interface UsuarioFormValues {
   email: string
   password: string
   confirmPassword: string
-  role: User['role']
+  role: AssignableUserRole
 }
 
 export const EMPTY_USUARIO_FORM: UsuarioFormValues = {
@@ -43,6 +44,6 @@ export function usuarioToFormValues(usuario: User): UsuarioFormValues {
     email: usuario.email,
     password: '',
     confirmPassword: '',
-    role: usuario.role,
+    role: normalizeUserRole(usuario.role) as AssignableUserRole,
   }
 }
