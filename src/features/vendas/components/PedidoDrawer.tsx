@@ -33,6 +33,8 @@ interface PedidoDrawerProps {
   onClose: () => void
   onSubmit: (values: PedidoFormValues) => void | Promise<void>
   mode?: 'create' | 'edit'
+  /** Quando true (create a partir de outro pedido), ajusta títulos do drawer. */
+  isClone?: boolean
   initialValues?: Partial<PedidoFormValues>
   isSaving?: boolean
 }
@@ -301,6 +303,7 @@ export function PedidoDrawer({
   onClose,
   onSubmit,
   mode = 'create',
+  isClone = false,
   initialValues,
   isSaving = false,
 }: PedidoDrawerProps) {
@@ -311,6 +314,9 @@ export function PedidoDrawer({
   const [clienteNome, setClienteNome] = useState(initialValues?.clienteNome ?? '')
   const [clienteDocumento, setClienteDocumento] = useState(initialValues?.clienteDocumento ?? '')
   const [vendedorNome, setVendedorNome] = useState(initialValues?.vendedorNome ?? '')
+  const [dataVenda, setDataVenda] = useState(
+    initialValues?.dataIso?.slice(0, 10) ?? new Date().toISOString().slice(0, 10),
+  )
   const [dataEntrega, setDataEntrega] = useState(initialValues?.dataEntregaIso?.slice(0, 10) ?? '')
   const [observacao, setObservacao] = useState(initialValues?.observacao ?? '')
   const [clienteFormaPref, setClienteFormaPref] = useState<FormaPagamento | ''>(
@@ -610,7 +616,8 @@ export function PedidoDrawer({
         parcelas,
         taxaJurosMensal: taxaMensal,
         diasVencimento,
-        dataEntregaIso: dataEntrega ? new Date(dataEntrega).toISOString() : '',
+        dataIso: dataVenda ? new Date(`${dataVenda}T12:00:00`).toISOString() : '',
+        dataEntregaIso: dataEntrega ? new Date(`${dataEntrega}T12:00:00`).toISOString() : '',
         itens,
         frete,
         jurosAdicionais,
@@ -640,11 +647,17 @@ export function PedidoDrawer({
         <div className={styles.drawerHeader}>
           <div>
             <h2 className={styles.drawerTitle}>
-              {mode === 'create' ? 'Novo pedido de venda' : 'Editar pedido'}
+              {mode === 'create'
+                ? isClone
+                  ? 'Clonar pedido'
+                  : 'Novo pedido de venda'
+                : 'Editar pedido'}
             </h2>
             <p className={styles.drawerSubtitle}>
               {mode === 'create'
-                ? 'Preencha os dados, itens e condições de pagamento'
+                ? isClone
+                  ? 'Revise os dados e salve para criar um novo orçamento a partir desta venda.'
+                  : 'Preencha os dados, itens e condições de pagamento'
                 : 'Atualize as informações do pedido'}
             </p>
           </div>
@@ -747,6 +760,18 @@ export function PedidoDrawer({
                       value={vendedorNome}
                       onChange={(e) => setVendedorNome(e.target.value)}
                     />
+                  </div>
+                  <div className={styles.formField}>
+                    <label htmlFor="pedido-data-venda">Data da venda</label>
+                    <input
+                      id="pedido-data-venda"
+                      type="date"
+                      value={dataVenda}
+                      onChange={(e) => setDataVenda(e.target.value)}
+                    />
+                    <span className={styles.formHint}>
+                      O cronograma de pagamento é recalculado com base nesta data.
+                    </span>
                   </div>
                   <div className={styles.formField}>
                     <label htmlFor="pedido-entrega">Previsão de entrega</label>
@@ -987,6 +1012,7 @@ export function PedidoDrawer({
                 diasVencimento={diasVencimento}
                 total={total}
                 formaPreferida={clienteFormaPref}
+                dataReferencia={dataVenda ? new Date(`${dataVenda}T12:00:00`) : new Date()}
                 onFormaChange={setFormaPagamento}
                 onOpcaoChange={handleOpcaoParcela}
                 onDiasVencimentoChange={setDiasVencimento}
@@ -1017,7 +1043,13 @@ export function PedidoDrawer({
             <LoadingButtonContent
               loading={isSaving}
               loadingLabel={mode === 'create' ? 'Criando...' : 'Salvando...'}
-              idleLabel={mode === 'create' ? 'Criar orçamento' : 'Salvar alterações'}
+              idleLabel={
+                mode === 'create'
+                  ? isClone
+                    ? 'Criar clone'
+                    : 'Criar orçamento'
+                  : 'Salvar alterações'
+              }
             />
           </button>
         </div>

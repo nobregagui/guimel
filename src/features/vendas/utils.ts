@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-export { mapPedidoToFormValues } from '@/features/vendas/utils/mapPedidoToFormValues'
+export { mapPedidoToFormValues, mapPedidoToCloneFormValues } from '@/features/vendas/utils/mapPedidoToFormValues'
 
 export function getPedidoSaveErrorMessage(error: unknown, fallback: string): string {
   if (!axios.isAxiosError(error)) {
@@ -8,18 +8,24 @@ export function getPedidoSaveErrorMessage(error: unknown, fallback: string): str
   }
 
   const status = error.response?.status
+  const bodyMessage = error.response?.data?.message
+  const message =
+    typeof bodyMessage === 'string'
+      ? bodyMessage
+      : Array.isArray(bodyMessage)
+        ? bodyMessage.filter((item): item is string => typeof item === 'string').join(', ')
+        : ''
 
   if (status === 409) {
-    const body = error.response?.data?.message
-    return typeof body === 'string' ? body : 'Pedido já registrado'
+    if (message && /parcela|baixad|liquid|cronograma|dataIso|data da venda|financeiro/i.test(message)) {
+      return message
+    }
+    if (message) return message
+    return 'Não é possível alterar a data da venda porque há parcela(s) já baixada(s).'
   }
 
-  if (status === 400 && Array.isArray(error.response?.data?.message)) {
-    return error.response.data.message.join(', ')
-  }
-
-  if (status === 400 && typeof error.response?.data?.message === 'string') {
-    return error.response.data.message
+  if (status === 400 && message) {
+    return message
   }
 
   if (status === 404) {

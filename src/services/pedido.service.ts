@@ -43,6 +43,8 @@ export type CreatePedidoPayload = {
   parcelas: number
   taxaJurosMensal: number
   diasVencimento?: number[]
+  /** Data da venda (ISO 8601). Base do cronograma no backend. */
+  dataIso: string
   dataEntregaIso?: string | null
   observacao?: string | null
   frete?: number
@@ -63,6 +65,16 @@ function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }
 
+/** Normaliza/valida dataIso para envio à API (sempre ISO válido). */
+export function toPedidoDataIso(value: string | null | undefined): string {
+  const raw = value?.trim()
+  if (raw) {
+    const parsed = new Date(raw)
+    if (!Number.isNaN(parsed.getTime())) return parsed.toISOString()
+  }
+  return new Date().toISOString()
+}
+
 export function mapPedidoFormToPayload(values: PedidoFormValues): CreatePedidoPayload {
   const vendedorId = trimOptional(values.vendedorId)
 
@@ -73,6 +85,7 @@ export function mapPedidoFormToPayload(values: PedidoFormValues): CreatePedidoPa
     parcelas: values.parcelas,
     taxaJurosMensal: values.taxaJurosMensal,
     diasVencimento: values.diasVencimento,
+    dataIso: toPedidoDataIso(values.dataIso),
     dataEntregaIso: values.dataEntregaIso || null,
     observacao: trimOptional(values.observacao) ?? null,
     frete: values.frete,

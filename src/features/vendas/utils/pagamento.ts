@@ -174,11 +174,12 @@ export function calcularCronograma(
   taxaMensal: number,
   prazoInicial: number,
   intervalo: number,
+  dataBase = new Date(),
 ): Parcela[] {
   if (valorBase <= 0 || parcelas <= 0) return []
 
   const taxa = taxaMensal / 100
-  const hoje = new Date()
+  const base = new Date(dataBase)
 
   let valorParcela: number
   if (taxa === 0) {
@@ -191,9 +192,9 @@ export function calcularCronograma(
   const resultado: Parcela[] = []
 
   for (let i = 0; i < parcelas; i++) {
-    const diasDesdeHoje = prazoInicial + intervalo * i
-    const vencimento = new Date(hoje)
-    vencimento.setDate(vencimento.getDate() + diasDesdeHoje)
+    const diasDesdeBase = prazoInicial + intervalo * i
+    const vencimento = new Date(base)
+    vencimento.setDate(vencimento.getDate() + diasDesdeBase)
 
     const valorSemJuros = valorBase / parcelas
     const juros = Math.max(0, valorParcela - valorSemJuros)
@@ -258,6 +259,7 @@ export function calcularCondicao(
         opcao.taxaMensal,
         config.prazoInicial,
         config.intervalo,
+        base,
       )
 
   const totalComJuros = cronograma.reduce((s, p) => s + p.valorComJuros, 0)

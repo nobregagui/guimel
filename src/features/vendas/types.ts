@@ -77,6 +77,7 @@ export interface PedidoFormValues {
   parcelas: number
   taxaJurosMensal: number
   diasVencimento: number[]
+  dataIso: string
   dataEntregaIso: string
   itens: Omit<ItemPedido, 'id'>[]
   frete: number

@@ -12,6 +12,7 @@ export function mapPedidoToFormValues(pedido: Pedido): PedidoFormValues {
     parcelas: pedido.parcelas,
     taxaJurosMensal: pedido.taxaJurosMensal,
     diasVencimento: [...pedido.diasVencimento],
+    dataIso: pedido.dataIso ?? '',
     dataEntregaIso: pedido.dataEntregaIso ?? '',
     itens: pedido.itens.map(({ produtoId, descricao, quantidade, valorUnitario, desconto, tipoDesconto, subtotal }) => ({
       produtoId,
@@ -27,5 +28,14 @@ export function mapPedidoToFormValues(pedido: Pedido): PedidoFormValues {
     descontoAdicional: pedido.descontoAdicional,
     multa: pedido.multa,
     observacao: pedido.observacao ?? '',
+  }
+}
+
+/** Valores para criar um novo orçamento a partir de uma venda existente. */
+export function mapPedidoToCloneFormValues(pedido: Pedido): PedidoFormValues {
+  return {
+    ...mapPedidoToFormValues(pedido),
+    dataIso: new Date().toISOString(),
+    dataEntregaIso: '',
   }
 }

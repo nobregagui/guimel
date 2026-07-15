@@ -30,6 +30,7 @@ import type { Pedido, PedidoFormValues, StatusPedido } from '@/features/vendas/t
 import {
   getPedidoActionErrorMessage,
   getPedidoSaveErrorMessage,
+  mapPedidoToCloneFormValues,
   mapPedidoToFormValues,
 } from '@/features/vendas/utils'
 import { getBuscaFromState } from '@/routes/navigationState'
@@ -138,6 +139,7 @@ export function VendasPage() {
   const [filtroForma, setFiltroForma] = useState('')
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [pedidoEditando, setPedidoEditando] = useState<Pedido | null>(null)
+  const [pedidoClonando, setPedidoClonando] = useState<Pedido | null>(null)
   const [pedidoParaExcluir, setPedidoParaExcluir] = useState<Pedido | null>(null)
 
   useEffect(() => {
@@ -215,10 +217,13 @@ export function VendasPage() {
       .mutateAsync(values)
       .then((pedido) => {
         showToast({
-          message: `Orçamento ${pedido.numero} criado com sucesso.`,
+          message: pedidoClonando
+            ? `Orçamento ${pedido.numero} criado a partir do clone.`
+            : `Orçamento ${pedido.numero} criado com sucesso.`,
           variant: 'success',
         })
         setDrawerOpen(false)
+        setPedidoClonando(null)
         navigate(`/vendas/${pedido.id}`)
       })
       .catch((error) => {
@@ -540,6 +545,11 @@ export function VendasPage() {
                                 onClick: () => setPedidoEditando(pedido),
                               },
                               {
+                                id: 'clonar',
+                                label: 'Clonar',
+                                onClick: () => setPedidoClonando(pedido),
+                              },
+                              {
                                 id: 'excluir',
                                 label: 'Excluir',
                                 danger: true,
@@ -565,10 +575,18 @@ export function VendasPage() {
         </VendasQueryFeedback>
       </div>
 
-      {drawerOpen ? (
+      {drawerOpen || pedidoClonando ? (
         <PedidoDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
+          key={pedidoClonando ? `clone-${pedidoClonando.id}` : 'create'}
+          open={drawerOpen || Boolean(pedidoClonando)}
+          isClone={Boolean(pedidoClonando)}
+          initialValues={
+            pedidoClonando ? mapPedidoToCloneFormValues(pedidoClonando) : undefined
+          }
+          onClose={() => {
+            setDrawerOpen(false)
+            setPedidoClonando(null)
+          }}
           onSubmit={handleSubmit}
           isSaving={createPedidoMutation.isPending}
         />
